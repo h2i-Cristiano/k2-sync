@@ -298,6 +298,7 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
 -- Create tenant and admin profile on signup
+DROP FUNCTION IF EXISTS create_tenant_for_user(text,text,text) CASCADE;
 CREATE OR REPLACE FUNCTION create_tenant_for_user(
   p_name TEXT,
   p_slug TEXT,
