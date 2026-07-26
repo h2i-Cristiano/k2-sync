@@ -169,12 +169,29 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="cpf">CPF *</Label>
-            <Input
-              id="cpf"
-              placeholder="000.000.000-00"
-              maxLength={14}
-              {...form.register("cpf", { onBlur: handleCPFLookup })}
-            />
+            <div className="flex gap-2">
+              <Input
+                id="cpf"
+                placeholder="000.000.000-00"
+                maxLength={14}
+                className="flex-1"
+                {...form.register("cpf")}
+                onBlur={() => handleCPFLookup()}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCPFLookup}
+                disabled={cpfStatus === "loading"}
+              >
+                {cpfStatus === "loading" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Buscar"
+                )}
+              </Button>
+            </div>
             {errors.cpf && <p className="text-sm text-red-500">{errors.cpf.message}</p>}
             {cpfStatus === "loading" && (
               <p className="text-sm text-blue-500 flex items-center gap-1">
