@@ -27,6 +27,7 @@ status: em-desenvolvimento
 > **Producao:** https://k2-sync.vercel.app
 > **GitHub:** https://github.com/h2i-Cristiano/k2-sync
 > **Supabase:** fdphsumvqokygyxbguqy (k2-sync, Sao Paulo)
+> **E2E Tests:** 35/35 passing
 
 ---
 
@@ -66,11 +67,14 @@ status: em-desenvolvimento
 - [x] Isolamento por `tenant_id` via JWT
 - [x] Auto-criacao de profile no signup (trigger `handle_new_user`)
 - [x] Storage buckets (avatars, patients, anamnesis)
+- [x] RPC `create_tenant_for_user` com `ON CONFLICT DO UPDATE` (corrige bug INSERT vs trigger)
 
 ### Dashboard
 - [x] 3 cards de estatisticas (pacientes, agendamentos, prontuarios)
 - [x] Lista de pacientes recentes
 - [x] Acoes rapidas (Novo Paciente, Agendar Sessao, Novo Prontuario)
+- [x] Dark mode toggle (Sun/Moon icons, next-themes)
+- [x] User avatar menu com dropdown (Perfil, Config, Sair)
 
 ### Pacientes
 - [x] Lista com busca (nome, email, telefone)
@@ -79,13 +83,19 @@ status: em-desenvolvimento
 - [x] Edicao via dialog no perfil
 - [x] Exclusao com confirmacao
 - [x] Server actions (create, update, delete)
+- [x] **Formulario expandido:** CPF*, Email*, Telefone*, Nascimento*, Genero*, Estado Civil, Profissao
+- [x] **Endereco completo:** CEP (auto-fill ViaCEP), Rua, Numero, Complemento, Bairro, Cidade, Estado
+- [x] **Contato de Emergencia:** Nome, Telefone, Parentesco
+- [x] **Observacoes** (textarea)
+- [x] **Validacao CPF Mod-11** (algoritmo matematico, sem API externa)
+- [x] **Prompt de agendamento** apos criacao do paciente
 
 ### Anamnese Digital
 - [x] Formulario de 5 passos com validacao Zod por step
-- [x] Step 1: Identificacao (nascimento, genero, estado civil, ocupacao, contato emergencia)
-- [x] Step 2: Historico de saude (alergias, medicacoes, cirurgias, gravidez)
-- [x] Step 3: Habitos (fumo, exercicio, sono, estresse, dieta)
-- [x] Step 4: Queixa principal (dor localizacao, intensidade, frequencia)
+- [x] Step 1: Identificacao
+- [x] Step 2: Historico de saude
+- [x] Step 3: Habitos
+- [x] Step 4: Queixa principal
 - [x] Step 5: Expectativas + Consentimento LGPD
 - [x] Server action (create, update)
 - [x] Barra de progresso + navegacao entre steps
@@ -93,47 +103,40 @@ status: em-desenvolvimento
 ### Agenda
 - [x] Navegacao por dia (anterior/proximo/hoje)
 - [x] Visualizacao timeline com cards de agendamento
-- [x] Cadastro via AppointmentForm (react-hook-form + Zod)
+- [x] Cadastro via AppointmentForm (create + edit mode)
 - [x] Status badges (agendado, confirmado, em andamento, concluido, cancelado, nao compareceu)
 - [x] Indicador de atendimento domiciliar
+- [x] **Pre-selecao de paciente** via query param `?patient={id}`
 - [x] Server actions (create, update, delete)
 
 ### Prontuarios Eletronicos
 - [x] Lista com busca
-- [x] Cadastro com campos (paciente, sessao, queixa, avaliacao, plano, notas)
+- [x] RecordForm com validacao Zod
 - [x] Status badges (rascunho, concluido)
-- [x] Exclusao
+- [x] **Edit/Delete** via server actions
 
 ### Configuracoes
-- [x] Aba Aparencia (seletor de tema Light/Dark/System via next-themes)
-- [x] Aba Perfil Profissional (formulario com placeholders — MOCKUP)
-- [x] Aba Notificacoes (toggles — parcialmente funcional)
-- [x] Aba Seguranca (formulario de senha — MOCKUP)
+- [x] Aba Aparencia (tema Light/Dark/System)
+- [x] **Aba Perfil Profissional** (DB real — `getProfile`, `updateProfile`)
+- [x] **Aba Notificacoes** (toggles)
+- [x] **Aba Seguranca** (`updatePassword` funcional)
 
-### Infraestrutura
-- [x] Providers (ThemeProvider + Toaster)
-- [x] Error boundary global (`error.tsx`)
-- [x] Loading global (`loading.tsx`)
-- [x] Pagina 404 personalizada (`not-found.tsx`)
-- [x] 14 componentes shadcn/ui (base-ui)
-- [x] Server actions com validacao Zod
-- [x] Zod schemas (patient, appointment, anamnese)
-- [x] Dark mode CSS variables (OKLCH)
-- [x] Playwright configurado + 2 testes E2E
+### Testes
+- [x] **35 testes E2E** (Playwright)
+- [x] cobrindo: auth, signup, dashboard, pacientes CRUD, agenda, prontuarios, configuracoes
+- [x] CI/CD (GitHub Actions) — lint + typecheck + Playwright
+
+### Validacao CPF
+- [x] `lib/cpf.ts` — `isValidCPF()` (Mod-11)
+- [x] Validacao no schema Zod (`.refine()`)
+- [x] Feedback visual (verde valido / vermelho invalidos digitos)
 
 ---
 
 ## Pendente
 
 ### Funcionalidades
-- [ ] Conectar Settings ao banco (perfil real do usuario)
 - [ ] Upload de foto de perfil (Supabase Storage)
-- [ ] Expandir PatientForm com todos os campos (endereco, contato emergencia, alergias, medicacoes)
-- [ ] Modo edit no AppointmentForm
-- [ ] Server actions para prontuarios (atualmente usa Supabase direto)
-- [ ] Validacao Zod nos prontuarios
-- [ ] Funcao `deleteAnamnese`
-- [ ] Dark mode toggle global no header
 - [ ] Dashboard com graficos (recharts/chart.js)
 - [ ] Hooks customizados (`src/hooks/`)
 
@@ -141,11 +144,6 @@ status: em-desenvolvimento
 - [ ] WhatsApp (Evolution API)
 - [ ] Pagamentos (Cakto PIX)
 - [ ] Modulo IA (Groq/Gemini)
-
-### Testes
-- [ ] Testes unitarios (Vitest)
-- [ ] Testes de componente
-- [ ] Testes E2E completos (Playwright)
 
 ---
 
@@ -161,15 +159,20 @@ status: em-desenvolvimento
 
 ### 3. asChild no shadcn v4
 - **Problema:** shadcn v4 usa base-ui, nao Radix. `asChild` nao existe.
-- **Solucao:** Usar `render` prop: `<DialogTrigger render={<Button />}>`
+- **Solucao:** Usar `render` prop
 
 ### 4. Porta em uso
 - **Problema:** porta 3000 ja em uso
 - **Solucao:** `npm run dev --port 3001`
 
-### 5. RPC create_tenant_for_user
-- **Problema:** Funcao chamada no signup mas nao definida no `database-schema.sql`
-- **Solucao:** Criar a funcao no Supabase SQL Editor
+### 5. RPC create_tenant_for_user (FIXED)
+- **Problema:** INSERT conflitava com trigger `handle_new_user`
+- **Solucao:** `ON CONFLICT (id) DO UPDATE SET full_name, role, tenant_id`
+- **Migracao:** `20260726020000_fix_tenant_rpc.sql`
+
+### 6. ReceitaWS CPF endpoint removido
+- **Problema:** ReceitaWS descontinuou endpoint CPF em 2026
+- **Solucao:** Validacao via algoritmo Mod-11 (client-side)
 
 ---
 
@@ -177,132 +180,72 @@ status: em-desenvolvimento
 
 ```
 D:\K2-Sync\
-├── database-schema.sql                          # Schema completo (326 linhas)
-├── PLANO-K2-SYNC.md                             # Este arquivo
+├── database-schema.sql
+├── PLANO-K2-SYNC.md
+├── supabase/migrations/
+│   ├── 20260726000000_create_tenant_rpc.sql
+│   ├── 20260726010000_auto_confirm_users.sql
+│   ├── 20260726020000_fix_tenant_rpc.sql
+│   └── 20260726030000_setup_dev_admin.sql
 └── frontend/
-    ├── package.json
-    ├── tsconfig.json
-    ├── next.config.ts
-    ├── playwright.config.ts
-    ├── components.json                           # shadcn config (base-nova)
-    ├── e2e/
-    │   ├── auth.spec.ts
-    │   └── patients.spec.ts
+    ├── e2e/ (8 arquivos, 35 testes)
     └── src/
-        ├── middleware.ts                         # Auth middleware
-        ├── app/
-        │   ├── layout.tsx                       # Root layout (Providers)
-        │   ├── page.tsx                         # Redirect /login
-        │   ├── error.tsx                        # Error boundary
-        │   ├── loading.tsx                      # Loading spinner
-        │   ├── not-found.tsx                    # 404 page
-        │   ├── globals.css                      # Tailwind + dark mode
-        │   ├── (auth)/
-        │   │   ├── layout.tsx                   # Split-screen auth
-        │   │   ├── login/page.tsx
-        │   │   └── signup/page.tsx
-        │   └── (dashboard)/
-        │       ├── layout.tsx                   # Nav shell + user menu
-        │       ├── dashboard/page.tsx           # Stats + recent
-        │       ├── patients/
-        │       │   ├── page.tsx                 # List + search + create
-        │       │   └── [id]/
-        │       │       ├── page.tsx             # Profile (3 tabs)
-        │       │       └── anamnese/page.tsx
-        │       ├── appointments/page.tsx        # Timeline day view
-        │       ├── records/page.tsx             # Prontuarios CRUD
-        │       └── settings/page.tsx            # 4 tabs (mockup)
-        ├── components/
-        │   ├── providers.tsx                    # ThemeProvider + Toaster
-        │   ├── forms/
-        │   │   ├── PatientForm.tsx              # react-hook-form + Zod
-        │   │   ├── AppointmentForm.tsx
-        │   │   └── AnamneseForm.tsx             # 5-step wizard
-        │   └── ui/                              # 14 shadcn components
-        │       ├── avatar.tsx
-        │       ├── button.tsx
-        │       ├── card.tsx
-        │       ├── dialog.tsx
-        │       ├── dropdown-menu.tsx
-        │       ├── input.tsx
-        │       ├── label.tsx
-        │       ├── select.tsx
-        │       ├── separator.tsx
-        │       ├── sheet.tsx
-        │       ├── sonner.tsx
-        │       ├── switch.tsx
-        │       ├── tabs.tsx
-        │       └── textarea.tsx
+        ├── app/(dashboard)/
+        │   ├── patients/page.tsx
+        │   ├── appointments/page.tsx
+        │   ├── records/page.tsx
+        │   └── settings/page.tsx
+        ├── components/forms/
+        │   ├── PatientForm.tsx      # CPF + CEP + campos obrigatorios
+        │   ├── AppointmentForm.tsx  # Create + Edit
+        │   ├── RecordForm.tsx
+        │   └── AnamneseForm.tsx     # 5-step wizard
         └── lib/
-            ├── utils.ts                         # cn() utility
-            ├── supabase/
-            │   ├── client.ts                    # Browser client
-            │   ├── server.ts                    # Server client
-            │   └── middleware.ts                # Session refresh
-            ├── validations/
-            │   ├── patient.ts                   # Zod schema
-            │   ├── appointment.ts
-            │   └── anamnese.ts
-            └── actions/
-                ├── patient.actions.ts           # Server actions
-                ├── appointment.actions.ts
-                └── anamnese.actions.ts
-```
-
----
-
-## Comandos Uteis
-
-```bash
-# Iniciar servidor
-cd D:\K2-Sync\frontend && npm run dev
-
-# Build de producao
-cd D:\K2-Sync\frontend && npm run build
-
-# Rodar testes E2E
-cd D:\K2-Sync\frontend && npx playwright test
-
-# Lint
-cd D:\K2-Sync\frontend && npm run lint
-
-# Adicionar componente shadcn
-cd D:\K2-Sync\frontend && npx shadcn@latest add [componente]
-
-# Deploy manual Vercel
-cd D:\K2-Sync\frontend && vercel --prod
-
-# Push schema para Supabase
-cd D:\K2-Sync\frontend && supabase db push --linked
+            ├── cpf.ts               # Validacao Mod-11
+            ├── validations/         # Zod schemas
+            └── actions/             # Server actions
 ```
 
 ---
 
 ## Deploy & CI/CD
 
-> [!info] Pipeline Automatizado
-> - **GitHub Actions:** lint + typecheck + Playwright tests em todo push/PR
-> - **Vercel:** auto-deploy em push para `main` (apos configurar `VERCEL_TOKEN`)
-> - **Supabase:** projeto linked, schema sincronizado
-
-### Secrets necessarios no GitHub (ja configurados)
-| Secret | Valor |
-|--------|-------|
-| `VERCEL_ORG_ID` | `ffxcjhffooztyczuvbyu` |
-| `VERCEL_PROJECT_ID` | `prj_tHqczFKZkRcou9r4GMHIY8vbbMMD` |
-| `VERCEL_TOKEN` | Criar em https://vercel.com/account/tokens |
-
 ### URLs
 | Servico | URL |
 |---------|-----|
 | Producao | https://k2-sync.vercel.app |
 | GitHub | https://github.com/h2i-Cristiano/k2-sync |
-| Supabase Dashboard | https://supabase.com/dashboard/project/fdphsumvqokygyxbguqy |
-| Supabase Studio | https://fdphsumvqokygyxbguqy.supabase.co |
+| Supabase | https://supabase.com/dashboard/project/fdphsumvqokygyxbguqy |
+
+### Dev Admin
+| Campo | Valor |
+|-------|-------|
+| Email | `ti.h2icorp@gmail.com` |
+| Senha | `08Cris8` |
+| Role | admin |
+| Tenant | H2i Corp - Dev |
+
+---
+
+## Comandos Uteis
+
+```bash
+# Iniciar
+cd D:\K2-Sync\frontend && npm run dev
+
+# Testes E2E
+$env:TEST_USER_EMAIL="e2e@test.com"; $env:TEST_USER_PASSWORD="test123456"
+npx playwright test
+
+# Deploy
+npx vercel --prod --force --scope arena-resenha
+
+# Lint + TypeCheck
+npm run lint && npx tsc --noEmit
+```
 
 ---
 
 > [!tip] Links
 > - [[SaaS_Resenha_e_Futebol]] - Arena Resenha
-> - [[Project_arena-resenha]] - Memoria IA Arena
-> - [[Project_k2-sync]] - Memoria IA K2-Sync
+> - [[Project_k2-sync]] - Obsidian
