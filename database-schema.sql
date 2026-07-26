@@ -313,7 +313,9 @@ BEGIN
   RETURNING * INTO new_tenant;
 
   INSERT INTO profiles (id, full_name, role, tenant_id)
-  VALUES (auth.uid(), p_full_name, 'admin', new_tenant.id);
+  VALUES (auth.uid(), p_full_name, 'admin', new_tenant.id)
+  ON CONFLICT (id) DO UPDATE
+  SET full_name = p_full_name, role = 'admin', tenant_id = new_tenant.id;
 
   RETURN NEXT new_tenant;
 END;
