@@ -23,8 +23,10 @@ status: em-desenvolvimento
 
 > [!success] MVP Funcionando — Fase 2
 > **Ultimo status:** 2026-07-26
-> **Porta:** http://localhost:3001
-> **Proximo:** Conectar Supabase + GitHub + Vercel
+> **Porta local:** http://localhost:3001
+> **Producao:** https://k2-sync.vercel.app
+> **GitHub:** https://github.com/h2i-Cristiano/k2-sync
+> **Supabase:** fdphsumvqokygyxbguqy (k2-sync, Sao Paulo)
 
 ---
 
@@ -266,7 +268,37 @@ cd D:\K2-Sync\frontend && npm run lint
 
 # Adicionar componente shadcn
 cd D:\K2-Sync\frontend && npx shadcn@latest add [componente]
+
+# Deploy manual Vercel
+cd D:\K2-Sync\frontend && vercel --prod
+
+# Push schema para Supabase
+cd D:\K2-Sync\frontend && supabase db push --linked
 ```
+
+---
+
+## Deploy & CI/CD
+
+> [!info] Pipeline Automatizado
+> - **GitHub Actions:** lint + typecheck + Playwright tests em todo push/PR
+> - **Vercel:** auto-deploy em push para `main` (apos configurar `VERCEL_TOKEN`)
+> - **Supabase:** projeto linked, schema sincronizado
+
+### Secrets necessarios no GitHub (ja configurados)
+| Secret | Valor |
+|--------|-------|
+| `VERCEL_ORG_ID` | `ffxcjhffooztyczuvbyu` |
+| `VERCEL_PROJECT_ID` | `prj_tHqczFKZkRcou9r4GMHIY8vbbMMD` |
+| `VERCEL_TOKEN` | Criar em https://vercel.com/account/tokens |
+
+### URLs
+| Servico | URL |
+|---------|-----|
+| Producao | https://k2-sync.vercel.app |
+| GitHub | https://github.com/h2i-Cristiano/k2-sync |
+| Supabase Dashboard | https://supabase.com/dashboard/project/fdphsumvqokygyxbguqy |
+| Supabase Studio | https://fdphsumvqokygyxbguqy.supabase.co |
 
 ---
 
