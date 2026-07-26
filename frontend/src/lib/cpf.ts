@@ -33,7 +33,7 @@ export async function fetchCPFData(cpf: string): Promise<CPFData | null> {
   if (cleaned.length !== 11) return null
 
   try {
-    const res = await fetch(`https://receitaws.com.br/v1/cpf/${cleaned}`, {
+    const res = await fetch(`/api/cpf?cpf=${cleaned}`, {
       headers: { Accept: "application/json" },
     })
 
@@ -41,7 +41,7 @@ export async function fetchCPFData(cpf: string): Promise<CPFData | null> {
 
     const data = await res.json()
 
-    if (data.status === "ERROR" || !data.nome) return null
+    if (data.error || !data.nome) return null
 
     return {
       nome: data.nome || "",

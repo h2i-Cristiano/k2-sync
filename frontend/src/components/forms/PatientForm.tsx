@@ -84,7 +84,7 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
   }
 
   async function handleCEPLookup() {
-    const cep = form.watch("address.zip_code") || ""
+    const cep = form.getValues("address.zip_code") || ""
     const cleaned = cep.replace(/\D/g, "")
     if (cleaned.length < 8) return
 
@@ -104,7 +104,7 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
   }
 
   async function handleCPFLookup() {
-    const cpf = form.watch("cpf") || ""
+    const cpf = form.getValues("cpf") || ""
     const cleaned = cpf.replace(/\D/g, "")
 
     if (cleaned.length !== 11) {
