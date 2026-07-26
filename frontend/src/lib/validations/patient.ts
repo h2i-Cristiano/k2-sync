@@ -3,13 +3,12 @@ import { isValidCPF } from "@/lib/cpf"
 
 export const patientSchema = z.object({
   full_name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
-  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  email: z.string().email("Email inválido"),
   phone: z.string().min(10, "Telefone obrigatório (mínimo 10 dígitos)"),
   cpf: z.string().min(11, "CPF obrigatório (mínimo 11 dígitos)").refine(
     (val) => isValidCPF(val),
     "CPF inválido"
   ),
-  rg: z.string().optional().or(z.literal("")),
   birth_date: z.string().min(1, "Data de nascimento é obrigatória"),
   gender: z.enum(["M", "F", "O"], { message: "Gênero é obrigatório" }),
   marital_status: z.string().optional().or(z.literal("")),

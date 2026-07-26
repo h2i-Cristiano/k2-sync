@@ -46,7 +46,6 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
       email: "",
       phone: "",
       cpf: "",
-      rg: "",
       birth_date: "",
       gender: undefined,
       marital_status: "",
@@ -125,19 +124,6 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
           {errors.full_name && <p className="text-sm text-red-500">{errors.full_name.message}</p>}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="email@teste.com" {...form.register("email")} />
-            {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="phone">Telefone *</Label>
-            <Input id="phone" placeholder="(11) 99999-9999" {...form.register("phone")} />
-            {errors.phone && <p className="text-sm text-red-500">{errors.phone.message}</p>}
-          </div>
-        </div>
-
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="cpf">CPF *</Label>
@@ -161,17 +147,23 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="rg">RG</Label>
-            <Input id="rg" placeholder="00.000.000-0" {...form.register("rg")} />
+            <Label htmlFor="email">Email *</Label>
+            <Input id="email" type="email" placeholder="email@teste.com" {...form.register("email")} />
+            {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Telefone *</Label>
+            <Input id="phone" placeholder="(11) 99999-9999" {...form.register("phone")} />
+            {errors.phone && <p className="text-sm text-red-500">{errors.phone.message}</p>}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="birth_date">Data de Nascimento *</Label>
             <Input id="birth_date" type="date" {...form.register("birth_date")} />
             {errors.birth_date && <p className="text-sm text-red-500">{errors.birth_date.message}</p>}
           </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label>Genero *</Label>
             <Select onValueChange={(val) => { if (val) form.setValue("gender", val as "M" | "F" | "O") }} defaultValue={form.watch("gender") ?? undefined}>
@@ -188,10 +180,11 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
             <Label htmlFor="marital_status">Estado Civil</Label>
             <Input id="marital_status" placeholder="Solteiro, Casado..." {...form.register("marital_status")} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="occupation">Profissao</Label>
-            <Input id="occupation" placeholder="Ex: Engenheiro" {...form.register("occupation")} />
-          </div>
+        </div>
+
+        <div className="space-y-2 max-w-[200px]">
+          <Label htmlFor="occupation">Profissao</Label>
+          <Input id="occupation" placeholder="Ex: Engenheiro" {...form.register("occupation")} />
         </div>
       </div>
 
