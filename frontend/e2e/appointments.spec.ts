@@ -33,13 +33,10 @@ test.describe('Appointments CRUD', () => {
     await loginAsTestUser(page);
     await page.goto('/appointments');
 
-    const nextDay = page.locator('button').filter({ has: page.locator('svg') }).nth(2);
-    if (await nextDay.isVisible()) {
-      await nextDay.click();
-      await page.waitForTimeout(500);
-    }
+    await expect(page.getByRole('button', { name: /hoje/i })).toBeVisible({ timeout: 10000 });
 
-    await page.getByRole('button', { name: /hoje/i }).click();
+    const todayBtn = page.getByRole('button', { name: /hoje/i });
+    await todayBtn.click();
     await page.waitForTimeout(500);
   });
 
