@@ -33,13 +33,13 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       })()
 
   const form = useForm<AppointmentFormValues>({
-    resolver: zodResolver(appointmentSchema),
+    resolver: zodResolver(appointmentSchema) as any,
     defaultValues: {
       patient_id: initialData?.patient_id || "",
       service_type: initialData?.service_type || "",
       scheduled_at: defaultDate,
       duration_minutes: initialData?.duration_minutes || 60,
-      status: initialData?.status || "scheduled",
+      status: (initialData?.status || "scheduled") as AppointmentFormValues["status"],
       notes: initialData?.notes || "",
       is_home_visit: initialData?.is_home_visit || false,
       travel_cost: initialData?.travel_cost || 0,
@@ -66,11 +66,14 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
     }
   }
 
+  const patientId = String(form.watch("patient_id") ?? "")
+  const statusValue = String(form.watch("status") ?? "scheduled")
+
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
       <div className="space-y-2">
         <Label htmlFor="patient_id">Paciente *</Label>
-        <Select onValueChange={(val) => form.setValue("patient_id", val)} defaultValue={form.getValues("patient_id")}>
+        <Select onValueChange={(val) => { if (val) form.setValue("patient_id", val) }} defaultValue={patientId}>
           <SelectTrigger id="patient_id" className={form.formState.errors.patient_id ? "border-destructive" : ""}>
             <SelectValue placeholder="Selecione o paciente" />
           </SelectTrigger>
@@ -128,7 +131,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
-          <Select onValueChange={(val) => form.setValue("status", val as any)} defaultValue={form.getValues("status")}>
+          <Select onValueChange={(val) => { if (val) form.setValue("status", val as AppointmentFormValues["status"]) }} defaultValue={statusValue}>
             <SelectTrigger id="status">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
