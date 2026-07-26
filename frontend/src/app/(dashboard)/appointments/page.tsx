@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Plus, Calendar, ChevronLeft, ChevronRight, Clock, User, MapPin } from "lucide-react"
+import { Plus, Calendar, ChevronLeft, ChevronRight, Clock, User, MapPin, Pencil } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -38,6 +38,7 @@ export default function AppointmentsPage() {
   const [patients, setPatients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isOpen, setIsOpen] = useState(false)
+  const [editingAppointment, setEditingAppointment] = useState<any>(null)
   const [selectedDate, setSelectedDate] = useState(new Date())
   const supabase = createClient()
 
@@ -105,22 +106,24 @@ export default function AppointmentsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Agenda</h1>
           <p className="text-muted-foreground mt-1">Gerencie seus compromissos e pacientes.</p>
         </div>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) setEditingAppointment(null) }}>
           <DialogTrigger render={<Button className="shadow-sm" />}>
             <Plus className="mr-2 h-4 w-4" />
             Novo Agendamento
           </DialogTrigger>
           <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Novo Agendamento</DialogTitle>
+              <DialogTitle>{editingAppointment ? "Editar Agendamento" : "Novo Agendamento"}</DialogTitle>
             </DialogHeader>
             <AppointmentForm 
-              patients={patients} 
+              patients={patients}
+              initialData={editingAppointment}
               onSuccess={() => {
                 setIsOpen(false)
+                setEditingAppointment(null)
                 fetchAppointments()
               }} 
-              onCancel={() => setIsOpen(false)}
+              onCancel={() => { setIsOpen(false); setEditingAppointment(null) }}
             />
           </DialogContent>
         </Dialog>
@@ -212,6 +215,16 @@ export default function AppointmentsPage() {
                         </div>
                       )}
                     </div>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-2 w-full"
+                      onClick={() => { setEditingAppointment(apt); setIsOpen(true) }}
+                    >
+                      <Pencil className="mr-2 h-3.5 w-3.5" />
+                      Editar
+                    </Button>
                   </CardContent>
                 </Card>
               </div>

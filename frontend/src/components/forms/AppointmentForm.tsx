@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { appointmentSchema, AppointmentFormValues } from "@/lib/validations/appointment"
-import { createAppointment } from "@/lib/actions/appointment.actions"
+import { createAppointment, updateAppointment } from "@/lib/actions/appointment.actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -55,9 +55,13 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
         scheduled_at: new Date(data.scheduled_at).toISOString(),
       }
       
-      // se tivesse edit faríamos update
-      await createAppointment(formattedData)
-      toast.success("Agendamento criado com sucesso!")
+      if (initialData?.id) {
+        await updateAppointment(initialData.id, formattedData)
+        toast.success("Agendamento atualizado com sucesso!")
+      } else {
+        await createAppointment(formattedData)
+        toast.success("Agendamento criado com sucesso!")
+      }
       onSuccess?.()
     } catch (error: any) {
       toast.error(error.message || "Erro ao salvar agendamento")
@@ -194,7 +198,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
           </Button>
         )}
         <Button type="submit" disabled={saving}>
-          {saving ? "Salvando..." : "Salvar Agendamento"}
+          {saving ? "Salvando..." : (initialData?.id ? "Atualizar Agendamento" : "Salvar Agendamento")}
         </Button>
       </div>
     </form>

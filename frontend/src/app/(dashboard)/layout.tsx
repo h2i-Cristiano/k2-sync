@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import Link from "next/link"
 import { Menu, Users, Calendar, FileText, Settings, LogOut } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: Menu },
@@ -64,9 +65,9 @@ export default function DashboardLayout({
     .toUpperCase() || "U"
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-50">
+      <header className="bg-white dark:bg-gray-900 border-b dark:border-gray-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Mobile menu */}
@@ -101,7 +102,7 @@ export default function DashboardLayout({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                  className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
                 >
                   {item.label}
                 </Link>
@@ -109,7 +110,9 @@ export default function DashboardLayout({
             </nav>
 
             {/* User menu */}
-            <DropdownMenu>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <DropdownMenu>
               <DropdownMenuTrigger render={<Button variant="ghost" className="relative h-8 w-8 rounded-full" />}>
                 <Avatar className="h-8 w-8">
                   <AvatarFallback>{initials}</AvatarFallback>
@@ -137,7 +140,8 @@ export default function DashboardLayout({
                   Sair
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
       </header>

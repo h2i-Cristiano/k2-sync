@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, FileText, Calendar, Edit, Activity, User, Phone, MapPin, Pill, AlertCircle, Clock } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"

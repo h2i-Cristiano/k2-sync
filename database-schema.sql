@@ -297,6 +297,27 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
+-- Create tenant and admin profile on signup
+CREATE OR REPLACE FUNCTION create_tenant_for_user(
+  p_name TEXT,
+  p_slug TEXT,
+  p_full_name TEXT
+)
+RETURNS SETOF tenants AS $$
+DECLARE
+  new_tenant tenants%ROWTYPE;
+BEGIN
+  INSERT INTO tenants (name, slug)
+  VALUES (p_name, p_slug)
+  RETURNING * INTO new_tenant;
+
+  INSERT INTO profiles (id, full_name, role, tenant_id)
+  VALUES (auth.uid(), p_full_name, 'admin', new_tenant.id);
+
+  RETURN NEXT new_tenant;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- =============================================
 -- STORAGE
 -- =============================================
