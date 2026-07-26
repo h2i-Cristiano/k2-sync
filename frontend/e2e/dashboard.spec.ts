@@ -26,11 +26,6 @@ test.describe('Dashboard', () => {
   test('theme toggle is visible', async ({ page }) => {
     await loginAsTestUser(page);
 
-    const themeButton = page.locator('header button[data-slot="theme-toggle"]').or(
-      page.locator('header button').filter({ hasText: /sun|moon/i })
-    ).or(
-      page.locator('header button[aria-label*="theme"]').or(page.locator('header button[aria-label*="tema"]'))
-    );
     const anyButton = page.locator('header .flex.items-center.gap-2 button').last();
     await expect(anyButton).toBeVisible();
   });

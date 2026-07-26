@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Plus, Search, FileText, Users, Eye, Trash2 } from "lucide-react"
+import { Plus, Search, FileText, Users, Eye, Trash2, Calendar } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { PatientForm } from "@/components/forms/PatientForm"
 import { deletePatient } from "@/lib/actions/patient.actions"
 import { toast } from "sonner"
@@ -23,6 +24,9 @@ export default function PatientsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [newPatientId, setNewPatientId] = useState<string | null>(null)
+  const [showSchedulePrompt, setShowSchedulePrompt] = useState(false)
+  const router = useRouter()
   const supabase = createClient()
 
   const fetchPatients = useCallback(async () => {
@@ -44,13 +48,22 @@ export default function PatientsPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir este paciente? Esta ação não pode ser desfeita.")) return
-    
+
     const result = await deletePatient(id)
     if (result?.error) {
       toast.error(result.error)
     } else {
       toast.success("Paciente excluído com sucesso")
       fetchPatients()
+    }
+  }
+
+  function handlePatientCreated(patientId?: string) {
+    setIsOpen(false)
+    fetchPatients()
+    if (patientId) {
+      setNewPatientId(patientId)
+      setShowSchedulePrompt(true)
     }
   }
 
@@ -70,13 +83,37 @@ export default function PatientsPage() {
             <DialogHeader>
               <DialogTitle>Adicionar Novo Paciente</DialogTitle>
             </DialogHeader>
-            <PatientForm onSuccess={() => {
-              setIsOpen(false)
-              fetchPatients()
-            }} />
+            <PatientForm onSuccess={handlePatientCreated} />
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Schedule Prompt after patient creation */}
+      <Dialog open={showSchedulePrompt} onOpenChange={setShowSchedulePrompt}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Paciente criado com sucesso!</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Deseja agendar uma consulta para este paciente agora?
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => { setShowSchedulePrompt(false); setNewPatientId(null) }}>
+                Agora nao
+              </Button>
+              <Button className="flex-1" onClick={() => {
+                setShowSchedulePrompt(false)
+                router.push(`/appointments?patient=${newPatientId}`)
+                setNewPatientId(null)
+              }}>
+                <Calendar className="mr-2 h-4 w-4" />
+                Agendar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

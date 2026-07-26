@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { AppointmentForm } from "@/components/forms/AppointmentForm"
 import { cn } from "@/lib/utils"
+import { useSearchParams } from "next/navigation"
 
 const statusColors: Record<string, string> = {
   scheduled: "bg-blue-100 text-blue-700 ring-1 ring-blue-700/10",
@@ -34,6 +35,8 @@ const statusLabels: Record<string, string> = {
 }
 
 export default function AppointmentsPage() {
+  const searchParams = useSearchParams()
+  const preselectedPatientId = searchParams.get("patient")
   const [appointments, setAppointments] = useState<any[]>([])
   const [patients, setPatients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -72,6 +75,13 @@ export default function AppointmentsPage() {
   useEffect(() => {
     fetchAppointments()
   }, [fetchAppointments])
+
+  useEffect(() => {
+    if (preselectedPatientId && patients.length > 0) {
+      setEditingAppointment({ patient_id: preselectedPatientId })
+      setIsOpen(true)
+    }
+  }, [preselectedPatientId, patients])
 
   const changeDay = (offset: number) => {
     const newDate = new Date(selectedDate)

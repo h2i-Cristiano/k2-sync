@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { patientSchema, PatientFormValues } from "@/lib/validations/patient"
@@ -12,10 +13,29 @@ import { toast } from "sonner"
 
 interface PatientFormProps {
   initialData?: PatientFormValues & { id?: string }
-  onSuccess?: () => void
+  onSuccess?: (patientId?: string) => void
+}
+
+async function fetchCEP(cep: string) {
+  const cleaned = cep.replace(/\D/g, "")
+  if (cleaned.length !== 8) return null
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${cleaned}/json/`)
+    const data = await res.json()
+    if (data.erro) return null
+    return {
+      street: data.logradouro || "",
+      neighborhood: data.bairro || "",
+      city: data.localidade || "",
+      state: data.uf || "",
+    }
+  } catch {
+    return null
+  }
 }
 
 export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
+  const [cepLoading, setCepLoading] = useState(false)
   const form = useForm<PatientFormValues>({
     resolver: zodResolver(patientSchema),
     defaultValues: initialData || {
@@ -50,11 +70,32 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
         return
       }
 
+      const newId = (result as any)?.data?.id
       toast.success(initialData?.id ? "Paciente atualizado!" : "Paciente criado com sucesso!")
       form.reset()
-      onSuccess?.()
+      onSuccess?.(newId)
     } catch {
       toast.error("Ocorreu um erro ao salvar o paciente.")
+    }
+  }
+
+  async function handleCEPLookup() {
+    const cep = form.watch("address.zip_code") || ""
+    const cleaned = cep.replace(/\D/g, "")
+    if (cleaned.length < 8) return
+
+    setCepLoading(true)
+    const address = await fetchCEP(cleaned)
+    setCepLoading(false)
+
+    if (address) {
+      form.setValue("address.street", address.street)
+      form.setValue("address.neighborhood", address.neighborhood)
+      form.setValue("address.city", address.city)
+      form.setValue("address.state", address.state)
+      toast.success("Endereço preenchido via CEP")
+    } else {
+      toast.error("CEP não encontrado")
     }
   }
 
@@ -77,7 +118,7 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
             {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="phone">Telefone</Label>
+            <Label htmlFor="phone">Telefone *</Label>
             <Input id="phone" placeholder="(11) 99999-9999" {...form.register("phone")} />
             {errors.phone && <p className="text-sm text-red-500">{errors.phone.message}</p>}
           </div>
@@ -85,23 +126,25 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
 
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="cpf">CPF</Label>
+            <Label htmlFor="cpf">CPF *</Label>
             <Input id="cpf" placeholder="000.000.000-00" {...form.register("cpf")} />
+            {errors.cpf && <p className="text-sm text-red-500">{errors.cpf.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="rg">RG</Label>
             <Input id="rg" placeholder="00.000.000-0" {...form.register("rg")} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="birth_date">Data de Nascimento</Label>
+            <Label htmlFor="birth_date">Data de Nascimento *</Label>
             <Input id="birth_date" type="date" {...form.register("birth_date")} />
+            {errors.birth_date && <p className="text-sm text-red-500">{errors.birth_date.message}</p>}
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label>Genero</Label>
-            <Select onValueChange={(val) => form.setValue("gender", val as "M" | "F" | "O")} defaultValue={form.watch("gender") ?? undefined}>
+            <Label>Genero *</Label>
+            <Select onValueChange={(val) => { if (val) form.setValue("gender", val as "M" | "F" | "O") }} defaultValue={form.watch("gender") ?? undefined}>
               <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="M">Masculino</SelectItem>
@@ -109,6 +152,7 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
                 <SelectItem value="O">Outro</SelectItem>
               </SelectContent>
             </Select>
+            {errors.gender && <p className="text-sm text-red-500">{errors.gender.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="marital_status">Estado Civil</Label>
@@ -124,6 +168,23 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
       {/* Endereco */}
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Endereco</h3>
+
+        <div className="space-y-2 max-w-[200px]">
+          <Label htmlFor="address.zip_code">CEP</Label>
+          <div className="flex gap-2">
+            <Input
+              id="address.zip_code"
+              placeholder="00000-000"
+              maxLength={8}
+              {...form.register("address.zip_code", {
+                onBlur: handleCEPLookup,
+              })}
+            />
+            <Button type="button" variant="outline" size="sm" onClick={handleCEPLookup} disabled={cepLoading}>
+              {cepLoading ? "Buscando..." : "Buscar"}
+            </Button>
+          </div>
+        </div>
 
         <div className="grid grid-cols-[2fr_1fr_1fr] gap-4">
           <div className="space-y-2">
@@ -153,11 +214,6 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
             <Label htmlFor="address.state">Estado</Label>
             <Input id="address.state" placeholder="SP" {...form.register("address.state")} />
           </div>
-        </div>
-
-        <div className="space-y-2 max-w-[200px]">
-          <Label htmlFor="address.zip_code">CEP</Label>
-          <Input id="address.zip_code" placeholder="00000-000" {...form.register("address.zip_code")} />
         </div>
       </div>
 
