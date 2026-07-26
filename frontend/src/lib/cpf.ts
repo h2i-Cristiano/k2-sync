@@ -19,37 +19,3 @@ export function isValidCPF(cpf: string): boolean {
   if (remainder === 10 || remainder === 11) remainder = 0
   return remainder === parseInt(cleaned.charAt(10))
 }
-
-export interface CPFData {
-  nome: string
-  nascimento: string
-  cpf: string
-  situacao: string
-  message?: string
-}
-
-export async function fetchCPFData(cpf: string): Promise<CPFData | null> {
-  const cleaned = cpf.replace(/\D/g, "")
-  if (cleaned.length !== 11) return null
-
-  try {
-    const res = await fetch(`/api/cpf?cpf=${cleaned}`, {
-      headers: { Accept: "application/json" },
-    })
-
-    if (!res.ok) return null
-
-    const data = await res.json()
-
-    if (data.error || !data.nome) return null
-
-    return {
-      nome: data.nome || "",
-      nascimento: data.nascimento || "",
-      cpf: data.cpf || cleaned,
-      situacao: data.situacao || "",
-    }
-  } catch {
-    return null
-  }
-}

@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
-import { isValidCPF, fetchCPFData } from "@/lib/cpf"
-import { CheckCircle, AlertCircle, Loader2 } from "lucide-react"
+import { isValidCPF } from "@/lib/cpf"
+import { CheckCircle, AlertCircle } from "lucide-react"
 
 interface PatientFormProps {
   initialData?: PatientFormValues & { id?: string }
@@ -38,8 +38,7 @@ async function fetchCEP(cep: string) {
 
 export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
   const [cepLoading, setCepLoading] = useState(false)
-  const [cpfStatus, setCpfStatus] = useState<"idle" | "loading" | "valid" | "invalid" | "error">("idle")
-  const [cpfMessage, setCpfMessage] = useState("")
+  const [cpfValid, setCpfValid] = useState<"idle" | "valid" | "invalid">("idle")
   const form = useForm<PatientFormValues>({
     resolver: zodResolver(patientSchema),
     defaultValues: initialData || {
@@ -103,47 +102,20 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
     }
   }
 
-  async function handleCPFLookup() {
+  function handleCPFValidation() {
     const cpf = form.getValues("cpf") || ""
     const cleaned = cpf.replace(/\D/g, "")
 
     if (cleaned.length !== 11) {
-      setCpfStatus("idle")
-      setCpfMessage("")
+      setCpfValid("idle")
       return
     }
 
-    if (!isValidCPF(cpf)) {
-      setCpfStatus("invalid")
-      setCpfMessage("CPF com dígitos verificadores inválidos")
-      return
-    }
-
-    setCpfStatus("loading")
-    setCpfMessage("Consultando Receita Federal...")
-
-    const data = await fetchCPFData(cpf)
-
-    if (data) {
-      if (data.nome) form.setValue("full_name", data.nome)
-      if (data.nascimento) {
-        const parts = data.nascimento.split("/")
-        if (parts.length === 3) {
-          form.setValue("birth_date", `${parts[2]}-${parts[1]}-${parts[0]}`)
-        }
-      }
-      setCpfStatus("valid")
-      setCpfMessage(`CPF válido — ${data.nome} (${data.situacao})`)
-      toast.success(`Dados preenchidos: ${data.nome}`)
-    } else {
-      setCpfStatus("error")
-      setCpfMessage("Não foi possível consultar. Preencha manualmente.")
-    }
+    setCpfValid(isValidCPF(cpf) ? "valid" : "invalid")
   }
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
-      {/* Dados Pessoais */}
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Dados Pessoais</h3>
 
@@ -169,43 +141,22 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="cpf">CPF *</Label>
-            <div className="flex gap-2">
-              <Input
-                id="cpf"
-                placeholder="000.000.000-00"
-                maxLength={14}
-                className="flex-1"
-                {...form.register("cpf")}
-                onBlur={() => handleCPFLookup()}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleCPFLookup}
-                disabled={cpfStatus === "loading"}
-              >
-                {cpfStatus === "loading" ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Buscar"
-                )}
-              </Button>
-            </div>
+            <Input
+              id="cpf"
+              placeholder="000.000.000-00"
+              maxLength={14}
+              {...form.register("cpf")}
+              onBlur={handleCPFValidation}
+            />
             {errors.cpf && <p className="text-sm text-red-500">{errors.cpf.message}</p>}
-            {cpfStatus === "loading" && (
-              <p className="text-sm text-blue-500 flex items-center gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" /> {cpfMessage}
-              </p>
-            )}
-            {cpfStatus === "valid" && (
+            {cpfValid === "valid" && (
               <p className="text-sm text-green-600 flex items-center gap-1">
-                <CheckCircle className="h-3 w-3" /> {cpfMessage}
+                <CheckCircle className="h-3 w-3" /> CPF válido
               </p>
             )}
-            {(cpfStatus === "invalid" || cpfStatus === "error") && (
-              <p className="text-sm text-amber-600 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" /> {cpfMessage}
+            {cpfValid === "invalid" && (
+              <p className="text-sm text-red-500 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" /> CPF com dígitos verificadores inválidos
               </p>
             )}
           </div>
@@ -244,7 +195,6 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
         </div>
       </div>
 
-      {/* Endereco */}
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Endereco</h3>
 
@@ -296,7 +246,6 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
         </div>
       </div>
 
-      {/* Contato de Emergencia */}
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Contato de Emergencia</h3>
 
@@ -316,7 +265,6 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
         </div>
       </div>
 
-      {/* Notas */}
       <div className="space-y-2">
         <Label htmlFor="notes">Observacoes</Label>
         <textarea
