@@ -35,6 +35,8 @@ import {
   Menu,
   HeartPulse,
   ChevronLeft,
+  ChevronDown,
+  ClipboardList,
 } from "lucide-react"
 
 interface NavItem {
@@ -44,11 +46,25 @@ interface NavItem {
   disabled?: boolean
 }
 
-const mainNav: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/appointments", label: "Agenda", icon: Calendar },
-  { href: "/patients", label: "Pacientes", icon: Users },
-  { href: "/records", label: "Prontuarios", icon: FileText },
+interface NavGroupDef {
+  label: string
+  items: NavItem[]
+  collapsible?: boolean
+}
+
+const mainNavGroups: NavGroupDef[] = [
+  {
+    label: "Principal",
+    items: [
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/appointments", label: "Agenda", icon: Calendar },
+    ],
+  },
+]
+
+const patientSubItems: NavItem[] = [
+  { href: "/patients", label: "Lista de Pacientes", icon: Users },
+  { href: "/patients/anamnese", label: "Anamnese", icon: ClipboardList },
 ]
 
 const financeNav: NavItem[] = [
@@ -72,47 +88,110 @@ const adminNav: NavItem[] = [
   { href: "/settings", label: "Configuracoes", icon: Settings },
 ]
 
-function NavGroup({ items, activeHref, collapsed }: { items: NavItem[]; activeHref: string; collapsed?: boolean }) {
+function NavLink({ item, active, collapsed }: { item: NavItem; active: boolean; collapsed?: boolean }) {
   return (
-    <div className="space-y-1">
-      {items.map((item) => {
-        const active = activeHref === item.href
-        return (
-          <Link
-            key={item.href}
-            href={item.disabled ? "#" : item.href}
-            className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-              item.disabled
-                ? "opacity-40 cursor-not-allowed"
-                : active
-                ? "bg-sidebar-accent text-white"
-                : "text-sidebar-foreground/70 hover:text-white hover:bg-sidebar-accent/50"
-            }`}
-            onClick={(e) => item.disabled && e.preventDefault()}
-          >
-            <div className="relative flex items-center justify-center">
-              {active && (
-                <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-full bg-primary" />
-              )}
-              <item.icon className={`h-[18px] w-[18px] ${active ? "text-primary" : ""}`} />
-            </div>
-            {!collapsed && <span>{item.label}</span>}
-            {!collapsed && item.disabled && (
-              <span className="ml-auto text-[10px] text-sidebar-foreground/30 uppercase tracking-wider">Em breve</span>
-            )}
-          </Link>
-        )
-      })}
-    </div>
+    <Link
+      href={item.disabled ? "#" : item.href}
+      className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+        item.disabled
+          ? "opacity-40 cursor-not-allowed"
+          : active
+          ? "bg-primary/10 text-primary"
+          : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+      }`}
+      onClick={(e) => item.disabled && e.preventDefault()}
+    >
+      <div className="relative flex items-center justify-center">
+        {active && (
+          <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-full bg-primary" />
+        )}
+        <item.icon className={`h-[18px] w-[18px] ${active ? "text-primary" : ""}`} />
+      </div>
+      {!collapsed && <span>{item.label}</span>}
+      {!collapsed && item.disabled && (
+        <span className="ml-auto text-[10px] text-muted-foreground/40 uppercase tracking-wider">Em breve</span>
+      )}
+    </Link>
   )
 }
 
 function NavLabel({ children, collapsed }: { children: React.ReactNode; collapsed?: boolean }) {
   if (collapsed) return null
   return (
-    <p className="px-3 pt-5 pb-2 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/30">
+    <p className="px-3 pt-5 pb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">
       {children}
     </p>
+  )
+}
+
+function PatientsNavGroup({ activeHref, collapsed }: { activeHref: string; collapsed?: boolean }) {
+  const [open, setOpen] = useState(false)
+  const isPatientsActive = activeHref.startsWith("/patients")
+
+  useEffect(() => {
+    if (isPatientsActive) setOpen(true)
+  }, [isPatientsActive])
+
+  if (collapsed) {
+    return (
+      <Link
+        href="/patients"
+        className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+          isPatientsActive
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+        }`}
+      >
+        <div className="relative flex items-center justify-center">
+          {isPatientsActive && (
+            <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-full bg-primary" />
+          )}
+          <Users className={`h-[18px] w-[18px] ${isPatientsActive ? "text-primary" : ""}`} />
+        </div>
+      </Link>
+    )
+  }
+
+  return (
+    <div className="space-y-0.5">
+      <button
+        onClick={() => setOpen(!open)}
+        className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+          isPatientsActive
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+        }`}
+      >
+        <div className="relative flex items-center justify-center">
+          {isPatientsActive && (
+            <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-full bg-primary" />
+          )}
+          <Users className={`h-[18px] w-[18px] ${isPatientsActive ? "text-primary" : ""}`} />
+        </div>
+        <span className="flex-1 text-left">Pacientes</span>
+        <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="ml-4 pl-4 border-l border-border/50 space-y-0.5">
+          {patientSubItems.map((item) => {
+            const active = activeHref === item.href || (item.href === "/patients" && activeHref.startsWith("/patients") && !activeHref.includes("anamnese"))
+            return (
+              <NavLink key={item.href} item={item} active={active} />
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function NavGroup({ items, activeHref, collapsed }: { items: NavItem[]; activeHref: string; collapsed?: boolean }) {
+  return (
+    <div className="space-y-0.5">
+      {items.map((item) => (
+        <NavLink key={item.href} item={item} active={activeHref === item.href} collapsed={collapsed} />
+      ))}
+    </div>
   )
 }
 
@@ -133,17 +212,17 @@ function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarContentP
     .toUpperCase() || "U"
 
   return (
-    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+    <div className="flex h-full flex-col bg-card border-r border-border/50 dark:bg-sidebar dark:border-sidebar-border">
       {/* Logo */}
       <div className="flex h-16 items-center justify-between px-4">
         <Link href="/dashboard" className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <HeartPulse className="h-4.5 w-4.5 text-white" />
+            <HeartPulse className="h-4.5 w-4.5 text-primary-foreground" />
           </div>
           {!collapsed && (
             <div>
-              <span className="text-base font-semibold text-white tracking-tight">K2-Sync</span>
-              <span className="block text-[10px] text-sidebar-foreground/40 -mt-0.5">Wellness OS</span>
+              <span className="text-base font-semibold tracking-tight text-foreground dark:text-white">K2-Sync</span>
+              <span className="block text-[10px] text-muted-foreground dark:text-sidebar-foreground/40 -mt-0.5">Wellness OS</span>
             </div>
           )}
         </Link>
@@ -151,7 +230,7 @@ function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarContentP
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-sidebar-foreground/40 hover:text-white hover:bg-sidebar-accent"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted dark:text-sidebar-foreground/40 dark:hover:text-white dark:hover:bg-sidebar-accent"
             onClick={onToggle}
           >
             <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
@@ -159,36 +238,46 @@ function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarContentP
         )}
       </div>
 
-      <Separator className="bg-sidebar-border" />
+      <Separator className="bg-border/50 dark:bg-sidebar-border" />
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto py-3">
-        <NavGroup items={mainNav} activeHref={pathname} collapsed={collapsed} />
+      <div className="flex-1 overflow-y-auto py-3 px-2">
+        {/* Principal group */}
+        <NavLabel collapsed={collapsed}>Principal</NavLabel>
+        <NavGroup items={mainNavGroups[0].items} activeHref={pathname} collapsed={collapsed} />
+        <div className="pt-1">
+          <PatientsNavGroup activeHref={pathname} collapsed={collapsed} />
+        </div>
+        <NavGroup items={[{ href: "/records", label: "Prontuarios", icon: FileText }]} activeHref={pathname} collapsed={collapsed} />
+
         <NavLabel collapsed={collapsed}>Financeiro</NavLabel>
         <NavGroup items={financeNav} activeHref={pathname} collapsed={collapsed} />
+
         <NavLabel collapsed={collapsed}>Operacional</NavLabel>
         <NavGroup items={operationalNav} activeHref={pathname} collapsed={collapsed} />
+
         <NavLabel collapsed={collapsed}>CRM</NavLabel>
         <NavGroup items={crmNav} activeHref={pathname} collapsed={collapsed} />
+
         <NavLabel collapsed={collapsed}>Sistema</NavLabel>
         <NavGroup items={adminNav} activeHref={pathname} collapsed={collapsed} />
       </div>
 
-      <Separator className="bg-sidebar-border" />
+      <Separator className="bg-border/50 dark:bg-sidebar-border" />
 
       {/* User */}
       <div className="p-3">
         <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant="ghost" className="w-full justify-start gap-3 h-auto py-2.5 px-3 text-sidebar-foreground/70 hover:text-white hover:bg-sidebar-accent/50" />}>
+          <DropdownMenuTrigger render={<Button variant="ghost" className="w-full justify-start gap-3 h-auto py-2.5 px-3 text-muted-foreground hover:text-foreground hover:bg-muted dark:text-sidebar-foreground/70 dark:hover:text-white dark:hover:bg-sidebar-accent/50" />}>
             <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-primary/20 text-primary text-xs font-medium">{initials}</AvatarFallback>
+              <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium dark:bg-primary/20">{initials}</AvatarFallback>
             </Avatar>
             {!collapsed && (
               <div className="flex flex-col items-start text-left min-w-0">
-                <span className="text-sm font-medium text-white truncate max-w-[140px]">
+                <span className="text-sm font-medium truncate max-w-[140px] text-foreground dark:text-white">
                   {user?.user_metadata?.full_name || "Usuario"}
                 </span>
-                <span className="text-[11px] text-sidebar-foreground/40 truncate max-w-[140px]">
+                <span className="text-[11px] text-muted-foreground dark:text-sidebar-foreground/40 truncate max-w-[140px]">
                   {user?.email}
                 </span>
               </div>
@@ -240,7 +329,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:z-50 bg-sidebar transition-all duration-300 ${collapsed ? "lg:w-[68px]" : "lg:w-64"}`}>
+      <aside className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:z-50 transition-all duration-300 glass-sidebar dark:bg-sidebar dark:border-r dark:border-sidebar-border ${collapsed ? "lg:w-[68px]" : "lg:w-64"}`}>
         <SidebarContent user={user} onLogout={handleLogout} collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
       </aside>
 
@@ -250,7 +339,7 @@ export function Sidebar() {
           <SheetTrigger render={<Button variant="ghost" size="icon" className="h-10 w-10 m-3" />}>
             <Menu className="h-5 w-5" />
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0 bg-sidebar border-sidebar-border">
+          <SheetContent side="left" className="w-64 p-0 border-r-0 glass-sidebar dark:bg-sidebar dark:border-sidebar-border">
             <SidebarContent user={user} onLogout={handleLogout} />
           </SheetContent>
         </Sheet>

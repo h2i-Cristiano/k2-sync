@@ -137,3 +137,69 @@
     @apply font-sans;
   }
 }
+
+@layer utilities {
+  .glass {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .dark .glass {
+    background: rgba(28, 28, 28, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark .glass-card {
+    background: rgba(28, 28, 28, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .glass-sidebar {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-right: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .glass-header {
+    background: rgba(248, 248, 246, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .dark .glass-header {
+    background: rgba(19, 19, 19, 0.8);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .bg-premium {
+    background: linear-gradient(135deg, #F8F8F6 0%, #F0F4F1 50%, #F8F8F6 100%);
+  }
+
+  .dark .bg-premium {
+    background: linear-gradient(135deg, #131313 0%, #171918 50%, #131313 100%);
+  }
+
+  .animate-glass {
+    animation: glass-shimmer 20s linear infinite;
+    background-size: 200% 200%;
+  }
+
+  @keyframes glass-shimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+}

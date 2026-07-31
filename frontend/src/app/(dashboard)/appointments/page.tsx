@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Plus, Calendar, ChevronLeft, ChevronRight, Clock, User, MapPin, Pencil } from "lucide-react"
+import { Plus, ChevronLeft, ChevronRight, User, MapPin, Pencil, CalendarDays } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -13,16 +13,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { AppointmentForm } from "@/components/forms/AppointmentForm"
-import { cn } from "@/lib/utils"
+import { getServiceById } from "@/lib/services"
 import { useSearchParams } from "next/navigation"
+import { Suspense } from "react"
 
 const statusColors: Record<string, string> = {
-  scheduled: "bg-blue-100 text-blue-700 ring-1 ring-blue-700/10",
-  confirmed: "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-700/10",
-  in_progress: "bg-amber-100 text-amber-700 ring-1 ring-amber-700/10",
-  completed: "bg-slate-100 text-slate-700 ring-1 ring-slate-700/10",
-  cancelled: "bg-rose-100 text-rose-700 ring-1 ring-rose-700/10",
-  no_show: "bg-purple-100 text-purple-700 ring-1 ring-purple-700/10",
+  scheduled: "bg-blue-50 text-blue-700 border-blue-200",
+  confirmed: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  in_progress: "bg-amber-50 text-amber-700 border-amber-200",
+  completed: "bg-slate-50 text-slate-600 border-slate-200",
+  cancelled: "bg-rose-50 text-rose-700 border-rose-200",
+  no_show: "bg-purple-50 text-purple-700 border-purple-200",
 }
 
 const statusLabels: Record<string, string> = {
@@ -34,18 +35,38 @@ const statusLabels: Record<string, string> = {
   no_show: "Não Compareceu",
 }
 
-export default function AppointmentsPage() {
+const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
+const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+
+function getDaysInMonth(year: number, month: number) {
+  return new Date(year, month + 1, 0).getDate()
+}
+
+function getFirstDayOfMonth(year: number, month: number) {
+  return new Date(year, month, 1).getDay()
+}
+
+function isSameDay(d1: Date, d2: Date) {
+  return d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear()
+}
+
+function AppointmentsPageInner() {
   const searchParams = useSearchParams()
   const preselectedPatientId = searchParams.get("patient")
   const [appointments, setAppointments] = useState<any[]>([])
+  const [allMonthAppointments, setAllMonthAppointments] = useState<any[]>([])
   const [patients, setPatients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isOpen, setIsOpen] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<any>(null)
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [view, setView] = useState<"day" | "list">("day")
   const supabase = createClient()
 
-  const fetchAppointments = useCallback(async () => {
+  const year = selectedDate.getFullYear()
+  const month = selectedDate.getMonth()
+
+  const fetchAppointmentsForDay = useCallback(async () => {
     setLoading(true)
     const startOfDay = new Date(selectedDate)
     startOfDay.setHours(0, 0, 0, 0)
@@ -63,18 +84,27 @@ export default function AppointmentsPage() {
     setLoading(false)
   }, [supabase, selectedDate])
 
+  const fetchMonthAppointments = useCallback(async () => {
+    const startOfMonth = new Date(year, month, 1)
+    const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999)
+
+    const { data } = await supabase
+      .from("appointments")
+      .select("id, scheduled_at, service_type, status")
+      .gte("scheduled_at", startOfMonth.toISOString())
+      .lte("scheduled_at", endOfMonth.toISOString())
+
+    setAllMonthAppointments(data || [])
+  }, [supabase, year, month])
+
   const fetchPatients = useCallback(async () => {
     const { data } = await supabase.from("patients").select("id, full_name").order("full_name")
     setPatients(data || [])
   }, [supabase])
 
-  useEffect(() => {
-    fetchPatients()
-  }, [fetchPatients])
-
-  useEffect(() => {
-    fetchAppointments()
-  }, [fetchAppointments])
+  useEffect(() => { fetchPatients() }, [fetchPatients])
+  useEffect(() => { fetchAppointmentsForDay() }, [fetchAppointmentsForDay])
+  useEffect(() => { fetchMonthAppointments() }, [fetchMonthAppointments])
 
   useEffect(() => {
     if (preselectedPatientId && patients.length > 0) {
@@ -83,18 +113,33 @@ export default function AppointmentsPage() {
     }
   }, [preselectedPatientId, patients])
 
-  const changeDay = (offset: number) => {
-    const newDate = new Date(selectedDate)
-    newDate.setDate(newDate.getDate() + offset)
-    setSelectedDate(newDate)
+  const hasAppointmentsOnDay = (day: number) => {
+    const d = new Date(year, month, day)
+    return allMonthAppointments.some(apt => {
+      const aptDate = new Date(apt.scheduled_at)
+      return isSameDay(aptDate, d)
+    })
   }
 
-  const setToday = () => {
+  const daysInMonth = getDaysInMonth(year, month)
+  const firstDay = getFirstDayOfMonth(year, month)
+
+  const prevMonth = () => {
+    if (month === 0) setSelectedDate(new Date(year - 1, 11, 1))
+    else setSelectedDate(new Date(year, month - 1, 1))
+  }
+
+  const nextMonth = () => {
+    if (month === 11) setSelectedDate(new Date(year + 1, 0, 1))
+    else setSelectedDate(new Date(year, month + 1, 1))
+  }
+
+  const goToToday = () => {
     setSelectedDate(new Date())
   }
 
-  const formatDate = (d: Date) => {
-    return d.toLocaleDateString("pt-BR", {
+  const formatSelectedDate = () => {
+    return selectedDate.toLocaleDateString("pt-BR", {
       weekday: "long",
       day: "2-digit",
       month: "long",
@@ -102,146 +147,332 @@ export default function AppointmentsPage() {
     })
   }
 
-  const isToday = (d: Date) => {
-    const today = new Date()
-    return d.getDate() === today.getDate() &&
-      d.getMonth() === today.getMonth() &&
-      d.getFullYear() === today.getFullYear()
-  }
+  const timeSlots = Array.from({ length: 13 }, (_, i) => i + 7) // 7:00 to 19:00
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 max-w-5xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="animate-in fade-in duration-500">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Agenda</h1>
           <p className="text-muted-foreground mt-1">Gerencie seus compromissos e pacientes.</p>
         </div>
-        <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) setEditingAppointment(null) }}>
-          <DialogTrigger render={<Button className="shadow-sm" />}>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Agendamento
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editingAppointment ? "Editar Agendamento" : "Novo Agendamento"}</DialogTitle>
-            </DialogHeader>
-            <AppointmentForm 
-              patients={patients}
-              initialData={editingAppointment}
-              onSuccess={() => {
-                setIsOpen(false)
-                setEditingAppointment(null)
-                fetchAppointments()
-              }} 
-              onCancel={() => { setIsOpen(false); setEditingAppointment(null) }}
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Date Navigator */}
-      <div className="flex flex-col sm:flex-row items-center justify-between bg-card p-4 rounded-2xl border shadow-sm gap-4">
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
-          <Button variant="outline" size="icon" onClick={() => changeDay(-1)} className="rounded-full">
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <Button 
-            variant="ghost" 
-            onClick={setToday}
-            className={cn("font-medium", isToday(selectedDate) && "text-primary bg-primary/10")}
-          >
-            Hoje
-          </Button>
-          <Button variant="outline" size="icon" onClick={() => changeDay(1)} className="rounded-full">
-            <ChevronRight className="h-5 w-5" />
-          </Button>
-        </div>
-        
-        <div className="text-center sm:text-right">
-          <p className="text-lg font-semibold capitalize text-foreground">{formatDate(selectedDate)}</p>
-          <p className="text-sm text-muted-foreground flex items-center justify-center sm:justify-end gap-1.5 mt-0.5">
-            <Calendar className="h-3.5 w-3.5" />
-            {appointments.length} agendamento(s)
-          </p>
+        <div className="flex items-center gap-3">
+          {/* View toggles */}
+          <div className="flex items-center bg-muted/50 rounded-xl p-1">
+            <button
+              onClick={() => setView("day")}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${view === "day" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Dia
+            </button>
+            <button
+              onClick={() => setView("list")}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${view === "list" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Lista
+            </button>
+          </div>
+          <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) setEditingAppointment(null) }}>
+            <DialogTrigger render={<Button className="shadow-sm rounded-xl" />}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{editingAppointment?.id ? "Editar Agendamento" : "Novo Agendamento"}</DialogTitle>
+              </DialogHeader>
+              <AppointmentForm
+                patients={patients}
+                initialData={editingAppointment}
+                onSuccess={() => {
+                  setIsOpen(false)
+                  setEditingAppointment(null)
+                  fetchAppointmentsForDay()
+                  fetchMonthAppointments()
+                }}
+                onCancel={() => { setIsOpen(false); setEditingAppointment(null) }}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
-      {/* Appointments List */}
-      {loading ? (
-        <div className="flex h-40 items-center justify-center">
-          <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-            <p>Carregando agenda...</p>
-          </div>
-        </div>
-      ) : appointments.length === 0 ? (
-        <div className="text-center py-20 bg-card rounded-2xl border border-dashed flex flex-col items-center justify-center shadow-sm">
-          <div className="h-20 w-20 bg-muted/50 rounded-full flex items-center justify-center mb-4">
-            <Calendar className="h-10 w-10 text-muted-foreground/50" />
-          </div>
-          <h3 className="text-xl font-semibold mb-2">Dia Livre</h3>
-          <p className="text-muted-foreground mb-6">Nenhum agendamento marcado para esta data.</p>
-          <Button variant="outline" onClick={() => setIsOpen(true)}>
-            Agendar Agora
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
-          {appointments.map((apt) => {
-            const timeString = new Date(apt.scheduled_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-            return (
-              <div key={apt.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                {/* Timeline dot */}
-                <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-background bg-primary shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 transition-transform group-hover:scale-110">
-                  <Clock className="h-4 w-4 text-primary-foreground" />
+      {/* Main layout: Calendar + Timeline */}
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+        {/* Left: Mini Calendar */}
+        <div className="space-y-4">
+          <Card variant="glass">
+            <CardContent className="p-4">
+              {/* Month navigator */}
+              <div className="flex items-center justify-between mb-4">
+                <button onClick={prevMonth} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <div className="text-center">
+                  <p className="text-sm font-semibold">{MONTHS[month]} {year}</p>
                 </div>
-                
-                <Card className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] shadow-sm hover:shadow-md transition-all duration-300 border-border/50 bg-card/80 backdrop-blur-sm group-hover:bg-card">
-                  <CardContent className="p-5 flex flex-col gap-3">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-bold text-primary">{timeString}</span>
-                          <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{apt.duration_minutes}min</span>
-                        </div>
-                        <p className="font-semibold text-lg flex items-center gap-1.5">
-                          {apt.patients?.full_name || "Paciente Removido"}
-                        </p>
-                      </div>
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap ${statusColors[apt.status] || ""}`}>
-                        {statusLabels[apt.status] || apt.status}
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground pt-3 border-t">
-                      <div className="flex items-center gap-1.5">
-                        <User className="h-4 w-4 shrink-0" />
-                        <span className="truncate">{apt.service_type}</span>
-                      </div>
-                      {apt.is_home_visit && (
-                        <div className="flex items-center gap-1.5 text-amber-600">
-                          <MapPin className="h-4 w-4 shrink-0" />
-                          <span className="truncate font-medium">Domiciliar</span>
+                <button onClick={nextMonth} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Weekday headers */}
+              <div className="grid grid-cols-7 gap-0 mb-1">
+                {WEEKDAYS.map((day) => (
+                  <div key={day} className="text-center text-[10px] font-medium text-muted-foreground py-1">
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              {/* Day grid */}
+              <div className="grid grid-cols-7 gap-0">
+                {Array.from({ length: firstDay }).map((_, i) => (
+                  <div key={`empty-${i}`} />
+                ))}
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                  const day = i + 1
+                  const date = new Date(year, month, day)
+                  const isSelected = isSameDay(date, selectedDate)
+                  const isToday = isSameDay(date, new Date())
+                  const hasApts = hasAppointmentsOnDay(day)
+
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => setSelectedDate(date)}
+                      className={`relative h-9 w-full flex items-center justify-center text-sm rounded-lg transition-all duration-150 ${
+                        isSelected
+                          ? "bg-primary text-primary-foreground font-semibold shadow-sm"
+                          : isToday
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "text-foreground hover:bg-muted/60"
+                      }`}
+                    >
+                      {day}
+                      {hasApts && !isSelected && (
+                        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
+                          <div className="h-1 w-1 rounded-full bg-primary/60" />
                         </div>
                       )}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Today button */}
+              <button
+                onClick={goToToday}
+                className="w-full mt-3 py-2 text-xs font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors"
+              >
+                Ir para Hoje
+              </button>
+            </CardContent>
+          </Card>
+
+          {/* Legend */}
+          <Card variant="glass">
+            <CardContent className="p-4">
+              <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Serviços</p>
+              <div className="space-y-1.5">
+                {Object.entries(
+                  allMonthAppointments.reduce<Record<string, number>>((acc, apt) => {
+                    acc[apt.service_type] = (acc[apt.service_type] || 0) + 1
+                    return acc
+                  }, {})
+                ).map(([type, count]) => {
+                  const svc = getServiceById(type)
+                  return (
+                    <div key={type} className="flex items-center gap-2 text-xs">
+                      <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: svc?.color || "#6B7280" }} />
+                      <span className="flex-1 text-muted-foreground">{svc?.label || type}</span>
+                      <span className="text-muted-foreground/60">{String(count)}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right: Day Timeline / List */}
+        <div>
+          {/* Day header */}
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold capitalize">{formatSelectedDate()}</h2>
+              <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                <CalendarDays className="h-3.5 w-3.5" />
+                {appointments.length} agendamento(s)
+              </p>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex h-60 items-center justify-center">
+              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                <p>Carregando agenda...</p>
+              </div>
+            </div>
+          ) : appointments.length === 0 ? (
+            <div className="text-center py-20 glass-card rounded-2xl flex flex-col items-center justify-center">
+              <div className="h-20 w-20 bg-muted/30 rounded-full flex items-center justify-center mb-4">
+                <CalendarDays className="h-10 w-10 text-muted-foreground/40" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Dia Livre</h3>
+              <p className="text-muted-foreground mb-6">Nenhum agendamento marcado para esta data.</p>
+              <Button variant="outline" onClick={() => setIsOpen(true)} className="rounded-xl">
+                Agendar Agora
+              </Button>
+            </div>
+          ) : view === "day" ? (
+            /* Timeline View */
+            <div className="space-y-2">
+              {timeSlots.map((hour) => {
+                const hourAppointments = appointments.filter(apt => {
+                  const d = new Date(apt.scheduled_at)
+                  return d.getHours() === hour
+                })
+
+                return (
+                  <div key={hour} className="flex gap-4 min-h-[60px]">
+                    {/* Time label */}
+                    <div className="w-16 shrink-0 text-right pt-1">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {String(hour).padStart(2, "0")}:00
+                      </span>
                     </div>
 
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="mt-2 w-full"
-                      onClick={() => { setEditingAppointment(apt); setIsOpen(true) }}
-                    >
-                      <Pencil className="mr-2 h-3.5 w-3.5" />
-                      Editar
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            )
-          })}
+                    {/* Line */}
+                    <div className="relative w-px bg-border/50 shrink-0">
+                      <div className="absolute top-2 -left-1 h-2.5 w-2.5 rounded-full bg-border" />
+                    </div>
+
+                    {/* Appointments */}
+                    <div className="flex-1 pb-2">
+                      {hourAppointments.map((apt) => {
+                        const aptTime = new Date(apt.scheduled_at)
+                        const timeStr = aptTime.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+                        const svc = getServiceById(apt.service_type)
+
+                        return (
+                          <div
+                            key={apt.id}
+                            className="glass-card rounded-xl p-4 mb-2 hover:shadow-md transition-all duration-200 cursor-pointer group"
+                            style={{ borderLeft: `3px solid ${svc?.color || "#6B7280"}` }}
+                            onClick={() => { setEditingAppointment(apt); setIsOpen(true) }}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-bold text-foreground">{timeStr}</span>
+                                  <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: `${svc?.color}15`, color: svc?.color }}>
+                                    {svc?.label || apt.service_type}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">{apt.duration_minutes}min</span>
+                                </div>
+                                <p className="font-medium text-foreground flex items-center gap-1.5">
+                                  <User className="h-3.5 w-3.5 text-muted-foreground" />
+                                  {apt.patients?.full_name || "Paciente Removido"}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-xs px-2.5 py-1 rounded-full font-medium border ${statusColors[apt.status] || ""}`}>
+                                  {statusLabels[apt.status] || apt.status}
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={(e) => { e.stopPropagation(); setEditingAppointment(apt); setIsOpen(true) }}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                            {apt.is_home_visit && (
+                              <div className="flex items-center gap-1.5 text-amber-600 mt-2">
+                                <MapPin className="h-3.5 w-3.5" />
+                                <span className="text-xs font-medium">Atendimento Domiciliar</span>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            /* List View */
+            <div className="space-y-2">
+              {appointments.map((apt) => {
+                const aptTime = new Date(apt.scheduled_at)
+                const timeStr = aptTime.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+                const svc = getServiceById(apt.service_type)
+
+                return (
+                  <div
+                    key={apt.id}
+                    className="glass-card rounded-xl p-4 hover:shadow-md transition-all duration-200 cursor-pointer group flex items-center gap-4"
+                    style={{ borderLeft: `3px solid ${svc?.color || "#6B7280"}` }}
+                    onClick={() => { setEditingAppointment(apt); setIsOpen(true) }}
+                  >
+                    <div className="w-16 shrink-0 text-center">
+                      <span className="text-sm font-bold text-foreground">{timeStr}</span>
+                      <span className="block text-[10px] text-muted-foreground">{apt.duration_minutes}min</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground truncate">{apt.patients?.full_name || "Paciente Removido"}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: `${svc?.color}15`, color: svc?.color }}>
+                          {svc?.label || apt.service_type}
+                        </span>
+                        {apt.is_home_visit && (
+                          <span className="text-[10px] text-amber-600 font-medium flex items-center gap-0.5">
+                            <MapPin className="h-3 w-3" /> Domiciliar
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium border ${statusColors[apt.status] || ""}`}>
+                        {statusLabels[apt.status] || apt.status}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => { e.stopPropagation(); setEditingAppointment(apt); setIsOpen(true) }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
+  )
+}
+
+export default function AppointmentsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-60 items-center justify-center">
+        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p>Carregando agenda...</p>
+        </div>
+      </div>
+    }>
+      <AppointmentsPageInner />
+    </Suspense>
   )
 }

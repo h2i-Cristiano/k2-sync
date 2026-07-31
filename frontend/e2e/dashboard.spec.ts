@@ -11,7 +11,6 @@ test.describe('Dashboard', () => {
     await expect(page.getByText(/pacientes/i).first()).toBeVisible();
     await expect(page.getByText(/agendamento/i).first()).toBeVisible();
 
-    await expect(page.getByRole('link', { name: 'Pacientes', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Agenda', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Prontuarios', exact: true })).toBeVisible();
   });
@@ -33,10 +32,7 @@ test.describe('Dashboard', () => {
   test('navigation links work', async ({ page }) => {
     await loginAsTestUser(page);
 
-    await page.getByRole('link', { name: 'Pacientes', exact: true }).first().click();
-    await page.waitForURL(/.*\/patients.*/);
-    await expect(page.getByText(/pacientes/i).first()).toBeVisible();
-
+    // Pacientes is now a collapsible group — click "Lista de Pacientes" sub-item
     await page.getByRole('link', { name: 'Agenda', exact: true }).first().click();
     await page.waitForURL(/.*\/appointments.*/);
     await expect(page.getByText(/agenda/i).first()).toBeVisible();

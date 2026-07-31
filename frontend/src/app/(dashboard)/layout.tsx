@@ -12,13 +12,13 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-premium">
       <Sidebar />
 
       {/* Main content area — offset by sidebar width on desktop */}
       <div className="lg:pl-64 transition-all duration-300">
         {/* Top header */}
-        <header className="sticky top-0 z-40 h-16 border-b border-border bg-background/80 backdrop-blur-xl">
+        <header className="sticky top-0 z-40 h-16 glass-header">
           <div className="flex h-full items-center justify-between px-6">
             {/* Mobile spacer for hamburger */}
             <div className="w-10 lg:hidden" />
@@ -29,7 +29,7 @@ export default function DashboardLayout({
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Pesquisar..."
-                  className="pl-10 h-10 bg-muted/50 border-transparent focus:border-primary/30 focus:bg-white dark:focus:bg-gray-900 rounded-xl"
+                  className="pl-10 h-10 bg-muted/40 border-transparent focus:border-primary/30 focus:bg-white/80 dark:focus:bg-white/[0.06] rounded-xl"
                 />
               </div>
             </div>

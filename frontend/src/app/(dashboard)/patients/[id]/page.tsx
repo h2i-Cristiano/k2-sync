@@ -10,6 +10,8 @@ import Link from "next/link"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { PatientForm } from "@/components/forms/PatientForm"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { getServiceById } from "@/lib/services"
 
 export default function PatientDetailPage() {
   const params = useParams()
@@ -296,9 +298,9 @@ export default function PatientDetailPage() {
                           </p>
                         </div>
                       </div>
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${a.status === 'completed' || a.status === 'signed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                      <Badge variant={a.status === 'completed' || a.status === 'signed' ? 'success' : 'warning'}>
                         {a.status === 'completed' ? 'Concluída' : a.status === 'signed' ? 'Assinada' : 'Rascunho'}
-                      </span>
+                      </Badge>
                     </div>
                   ))}
                 </div>
@@ -320,20 +322,28 @@ export default function PatientDetailPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {appointments.map((appt) => (
-                    <div key={appt.id} className="p-4 border border-border/50 bg-muted/10 rounded-xl flex justify-between items-center hover:bg-muted/30 transition-colors">
-                      <div>
-                        <p className="font-semibold capitalize">{appt.service_type}</p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <Clock className="h-3 w-3" />
-                          {new Date(appt.scheduled_at).toLocaleString("pt-BR")}
-                        </p>
+                  {appointments.map((appt) => {
+                    const svc = getServiceById(appt.service_type)
+                    return (
+                      <div key={appt.id} className="p-4 border border-border/50 bg-muted/10 rounded-xl flex justify-between items-center hover:bg-muted/30 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${svc?.color || "#6B7280"}15` }}>
+                            <Calendar className="h-4 w-4" style={{ color: svc?.color || "#6B7280" }} />
+                          </div>
+                          <div>
+                            <p className="font-semibold">{svc?.label || appt.service_type}</p>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
+                              <Clock className="h-3 w-3" />
+                              {new Date(appt.scheduled_at).toLocaleString("pt-BR")}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant={appt.status === "completed" ? "success" : appt.status === "cancelled" ? "destructive" : appt.status === "confirmed" ? "default" : "secondary"}>
+                          {appt.status === "scheduled" ? "Agendado" : appt.status === "confirmed" ? "Confirmado" : appt.status === "in_progress" ? "Em andamento" : appt.status === "completed" ? "Concluído" : appt.status === "cancelled" ? "Cancelado" : "Não Compareceu"}
+                        </Badge>
                       </div>
-                      <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-secondary text-secondary-foreground">
-                        {appt.status}
-                      </span>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </CardContent>

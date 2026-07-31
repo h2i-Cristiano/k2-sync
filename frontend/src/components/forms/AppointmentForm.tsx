@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
+import { SERVICES, getServiceById } from "@/lib/services"
 
 interface AppointmentFormProps {
   patients: { id: string; full_name: string }[]
@@ -23,9 +24,8 @@ interface AppointmentFormProps {
 export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: AppointmentFormProps) {
   const [saving, setSaving] = useState(false)
 
-  // Default date to today + 1 hour or initialData
-  const defaultDate = initialData?.scheduled_at 
-    ? new Date(initialData.scheduled_at).toISOString().slice(0, 16) 
+  const defaultDate = initialData?.scheduled_at
+    ? new Date(initialData.scheduled_at).toISOString().slice(0, 16)
     : (() => {
         const d = new Date()
         d.setHours(d.getHours() + 1, 0, 0, 0)
@@ -36,7 +36,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
     resolver: zodResolver(appointmentSchema) as any,
     defaultValues: {
       patient_id: initialData?.patient_id || "",
-      service_type: initialData?.service_type || "",
+      service_type: (initialData?.service_type || "outro") as AppointmentFormValues["service_type"],
       scheduled_at: defaultDate,
       duration_minutes: initialData?.duration_minutes || 60,
       status: (initialData?.status || "scheduled") as AppointmentFormValues["status"],
@@ -47,6 +47,9 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
     },
   })
 
+  const watchServiceType = form.watch("service_type")
+  const watchIsHomeVisit = form.watch("is_home_visit")
+
   async function onSubmit(data: AppointmentFormValues) {
     setSaving(true)
     try {
@@ -54,7 +57,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
         ...data,
         scheduled_at: new Date(data.scheduled_at).toISOString(),
       }
-      
+
       if (initialData?.id) {
         await updateAppointment(initialData.id, formattedData)
         toast.success("Agendamento atualizado com sucesso!")
@@ -70,15 +73,27 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
     }
   }
 
-  const patientId = String(form.watch("patient_id") ?? "")
-  const statusValue = String(form.watch("status") ?? "scheduled")
+  const handleServiceChange = (value: string | null) => {
+    if (!value) return
+    const svc = getServiceById(value)
+    if (svc) {
+      form.setValue("service_type", value as AppointmentFormValues["service_type"])
+      form.setValue("duration_minutes", svc.defaultDuration)
+      if (!initialData?.total_cost && svc.defaultPrice > 0) {
+        form.setValue("total_cost", svc.defaultPrice)
+      }
+    }
+  }
+
+  const selectedService = getServiceById(watchServiceType)
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+      {/* Patient */}
       <div className="space-y-2">
         <Label htmlFor="patient_id">Paciente *</Label>
-        <Select onValueChange={(val) => { if (val) form.setValue("patient_id", val) }} defaultValue={patientId}>
-          <SelectTrigger id="patient_id" className={form.formState.errors.patient_id ? "border-destructive" : ""}>
+        <Select onValueChange={(val) => { if (val) form.setValue("patient_id", val) }} defaultValue={String(form.watch("patient_id") ?? "")}>
+          <SelectTrigger id="patient_id" className={`w-full h-12 rounded-xl ${form.formState.errors.patient_id ? "border-destructive" : ""}`}>
             <SelectValue placeholder="Selecione o paciente" />
           </SelectTrigger>
           <SelectContent>
@@ -92,25 +107,45 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
         )}
       </div>
 
+      {/* Service Type */}
       <div className="space-y-2">
         <Label htmlFor="service_type">Tipo de Serviço *</Label>
-        <Input 
-          id="service_type"
-          placeholder="Massagem, Avaliação, Retorno..." 
-          {...form.register("service_type")}
-          className={form.formState.errors.service_type ? "border-destructive" : ""}
-        />
+        <Select onValueChange={handleServiceChange} defaultValue={String(form.watch("service_type") ?? "outro")}>
+          <SelectTrigger id="service_type" className={`w-full h-12 rounded-xl ${form.formState.errors.service_type ? "border-destructive" : ""}`}>
+            <SelectValue placeholder="Selecione o serviço" />
+          </SelectTrigger>
+          <SelectContent>
+            {SERVICES.map((svc) => (
+              <SelectItem key={svc.id} value={svc.id}>
+                <div className="flex items-center gap-2">
+                  <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: svc.color }} />
+                  <span>{svc.label}</span>
+                  <span className="text-xs text-muted-foreground ml-auto">{svc.defaultDuration}min</span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {selectedService && (
+          <div className="flex items-center gap-2 mt-1">
+            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: selectedService.color }} />
+            <span className="text-xs text-muted-foreground">
+              {selectedService.defaultDuration}min · R$ {selectedService.defaultPrice.toFixed(0)}
+            </span>
+          </div>
+        )}
         {form.formState.errors.service_type && (
           <p className="text-sm font-medium text-destructive">{form.formState.errors.service_type.message}</p>
         )}
       </div>
 
+      {/* Date + Duration */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="scheduled_at">Data e Hora *</Label>
-          <Input 
+          <Input
             id="scheduled_at"
-            type="datetime-local" 
+            type="datetime-local"
             {...form.register("scheduled_at")}
             className={form.formState.errors.scheduled_at ? "border-destructive" : ""}
           />
@@ -120,9 +155,9 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
         </div>
         <div className="space-y-2">
           <Label htmlFor="duration_minutes">Duração (min) *</Label>
-          <Input 
+          <Input
             id="duration_minutes"
-            type="number" 
+            type="number"
             {...form.register("duration_minutes")}
             className={form.formState.errors.duration_minutes ? "border-destructive" : ""}
           />
@@ -132,11 +167,12 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
         </div>
       </div>
 
+      {/* Status + Home Visit */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
-          <Select onValueChange={(val) => { if (val) form.setValue("status", val as AppointmentFormValues["status"]) }} defaultValue={statusValue}>
-            <SelectTrigger id="status">
+          <Select onValueChange={(val) => { if (val) form.setValue("status", val as AppointmentFormValues["status"]) }} defaultValue={String(form.watch("status") ?? "scheduled")}>
+            <SelectTrigger id="status" className="w-full h-12 rounded-xl">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -150,47 +186,50 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
           </Select>
         </div>
         <div className="flex items-center space-x-2 pt-8">
-          <Switch 
+          <Switch
             id="is_home_visit"
-            checked={form.watch("is_home_visit")} 
-            onCheckedChange={(checked) => form.setValue("is_home_visit", checked)} 
+            checked={watchIsHomeVisit}
+            onCheckedChange={(checked) => form.setValue("is_home_visit", checked)}
           />
           <Label htmlFor="is_home_visit">Atendimento Domiciliar</Label>
         </div>
       </div>
 
+      {/* Costs */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="total_cost">Valor Total (R$)</Label>
-          <Input 
+          <Input
             id="total_cost"
-            type="number" 
+            type="number"
             step="0.01"
             {...form.register("total_cost")}
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="travel_cost">Taxa de Deslocamento (R$)</Label>
-          <Input 
+          <Input
             id="travel_cost"
-            type="number" 
+            type="number"
             step="0.01"
             {...form.register("travel_cost")}
-            disabled={!form.watch("is_home_visit")}
+            disabled={!watchIsHomeVisit}
           />
         </div>
       </div>
 
+      {/* Notes */}
       <div className="space-y-2">
         <Label htmlFor="notes">Observações Adicionais</Label>
-        <Textarea 
+        <Textarea
           id="notes"
-          placeholder="Anotações para o agendamento..." 
+          placeholder="Anotações para o agendamento..."
           {...form.register("notes")}
           className="resize-none"
         />
       </div>
 
+      {/* Actions */}
       <div className="flex justify-end gap-3 pt-4 border-t">
         {onCancel && (
           <Button type="button" variant="ghost" onClick={onCancel}>

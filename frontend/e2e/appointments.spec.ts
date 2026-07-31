@@ -7,22 +7,22 @@ test.describe('Appointments CRUD', () => {
     await page.goto('/appointments');
 
     await expect(page.getByText(/agenda/i).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: /novo agendamento/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /novo/i })).toBeVisible();
   });
 
   test('date navigator is visible', async ({ page }) => {
     await loginAsTestUser(page);
     await page.goto('/appointments');
 
-    await expect(page.getByRole('button', { name: /hoje/i })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /agendar/i }).or(page.getByText(/agendamento/i).first())).toBeVisible();
+    await expect(page.getByText(/ir para hoje/i)).toBeVisible();
+    await expect(page.getByText(/agendar/i).or(page.getByText(/agendamento/i).first())).toBeVisible();
   });
 
   test('can open new appointment dialog', async ({ page }) => {
     await loginAsTestUser(page);
     await page.goto('/appointments');
 
-    await page.getByRole('button', { name: /novo agendamento/i }).click();
+    await page.getByRole('button', { name: /novo/i }).click();
     await page.waitForTimeout(500);
 
     await expect(page.getByRole('dialog')).toBeVisible();
@@ -33,9 +33,9 @@ test.describe('Appointments CRUD', () => {
     await loginAsTestUser(page);
     await page.goto('/appointments');
 
-    await expect(page.getByRole('button', { name: /hoje/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/ir para hoje/i)).toBeVisible({ timeout: 10000 });
 
-    const todayBtn = page.getByRole('button', { name: /hoje/i });
+    const todayBtn = page.getByText(/ir para hoje/i);
     await todayBtn.click();
     await page.waitForTimeout(500);
   });

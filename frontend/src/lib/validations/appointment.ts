@@ -1,10 +1,23 @@
 import { z } from "zod"
 
+const serviceTypeEnum = z.enum([
+  "massoterapia",
+  "estetica-facial",
+  "estetica-corp",
+  "fisioterapia",
+  "quiropraxia",
+  "acupuntura",
+  "spa",
+  "danca",
+  "personal",
+  "outro",
+])
+
 export const appointmentSchema = z.object({
   patient_id: z.string().uuid("Selecione um paciente válido"),
   professional_id: z.string().uuid().optional(),
-  service_type: z.string().min(2, "Informe o tipo de serviço"),
-  scheduled_at: z.string(), // expected ISO string
+  service_type: serviceTypeEnum,
+  scheduled_at: z.string(),
   duration_minutes: z.coerce.number().min(5).default(60),
   status: z.enum(['scheduled', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show']).default('scheduled'),
   notes: z.string().optional(),
