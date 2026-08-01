@@ -4,13 +4,23 @@ import { Sidebar } from "@/components/layout/sidebar"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Bell, Search } from "lucide-react"
+import { Bell, Search, LogOut } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const router = useRouter()
+  const supabase = createClient()
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push("/login")
+  }
+
   return (
     <div className="min-h-screen bg-premium">
       <Sidebar />
@@ -41,6 +51,9 @@ export default function DashboardLayout({
                 <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />
               </Button>
               <ThemeToggle />
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={handleLogout} title="Sair">
+                <LogOut className="h-[18px] w-[18px] text-muted-foreground" />
+              </Button>
             </div>
           </div>
         </header>
