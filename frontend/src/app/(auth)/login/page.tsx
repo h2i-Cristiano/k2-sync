@@ -22,7 +22,7 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
@@ -31,6 +31,24 @@ export default function LoginPage() {
       setError(error.message)
       setLoading(false)
       return
+    }
+
+    // Ensure JWT has tenant_id from profiles table
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("tenant_id, role")
+        .eq("id", data.user.id)
+        .single()
+
+      if (profile?.tenant_id) {
+        const jwtMeta = data.user.user_metadata || {}
+        if (!jwtMeta.tenant_id || jwtMeta.tenant_id !== profile.tenant_id) {
+          await supabase.auth.updateUser({
+            data: { tenant_id: profile.tenant_id, role: profile.role },
+          })
+        }
+      }
     }
 
     router.push("/dashboard")

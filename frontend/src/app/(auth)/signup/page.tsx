@@ -64,10 +64,13 @@ export default function SignupPage() {
         return
       }
 
-      // 3. Atualizar JWT
+      // 3. Atualizar JWT com tenant_id e role
       await supabase.auth.updateUser({
         data: { tenant_id: tenant?.id, role: "admin" },
       })
+
+      // 4. Forçar refresh da sessão para o JWT incluir tenant_id
+      await supabase.auth.getSession()
 
       setSuccess(true)
     } catch (err) {
