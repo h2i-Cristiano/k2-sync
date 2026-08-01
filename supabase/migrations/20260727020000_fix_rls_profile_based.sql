@@ -3,7 +3,7 @@
 -- Using profiles table for tenant check is always correct and reliable.
 
 -- Helper function: get current user's tenant_id from profiles
-CREATE OR REPLACE FUNCTION auth.user_tenant_id()
+CREATE OR REPLACE FUNCTION public.user_tenant_id()
 RETURNS UUID AS $$
   SELECT tenant_id FROM public.profiles WHERE id = auth.uid() LIMIT 1;
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
@@ -26,28 +26,28 @@ DROP POLICY IF EXISTS profiles_tenant_isolation ON profiles;
 -- Profiles: self-read + tenant isolation
 -- (profiles_self_read and profiles_self_update already exist from previous migration)
 CREATE POLICY profiles_tenant_isolation ON profiles
-  FOR ALL USING (tenant_id = auth.user_tenant_id());
+  FOR ALL USING (tenant_id = public.user_tenant_id());
 
 -- Patients
 CREATE POLICY patients_tenant_isolation ON patients
-  FOR ALL USING (tenant_id = auth.user_tenant_id());
+  FOR ALL USING (tenant_id = public.user_tenant_id());
 
 -- Appointments
 CREATE POLICY appointments_tenant_isolation ON appointments
-  FOR ALL USING (tenant_id = auth.user_tenant_id());
+  FOR ALL USING (tenant_id = public.user_tenant_id());
 
 -- Anamnesis
 CREATE POLICY anamnesis_tenant_isolation ON anamnesis
-  FOR ALL USING (tenant_id = auth.user_tenant_id());
+  FOR ALL USING (tenant_id = public.user_tenant_id());
 
 -- Medical Records
 CREATE POLICY medical_records_tenant_isolation ON medical_records
-  FOR ALL USING (tenant_id = auth.user_tenant_id());
+  FOR ALL USING (tenant_id = public.user_tenant_id());
 
 -- Payments
 CREATE POLICY payments_tenant_isolation ON payments
-  FOR ALL USING (tenant_id = auth.user_tenant_id());
+  FOR ALL USING (tenant_id = public.user_tenant_id());
 
 -- Audit Logs
 CREATE POLICY audit_logs_tenant_isolation ON audit_logs
-  FOR ALL USING (tenant_id = auth.user_tenant_id());
+  FOR ALL USING (tenant_id = public.user_tenant_id());
