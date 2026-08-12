@@ -1,10 +1,12 @@
-"use client"
+﻿"use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, Suspense } from "react"
+import dynamic from "next/dynamic"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Plus, ChevronLeft, ChevronRight, User, MapPin, Pencil, CalendarDays } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Plus, ChevronLeft, ChevronRight, User, MapPin, Pencil, CalendarDays, Filter, ChevronDown } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -12,18 +14,29 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { AppointmentForm } from "@/components/forms/AppointmentForm"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { getServiceById } from "@/lib/services"
 import { useSearchParams } from "next/navigation"
-import { Suspense } from "react"
+import { updateAppointment } from "@/lib/actions/appointment.actions"
+import { toast } from "sonner"
+
+const AppointmentForm = dynamic(
+  () => import("@/components/forms/AppointmentForm").then((mod) => ({ default: mod.AppointmentForm })),
+  { loading: () => <div className="p-6"><Skeleton className="h-[500px] w-full rounded-xl" /></div> }
+)
 
 const statusColors: Record<string, string> = {
-  scheduled: "bg-blue-50 text-blue-700 border-blue-200",
-  confirmed: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  in_progress: "bg-amber-50 text-amber-700 border-amber-200",
-  completed: "bg-slate-50 text-slate-600 border-slate-200",
-  cancelled: "bg-rose-50 text-rose-700 border-rose-200",
-  no_show: "bg-purple-50 text-purple-700 border-purple-200",
+  scheduled: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30",
+  confirmed: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 font-semibold",
+  in_progress: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30 font-semibold animate-pulse",
+  completed: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30",
+  cancelled: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30",
+  no_show: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30",
 }
 
 const statusLabels: Record<string, string> = {
@@ -34,6 +47,15 @@ const statusLabels: Record<string, string> = {
   cancelled: "Cancelado",
   no_show: "Não Compareceu",
 }
+
+const filterOptions = [
+  { key: "all", label: "Todos" },
+  { key: "today", label: "Hoje" },
+  { key: "scheduled", label: "Agendados" },
+  { key: "confirmed", label: "Confirmados" },
+  { key: "completed", label: "Concluídos" },
+  { key: "cancelled", label: "Cancelados" },
+]
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
 const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
@@ -61,6 +83,7 @@ function AppointmentsPageInner() {
   const [editingAppointment, setEditingAppointment] = useState<any>(null)
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [view, setView] = useState<"day" | "list">("day")
+  const [activeFilter, setActiveFilter] = useState("all")
   const supabase = createClient()
 
   const year = selectedDate.getFullYear()
@@ -102,6 +125,28 @@ function AppointmentsPageInner() {
     setPatients(data || [])
   }, [supabase])
 
+  const handleStatusChange = useCallback(async (appointmentId: string, newStatus: "scheduled" | "confirmed" | "in_progress" | "completed" | "cancelled" | "no_show") => {
+    const previousAppointments = [...appointments]
+    const previousMonthAppointments = [...allMonthAppointments]
+
+    setAppointments(prev =>
+      prev.map(apt => apt.id === appointmentId ? { ...apt, status: newStatus } : apt)
+    )
+    setAllMonthAppointments(prev =>
+      prev.map(apt => apt.id === appointmentId ? { ...apt, status: newStatus } : apt)
+    )
+
+    const result = await updateAppointment(appointmentId, { status: newStatus })
+
+    if (result.error) {
+      setAppointments(previousAppointments)
+      setAllMonthAppointments(previousMonthAppointments)
+      toast.error("Erro ao atualizar status", { description: result.error })
+    } else {
+      toast.success(`Status alterado para "${statusLabels[newStatus] || newStatus}"`)
+    }
+  }, [appointments, allMonthAppointments])
+
   useEffect(() => { fetchPatients() }, [fetchPatients])
   useEffect(() => { fetchAppointmentsForDay() }, [fetchAppointmentsForDay])
   useEffect(() => { fetchMonthAppointments() }, [fetchMonthAppointments])
@@ -112,6 +157,12 @@ function AppointmentsPageInner() {
       setIsOpen(true)
     }
   }, [preselectedPatientId, patients])
+
+  const filteredAppointments = appointments.filter((apt) => {
+    if (activeFilter === "all") return true
+    if (activeFilter === "today") return true
+    return apt.status === activeFilter
+  })
 
   const hasAppointmentsOnDay = (day: number) => {
     const d = new Date(year, month, day)
@@ -147,18 +198,16 @@ function AppointmentsPageInner() {
     })
   }
 
-  const timeSlots = Array.from({ length: 13 }, (_, i) => i + 7) // 7:00 to 19:00
+  const timeSlots = Array.from({ length: 13 }, (_, i) => i + 7)
 
   return (
     <div className="animate-in fade-in duration-500">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Agenda</h1>
           <p className="text-muted-foreground mt-1">Gerencie seus compromissos e pacientes.</p>
         </div>
         <div className="flex items-center gap-3">
-          {/* View toggles */}
           <div className="flex items-center bg-muted/50 rounded-xl p-1">
             <button
               onClick={() => setView("day")}
@@ -182,29 +231,28 @@ function AppointmentsPageInner() {
               <DialogHeader>
                 <DialogTitle>{editingAppointment?.id ? "Editar Agendamento" : "Novo Agendamento"}</DialogTitle>
               </DialogHeader>
-              <AppointmentForm
-                patients={patients}
-                initialData={editingAppointment}
-                onSuccess={() => {
-                  setIsOpen(false)
-                  setEditingAppointment(null)
-                  fetchAppointmentsForDay()
-                  fetchMonthAppointments()
-                }}
-                onCancel={() => { setIsOpen(false); setEditingAppointment(null) }}
-              />
+              <Suspense fallback={<Skeleton className="h-[500px] w-full rounded-xl" />}>
+                <AppointmentForm
+                  patients={patients}
+                  initialData={editingAppointment}
+                  onSuccess={() => {
+                    setIsOpen(false)
+                    setEditingAppointment(null)
+                    fetchAppointmentsForDay()
+                    fetchMonthAppointments()
+                  }}
+                  onCancel={() => { setIsOpen(false); setEditingAppointment(null) }}
+                />
+              </Suspense>
             </DialogContent>
           </Dialog>
         </div>
       </div>
 
-      {/* Main layout: Calendar + Timeline */}
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-        {/* Left: Mini Calendar */}
         <div className="space-y-4">
           <Card variant="glass">
             <CardContent className="p-4">
-              {/* Month navigator */}
               <div className="flex items-center justify-between mb-4">
                 <button onClick={prevMonth} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
                   <ChevronLeft className="h-4 w-4" />
@@ -217,7 +265,6 @@ function AppointmentsPageInner() {
                 </button>
               </div>
 
-              {/* Weekday headers */}
               <div className="grid grid-cols-7 gap-0 mb-1">
                 {WEEKDAYS.map((day) => (
                   <div key={day} className="text-center text-[10px] font-medium text-muted-foreground py-1">
@@ -226,7 +273,6 @@ function AppointmentsPageInner() {
                 ))}
               </div>
 
-              {/* Day grid */}
               <div className="grid grid-cols-7 gap-0">
                 {Array.from({ length: firstDay }).map((_, i) => (
                   <div key={`empty-${i}`} />
@@ -261,7 +307,6 @@ function AppointmentsPageInner() {
                 })}
               </div>
 
-              {/* Today button */}
               <button
                 onClick={goToToday}
                 className="w-full mt-3 py-2 text-xs font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors"
@@ -271,7 +316,6 @@ function AppointmentsPageInner() {
             </CardContent>
           </Card>
 
-          {/* Legend */}
           <Card variant="glass">
             <CardContent className="p-4">
               <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Serviços</p>
@@ -296,27 +340,51 @@ function AppointmentsPageInner() {
           </Card>
         </div>
 
-        {/* Right: Day Timeline / List */}
         <div>
-          {/* Day header */}
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-lg font-semibold capitalize">{formatSelectedDate()}</h2>
               <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
                 <CalendarDays className="h-3.5 w-3.5" />
-                {appointments.length} agendamento(s)
+                {filteredAppointments.length} agendamento(s)
               </p>
             </div>
           </div>
 
+          <div className="flex flex-wrap gap-2 mb-4">
+            {filterOptions.map((filter) => (
+              <button
+                key={filter.key}
+                onClick={() => setActiveFilter(filter.key)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${
+                  activeFilter === filter.key
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-background text-muted-foreground border-border/60 hover:border-primary/40 hover:text-foreground"
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+
           {loading ? (
-            <div className="flex h-60 items-center justify-center">
-              <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                <p>Carregando agenda...</p>
-              </div>
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="glass-card rounded-xl p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-5 w-16" />
+                        <Skeleton className="h-5 w-24 rounded-full" />
+                      </div>
+                      <Skeleton className="h-4 w-48" />
+                    </div>
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </div>
+                </div>
+              ))}
             </div>
-          ) : appointments.length === 0 ? (
+          ) : filteredAppointments.length === 0 ? (
             <div className="text-center py-20 glass-card rounded-2xl flex flex-col items-center justify-center">
               <div className="h-20 w-20 bg-muted/30 rounded-full flex items-center justify-center mb-4">
                 <CalendarDays className="h-10 w-10 text-muted-foreground/40" />
@@ -328,29 +396,25 @@ function AppointmentsPageInner() {
               </Button>
             </div>
           ) : view === "day" ? (
-            /* Timeline View */
             <div className="space-y-2">
               {timeSlots.map((hour) => {
-                const hourAppointments = appointments.filter(apt => {
+                const hourAppointments = filteredAppointments.filter(apt => {
                   const d = new Date(apt.scheduled_at)
                   return d.getHours() === hour
                 })
 
                 return (
                   <div key={hour} className="flex gap-4 min-h-[60px]">
-                    {/* Time label */}
                     <div className="w-16 shrink-0 text-right pt-1">
                       <span className="text-xs font-medium text-muted-foreground">
                         {String(hour).padStart(2, "0")}:00
                       </span>
                     </div>
 
-                    {/* Line */}
                     <div className="relative w-px bg-border/50 shrink-0">
                       <div className="absolute top-2 -left-1 h-2.5 w-2.5 rounded-full bg-border" />
                     </div>
 
-                    {/* Appointments */}
                     <div className="flex-1 pb-2">
                       {hourAppointments.map((apt) => {
                         const aptTime = new Date(apt.scheduled_at)
@@ -379,9 +443,34 @@ function AppointmentsPageInner() {
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className={`text-xs px-2.5 py-1 rounded-full font-medium border ${statusColors[apt.status] || ""}`}>
-                                  {statusLabels[apt.status] || apt.status}
-                                </span>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger
+                                    render={
+                                      <button
+                                        className={`text-xs px-2.5 py-1 rounded-full font-medium border cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1 ${statusColors[apt.status] || ""}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                      />
+                                    }
+                                  >
+                                    {statusLabels[apt.status] || apt.status}
+                                    <ChevronDown className="h-3 w-3" />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                    {Object.entries(statusLabels).map(([key, label]) => (
+                                      <DropdownMenuItem
+                                        key={key}
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleStatusChange(apt.id, key as any)
+                                        }}
+                                        className={apt.status === key ? "bg-accent" : ""}
+                                      >
+                                        <span className={`w-2 h-2 rounded-full ${statusColors[key]?.split(" ")[0]}`} />
+                                        {label}
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -407,9 +496,8 @@ function AppointmentsPageInner() {
               })}
             </div>
           ) : (
-            /* List View */
             <div className="space-y-2">
-              {appointments.map((apt) => {
+              {filteredAppointments.map((apt) => {
                 const aptTime = new Date(apt.scheduled_at)
                 const timeStr = aptTime.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
                 const svc = getServiceById(apt.service_type)
@@ -439,9 +527,34 @@ function AppointmentsPageInner() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium border ${statusColors[apt.status] || ""}`}>
-                        {statusLabels[apt.status] || apt.status}
-                      </span>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
+                            <button
+                              className={`text-xs px-2.5 py-1 rounded-full font-medium border cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1 ${statusColors[apt.status] || ""}`}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          }
+                        >
+                          {statusLabels[apt.status] || apt.status}
+                          <ChevronDown className="h-3 w-3" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                          {Object.entries(statusLabels).map(([key, label]) => (
+                            <DropdownMenuItem
+                              key={key}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleStatusChange(apt.id, key as any)
+                              }}
+                              className={apt.status === key ? "bg-accent" : ""}
+                            >
+                              <span className={`w-2 h-2 rounded-full ${statusColors[key]?.split(" ")[0]}`} />
+                              {label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -465,10 +578,21 @@ function AppointmentsPageInner() {
 export default function AppointmentsPage() {
   return (
     <Suspense fallback={
-      <div className="flex h-60 items-center justify-center">
-        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p>Carregando agenda...</p>
+      <div className="space-y-6">
+        <div className="flex justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <Skeleton className="h-10 w-24 rounded-xl" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+          <Skeleton className="h-[400px] rounded-xl" />
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-[80px] rounded-xl" />
+            ))}
+          </div>
         </div>
       </div>
     }>
