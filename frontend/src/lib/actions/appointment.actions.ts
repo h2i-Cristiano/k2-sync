@@ -11,12 +11,13 @@ export async function createAppointment(data: AppointmentCreateFormValues & { de
   try {
     const { depositAmount, ...appointmentData } = data
     const validatedData = appointmentCreateSchema.parse(appointmentData)
+    const { commission_amount: _commissionAmount, ...insertData } = validatedData as any
     const { supabase, tenantId, user } = await getUserAndTenant()
 
     const { data: newAppointment, error } = await supabase
       .from("appointments")
       .insert({
-        ...validatedData,
+        ...insertData,
         tenant_id: tenantId,
         professional_id: user.id
       })
@@ -75,6 +76,7 @@ export async function updateAppointment(id: string, data: Partial<AppointmentUpd
   try {
     uuidSchema.parse(id)
     const validatedData = appointmentUpdateSchema.parse(data)
+    const { commission_amount: _commissionAmount, ...updateData } = validatedData as any
     const { supabase, tenantId } = await getUserAndTenant()
 
     const { data: currentApt } = await supabase
@@ -86,7 +88,7 @@ export async function updateAppointment(id: string, data: Partial<AppointmentUpd
 
     const { error } = await supabase
       .from("appointments")
-      .update(validatedData)
+      .update(updateData)
       .eq("id", id)
       .eq("tenant_id", tenantId)
 
