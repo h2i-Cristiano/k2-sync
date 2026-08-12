@@ -67,23 +67,32 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
   const commissionAmount = Number(watchTotalCost) * (Number(watchCommissionPercent) / 100)
 
   async function onSubmit(data: AppointmentCreateFormValues) {
+    console.log("=== FORM SUBMIT ===")
+    console.log("form data:", data)
+    console.log("form errors:", form.formState.errors)
+    console.log("services:", services)
+    console.log("commissionAmount:", commissionAmount)
     setSaving(true)
     const formattedData = {
       ...data,
       scheduled_at: new Date(data.scheduled_at).toISOString(),
       commission_amount: commissionAmount,
     }
+    console.log("Formatted data:", formattedData)
 
     let result
     if (initialData?.id) {
+      console.log("Updating appointment:", initialData.id, formattedData)
       result = await updateAppointment(initialData.id, formattedData)
     } else {
+      console.log("Creating appointment:", formattedData)
       result = await createAppointment({
         ...formattedData,
         depositAmount: chargeDeposit && depositAmount > 0 ? depositAmount : undefined,
       })
     }
 
+    console.log("Server result:", result)
     setSaving(false)
     if (result.error) {
       toast.error(result.error)
@@ -108,8 +117,10 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
   }
 
   const handleServiceChange = (value: string | null) => {
+    console.log("Service selected:", value)
     if (!value) return
     const svc = services.find(s => s.id === value)
+    console.log("Service found:", !!svc, svc?.name)
     if (svc) {
       form.setValue("service_type", value)
       form.setValue("duration_minutes", svc.duration_minutes)
@@ -119,6 +130,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       if (svc.commission_percent > 0) {
         form.setValue("commission_percent", svc.commission_percent)
       }
+      console.log("Form updated - service_type:", value, "duration:", svc.duration_minutes, "price:", svc.price)
     }
   }
 
@@ -129,7 +141,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       {/* Patient */}
       <div className="space-y-2">
         <Label htmlFor="patient_id">Paciente *</Label>
-        <Select onValueChange={(val) => { if (val) form.setValue("patient_id", val) }} value={form.watch("patient_id") || ""}>
+        <Select onValueChange={(val) => { if (val) form.setValue("patient_id", val) }} defaultValue={form.watch("patient_id") || undefined}>
           <SelectTrigger id="patient_id" className={`w-full h-12 rounded-xl ${form.formState.errors.patient_id ? "border-destructive" : ""}`}>
             <SelectValue placeholder="Selecione o paciente" />
           </SelectTrigger>
@@ -147,7 +159,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       {/* Service Type */}
       <div className="space-y-2">
         <Label htmlFor="service_type">Tipo de Serviço *</Label>
-        <Select onValueChange={handleServiceChange} value={form.watch("service_type") || ""}>
+        <Select onValueChange={handleServiceChange} defaultValue={form.watch("service_type") || undefined}>
           <SelectTrigger id="service_type" className={`w-full h-12 rounded-xl ${form.formState.errors.service_type ? "border-destructive" : ""}`}>
             <SelectValue placeholder="Selecione o serviço" />
           </SelectTrigger>
@@ -208,7 +220,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
-          <Select onValueChange={(val) => { if (val) form.setValue("status", val as AppointmentCreateFormValues["status"]) }} value={form.watch("status") || "scheduled"}>
+          <Select onValueChange={(val) => { if (val) form.setValue("status", val as AppointmentCreateFormValues["status"]) }} defaultValue={form.watch("status") || "scheduled"}>
             <SelectTrigger id="status" className="w-full h-12 rounded-xl">
               <SelectValue placeholder="Status" />
             </SelectTrigger>

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, Pencil, Trash2, Stethoscope, Save, X } from "lucide-react"
+import { Plus, Pencil, Trash2, Hand, Save, X } from "lucide-react"
 import { toast } from "sonner"
 
 interface Service {
@@ -142,7 +142,7 @@ export default function ServicesPage() {
             </div>
           ) : services.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              <Stethoscope className="h-10 w-10 mx-auto mb-3 opacity-40" />
+              <Hand className="h-10 w-10 mx-auto mb-3 opacity-40" />
               <p className="text-sm">Nenhum serviço cadastrado.</p>
             </div>
           ) : (

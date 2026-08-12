@@ -39,6 +39,7 @@ import {
   ClipboardList,
   ArrowDownCircle,
   ArrowUpCircle,
+  Hand,
 } from "lucide-react"
 
 interface NavItem {
@@ -77,7 +78,7 @@ const financeNav: NavItem[] = [
 ]
 
 const operationalNav: NavItem[] = [
-  { href: "/services", label: "Servicos", icon: Stethoscope },
+  { href: "/services", label: "Servicos", icon: Hand },
   { href: "/products", label: "Produtos", icon: ShoppingBag },
   { href: "/stock", label: "Estoque", icon: Warehouse },
 ]
