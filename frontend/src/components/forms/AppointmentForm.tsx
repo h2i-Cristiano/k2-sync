@@ -14,6 +14,11 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { fetchServices, ServiceDef } from "@/lib/services"
 
+function formatLocalDatetime(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 interface AppointmentFormProps {
   patients: { id: string; full_name: string; phone?: string }[]
   initialData?: any
@@ -32,11 +37,11 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
   }, [])
 
   const defaultDate = initialData?.scheduled_at
-    ? new Date(initialData.scheduled_at).toISOString().slice(0, 16)
+    ? formatLocalDatetime(new Date(initialData.scheduled_at))
     : (() => {
         const d = new Date()
         d.setHours(d.getHours() + 1, 0, 0, 0)
-        return d.toISOString().slice(0, 16)
+        return formatLocalDatetime(d)
       })()
 
   const form = useForm<AppointmentCreateFormValues>({
@@ -124,7 +129,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       {/* Patient */}
       <div className="space-y-2">
         <Label htmlFor="patient_id">Paciente *</Label>
-        <Select onValueChange={(val) => { if (val) form.setValue("patient_id", val) }} defaultValue={String(form.watch("patient_id") ?? "")}>
+        <Select onValueChange={(val) => { if (val) form.setValue("patient_id", val) }} value={form.watch("patient_id") || ""}>
           <SelectTrigger id="patient_id" className={`w-full h-12 rounded-xl ${form.formState.errors.patient_id ? "border-destructive" : ""}`}>
             <SelectValue placeholder="Selecione o paciente" />
           </SelectTrigger>
@@ -142,7 +147,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       {/* Service Type */}
       <div className="space-y-2">
         <Label htmlFor="service_type">Tipo de Serviço *</Label>
-        <Select onValueChange={handleServiceChange} defaultValue={String(form.watch("service_type") ?? "")}>
+        <Select onValueChange={handleServiceChange} value={form.watch("service_type") || ""}>
           <SelectTrigger id="service_type" className={`w-full h-12 rounded-xl ${form.formState.errors.service_type ? "border-destructive" : ""}`}>
             <SelectValue placeholder="Selecione o serviço" />
           </SelectTrigger>
@@ -203,7 +208,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
-          <Select onValueChange={(val) => { if (val) form.setValue("status", val as AppointmentCreateFormValues["status"]) }} defaultValue={String(form.watch("status") ?? "scheduled")}>
+          <Select onValueChange={(val) => { if (val) form.setValue("status", val as AppointmentCreateFormValues["status"]) }} value={form.watch("status") || "scheduled"}>
             <SelectTrigger id="status" className="w-full h-12 rounded-xl">
               <SelectValue placeholder="Status" />
             </SelectTrigger>

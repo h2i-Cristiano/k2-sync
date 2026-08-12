@@ -24,8 +24,8 @@ export async function createAppointment(data: AppointmentCreateFormValues & { de
       .single()
 
     if (error) {
-      console.error("Erro ao criar agendamento:", error)
-      return { error: "Erro ao criar agendamento no banco de dados." }
+      console.error("Erro ao criar agendamento:", JSON.stringify(error, null, 2))
+      return { error: `Erro ao criar agendamento: ${error.message || error.details || "Erro desconhecido"}` }
     }
 
     let depositEntryId: string | null = null
@@ -64,9 +64,10 @@ export async function createAppointment(data: AppointmentCreateFormValues & { de
     return { data: newAppointment, depositEntryId }
 
   } catch (err: any) {
-    console.error("Erro em createAppointment:", err)
+    console.error("Erro em createAppointment:", err?.message || err)
     if (err.message === "Não autenticado") return { error: "Não autorizado." }
-    return { error: "Os dados enviados são inválidos." }
+    if (err.message?.includes("Tenant não encontrado")) return { error: err.message }
+    return { error: `Erro: ${err.message || "Dados inválidos ou erro interno."}` }
   }
 }
 

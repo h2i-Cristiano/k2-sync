@@ -251,6 +251,20 @@ function AppointmentsPageInner() {
                         patientName: result.patientName || "Paciente",
                         serviceName: result.serviceName || "Serviço",
                       })
+                      if (result.patientPhone) {
+                        const msg = buildDepositMessage({
+                          patientName: result.patientName || "Paciente",
+                          serviceName: result.serviceName || "Serviço",
+                          amount: result.depositAmount,
+                        })
+                        toast.success("Agendamento criado! Envie a cobrança via WhatsApp.", {
+                          action: {
+                            label: "WhatsApp",
+                            onClick: () => window.open(getWhatsAppUrl(result.patientPhone!, msg), "_blank"),
+                          },
+                          duration: 10000,
+                        })
+                      }
                     }
                   }}
                   onCancel={() => { setIsOpen(false); setEditingAppointment(null) }}
