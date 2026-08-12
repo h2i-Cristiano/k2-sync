@@ -1,0 +1,10 @@
+{
+  "name": "k2-sync",
+  "private": true,
+  "scripts": {
+    "vercel-build": "cd frontend && npm install && npm run build",
+    "build": "cd frontend && npm run build",
+    "dev": "cd frontend && npm run dev",
+    "start": "cd frontend && npm start"
+  }
+}
