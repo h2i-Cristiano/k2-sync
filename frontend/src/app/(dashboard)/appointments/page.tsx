@@ -32,7 +32,7 @@ const AppointmentForm = dynamic(
 
 const statusColors: Record<string, string> = {
   scheduled: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30",
-  confirmed: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 font-semibold",
+  confirmed: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30 font-semibold",
   in_progress: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30 font-semibold animate-pulse",
   completed: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30",
   cancelled: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30",

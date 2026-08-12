@@ -33,7 +33,7 @@ import {
   Settings,
   LogOut,
   Menu,
-  HeartPulse,
+  Leaf,
   ChevronLeft,
   ChevronDown,
   ClipboardList,
@@ -94,22 +94,22 @@ function NavLink({ item, active, collapsed }: { item: NavItem; active: boolean; 
       href={item.disabled ? "#" : item.href}
       className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
         item.disabled
-          ? "opacity-45 cursor-not-allowed"
+          ? "opacity-40 cursor-not-allowed"
           : active
-          ? "bg-primary/15 text-primary font-semibold shadow-xs dark:bg-primary/20 dark:text-emerald-400"
-          : "text-muted-foreground hover:text-foreground hover:bg-primary/5 dark:hover:bg-sidebar-accent/60"
+          ? "bg-accent/15 text-accent font-semibold shadow-xs dark:bg-accent/20 dark:text-accent"
+          : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/[0.04] dark:hover:bg-sidebar-accent/50"
       }`}
       onClick={(e) => item.disabled && e.preventDefault()}
     >
       <div className="relative flex items-center justify-center">
         {active && (
-          <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3.5px] rounded-r-full bg-primary shadow-[0_0_8px_rgba(13,148,136,0.6)]" />
+          <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3.5px] rounded-r-full bg-gradient-to-b from-teal-500 to-cyan-500 shadow-[0_0_10px_rgba(0,180,180,0.5)]" />
         )}
-        <item.icon className={`h-[19px] w-[19px] transition-transform duration-200 group-hover:scale-110 ${active ? "text-primary dark:text-emerald-400" : "text-muted-foreground/80 group-hover:text-foreground"}`} />
+        <item.icon className={`h-[19px] w-[19px] transition-transform duration-200 group-hover:scale-110 ${active ? "text-accent dark:text-accent" : "text-sidebar-foreground/60 group-hover:text-sidebar-foreground"}`} />
       </div>
       {!collapsed && <span>{item.label}</span>}
       {!collapsed && item.disabled && (
-        <span className="ml-auto text-[9px] font-semibold bg-muted/80 text-muted-foreground/60 px-1.5 py-0.5 rounded uppercase tracking-wider">Em breve</span>
+        <span className="ml-auto text-[9px] font-semibold bg-white/[0.06] text-sidebar-foreground/40 px-1.5 py-0.5 rounded uppercase tracking-wider">Em breve</span>
       )}
     </Link>
   )
@@ -118,7 +118,7 @@ function NavLink({ item, active, collapsed }: { item: NavItem; active: boolean; 
 function NavLabel({ children, collapsed }: { children: React.ReactNode; collapsed?: boolean }) {
   if (collapsed) return null
   return (
-    <p className="px-3 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 dark:text-sidebar-foreground/35">
+    <p className="px-3 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/30">
       {children}
     </p>
   )
@@ -138,15 +138,15 @@ function PatientsNavGroup({ activeHref, collapsed }: { activeHref: string; colla
         href="/patients"
         className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
           isPatientsActive
-            ? "bg-primary/15 text-primary font-semibold dark:bg-primary/20 dark:text-emerald-400"
-            : "text-muted-foreground hover:text-foreground hover:bg-primary/5 dark:hover:bg-sidebar-accent/60"
+            ? "bg-accent/15 text-accent font-semibold dark:bg-accent/20 dark:text-accent"
+            : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/[0.04] dark:hover:bg-sidebar-accent/50"
         }`}
       >
         <div className="relative flex items-center justify-center">
           {isPatientsActive && (
-            <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3.5px] rounded-r-full bg-primary shadow-[0_0_8px_rgba(13,148,136,0.6)]" />
+            <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3.5px] rounded-r-full bg-gradient-to-b from-teal-500 to-cyan-500 shadow-[0_0_10px_rgba(0,180,180,0.5)]" />
           )}
-          <Users className={`h-[19px] w-[19px] ${isPatientsActive ? "text-primary dark:text-emerald-400" : ""}`} />
+          <Users className={`h-[19px] w-[19px] ${isPatientsActive ? "text-accent dark:text-accent" : ""}`} />
         </div>
       </Link>
     )
@@ -158,21 +158,21 @@ function PatientsNavGroup({ activeHref, collapsed }: { activeHref: string; colla
         onClick={() => setOpen(!open)}
         className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
           isPatientsActive
-            ? "bg-primary/15 text-primary font-semibold dark:bg-primary/20 dark:text-emerald-400"
-            : "text-muted-foreground hover:text-foreground hover:bg-primary/5 dark:hover:bg-sidebar-accent/60"
+            ? "bg-accent/15 text-accent font-semibold dark:bg-accent/20 dark:text-accent"
+            : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/[0.04] dark:hover:bg-sidebar-accent/50"
         }`}
       >
         <div className="relative flex items-center justify-center">
           {isPatientsActive && (
-            <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3.5px] rounded-r-full bg-primary shadow-[0_0_8px_rgba(13,148,136,0.6)]" />
+            <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3.5px] rounded-r-full bg-gradient-to-b from-teal-500 to-cyan-500 shadow-[0_0_10px_rgba(0,180,180,0.5)]" />
           )}
-          <Users className={`h-[19px] w-[19px] ${isPatientsActive ? "text-primary dark:text-emerald-400" : ""}`} />
+          <Users className={`h-[19px] w-[19px] ${isPatientsActive ? "text-accent dark:text-accent" : ""}`} />
         </div>
         <span className="flex-1 text-left">Pacientes</span>
-        <ChevronDown className={`h-4 w-4 text-muted-foreground/60 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-4 w-4 text-sidebar-foreground/40 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <div className="ml-4 pl-3.5 border-l-2 border-primary/20 space-y-0.5 mt-1">
+        <div className="ml-4 pl-3.5 border-l-2 border-accent/20 space-y-0.5 mt-1">
           {patientSubItems.map((item) => {
             const active = activeHref === item.href || (item.href === "/patients" && activeHref.startsWith("/patients") && !activeHref.includes("anamnese"))
             return (
@@ -216,13 +216,13 @@ function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarContentP
       {/* Logo */}
       <div className="flex h-16 items-center justify-between px-4">
         <Link href="/dashboard" className="flex items-center gap-3 group">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform duration-200">
-            <HeartPulse className="h-5 w-5 text-white animate-pulse" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 shadow-lg shadow-teal-500/25 group-hover:scale-105 transition-transform duration-200">
+            <Leaf className="h-5 w-5 text-white" />
           </div>
           {!collapsed && (
             <div>
               <span className="text-base font-bold tracking-tight text-foreground dark:text-white group-hover:text-primary transition-colors">K2-Sync</span>
-              <span className="block text-[10px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wider -mt-0.5">Wellness OS</span>
+              <span className="block text-[10px] font-medium text-teal-600 dark:text-teal-400 uppercase tracking-wider -mt-0.5">Wellness OS</span>
             </div>
           )}
         </Link>
@@ -230,7 +230,7 @@ function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarContentP
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted dark:text-sidebar-foreground/60 dark:hover:text-white dark:hover:bg-sidebar-accent"
+            className="h-8 w-8 rounded-lg text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-white/[0.06] dark:hover:text-white dark:hover:bg-sidebar-accent"
             onClick={onToggle}
           >
             <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
@@ -268,19 +268,19 @@ function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarContentP
       {/* User */}
       <div className="p-3">
         <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant="ghost" className="w-full justify-start gap-3 h-auto py-2.5 px-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-primary/5 dark:text-sidebar-foreground/70 dark:hover:text-white dark:hover:bg-sidebar-accent/50" />}>
+          <DropdownMenuTrigger render={<Button variant="ghost" className="w-full justify-start gap-3 h-auto py-2.5 px-3 rounded-xl text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/[0.04] dark:text-sidebar-foreground/70 dark:hover:text-white dark:hover:bg-sidebar-accent/50" />}>
             <div className="relative">
-              <Avatar className="h-8.5 w-8.5 ring-2 ring-emerald-500/30">
-                <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-700 text-white text-xs font-semibold">{initials}</AvatarFallback>
+              <Avatar className="h-8.5 w-8.5 ring-2 ring-teal-500/30">
+                <AvatarFallback className="bg-gradient-to-br from-teal-500 to-cyan-700 text-white text-xs font-semibold">{initials}</AvatarFallback>
               </Avatar>
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-teal-500 ring-2 ring-white dark:ring-sidebar" />
             </div>
             {!collapsed && (
               <div className="flex flex-col items-start text-left min-w-0">
                 <span className="text-sm font-semibold truncate max-w-[140px] text-foreground dark:text-white">
                   {user?.user_metadata?.full_name || "Usuario"}
                 </span>
-                <span className="text-[11px] text-muted-foreground dark:text-sidebar-foreground/50 truncate max-w-[140px]">
+                <span className="text-[11px] text-sidebar-foreground/45 truncate max-w-[140px]">
                   {user?.email}
                 </span>
               </div>
@@ -295,7 +295,7 @@ function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarContentP
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem render={<Link href="/settings" />}>
-              <Settings className="mr-2 h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <Settings className="mr-2 h-4 w-4 text-teal-600 dark:text-teal-400" />
               Configuracoes
             </DropdownMenuItem>
             <DropdownMenuSeparator />

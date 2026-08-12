@@ -26,7 +26,7 @@ const PatientForm = dynamic(
 )
 
 const AVATAR_GRADIENTS = [
-  "from-emerald-500 to-teal-700",
+  "from-teal-500 to-cyan-700",
   "from-amber-500 to-orange-600",
   "from-indigo-500 to-blue-700",
   "from-rose-500 to-pink-700",
@@ -99,7 +99,7 @@ export default function PatientsPage() {
           <p className="text-sm text-muted-foreground">Gerencie sua lista de pacientes, fichas e prontuários médicos.</p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger render={<Button className="rounded-xl font-semibold shadow-md shadow-emerald-500/20" />}>
+          <DialogTrigger render={<Button className="rounded-xl font-semibold shadow-md shadow-teal-500/20" />}>
             <Plus className="mr-2 h-4 w-4" />
             Novo Paciente
           </DialogTrigger>
@@ -117,7 +117,7 @@ export default function PatientsPage() {
       <Dialog open={showSchedulePrompt} onOpenChange={setShowSchedulePrompt}>
         <DialogContent className="sm:max-w-sm rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-emerald-600 dark:text-emerald-400 font-bold">Paciente criado com sucesso!</DialogTitle>
+            <DialogTitle className="text-teal-600 dark:text-teal-400 font-bold">Paciente criado com sucesso!</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground">
@@ -127,7 +127,7 @@ export default function PatientsPage() {
               <Button variant="outline" className="flex-1 rounded-xl" onClick={() => { setShowSchedulePrompt(false); setNewPatientId(null) }}>
                 Agora não
               </Button>
-              <Button className="flex-1 rounded-xl font-semibold shadow-md shadow-emerald-500/20" onClick={() => {
+              <Button className="flex-1 rounded-xl font-semibold shadow-md shadow-teal-500/20" onClick={() => {
                 setShowSchedulePrompt(false)
                 router.push(`/appointments?patient=${newPatientId}`)
                 setNewPatientId(null)
@@ -141,7 +141,7 @@ export default function PatientsPage() {
       </Dialog>
 
       <div className="relative max-w-md">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-teal-600 dark:text-teal-400" />
         <Input
           placeholder="Buscar por nome, email, telefone ou CPF..."
           className="pl-10 pr-9 bg-card border-border/60 rounded-xl shadow-xs focus:border-primary/50 transition-all"
@@ -177,7 +177,7 @@ export default function PatientsPage() {
             </div>
           ) : filteredPatients.length === 0 ? (
             <div className="p-16 text-center text-muted-foreground">
-              <div className="h-14 w-14 mx-auto rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-4">
+              <div className="h-14 w-14 mx-auto rounded-full bg-emerald-500/10 flex items-center justify-center text-teal-600 dark:text-teal-400 mb-4">
                 <Users className="h-7 w-7" />
               </div>
               <p className="text-xl font-bold text-foreground mb-1">Nenhum paciente encontrado</p>
@@ -221,7 +221,7 @@ export default function PatientsPage() {
                         <td className="p-4 text-right">
                           <div className="flex justify-end gap-2">
                             <Button render={<Link href={`/patients/${patient.id}/anamnese`} />} variant="outline" size="sm" className="h-8 rounded-lg shadow-xs hover:border-primary/40">
-                              <FileText className="h-3.5 w-3.5 mr-1.5 text-emerald-600 dark:text-emerald-400" />
+                              <FileText className="h-3.5 w-3.5 mr-1.5 text-teal-600 dark:text-teal-400" />
                               Anamnese
                             </Button>
                             <Button render={<Link href={`/patients/${patient.id}`} />} variant="secondary" size="sm" className="h-8 rounded-lg shadow-xs">
