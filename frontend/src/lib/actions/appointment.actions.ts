@@ -7,9 +7,10 @@ import { getUserAndTenant } from "@/lib/auth-helpers"
 
 const uuidSchema = z.string().uuid("ID inválido")
 
-export async function createAppointment(data: AppointmentCreateFormValues) {
+export async function createAppointment(data: AppointmentCreateFormValues & { depositAmount?: number }) {
   try {
-    const validatedData = appointmentCreateSchema.parse(data)
+    const { depositAmount, ...appointmentData } = data
+    const validatedData = appointmentCreateSchema.parse(appointmentData)
     const { supabase, tenantId, user } = await getUserAndTenant()
 
     const { data: newAppointment, error } = await supabase
@@ -27,8 +28,40 @@ export async function createAppointment(data: AppointmentCreateFormValues) {
       return { error: "Erro ao criar agendamento no banco de dados." }
     }
 
+    let depositEntryId: string | null = null
+
+    if (depositAmount && depositAmount > 0) {
+      const [patientResult, serviceResult] = await Promise.all([
+        supabase.from("patients").select("full_name").eq("id", validatedData.patient_id).single(),
+        supabase.from("services").select("name").eq("id", validatedData.service_type).single(),
+      ])
+
+      const patientName = patientResult.data?.full_name || "Paciente"
+      const serviceName = serviceResult.data?.name || "Serviço"
+
+      const { data: entry, error: entryError } = await supabase
+        .from("financial_entries")
+        .insert({
+          tenant_id: tenantId,
+          type: "receivable",
+          description: `Entrada - ${serviceName} - ${patientName}`,
+          amount: depositAmount,
+          due_date: new Date().toISOString().split("T")[0],
+          status: "pending",
+          category: "Sessão",
+          appointment_id: newAppointment.id,
+        })
+        .select("id")
+        .single()
+
+      if (!entryError && entry) {
+        depositEntryId = entry.id
+      }
+    }
+
     revalidatePath("/appointments")
-    return { data: newAppointment }
+    revalidatePath("/financial/receivable")
+    return { data: newAppointment, depositEntryId }
 
   } catch (err: any) {
     console.error("Erro em createAppointment:", err)
@@ -43,6 +76,13 @@ export async function updateAppointment(id: string, data: Partial<AppointmentUpd
     const validatedData = appointmentUpdateSchema.parse(data)
     const { supabase, tenantId } = await getUserAndTenant()
 
+    const { data: currentApt } = await supabase
+      .from("appointments")
+      .select("status, total_cost, patient_id, service_type")
+      .eq("id", id)
+      .eq("tenant_id", tenantId)
+      .single()
+
     const { error } = await supabase
       .from("appointments")
       .update(validatedData)
@@ -54,7 +94,30 @@ export async function updateAppointment(id: string, data: Partial<AppointmentUpd
       return { error: "Erro ao atualizar agendamento." }
     }
 
+    if (validatedData.status === "completed" && currentApt && currentApt.status !== "completed" && currentApt.total_cost > 0) {
+      const [patientResult, serviceResult] = await Promise.all([
+        supabase.from("patients").select("full_name").eq("id", currentApt.patient_id).single(),
+        supabase.from("services").select("name").eq("id", currentApt.service_type).single(),
+      ])
+
+      const patientName = patientResult.data?.full_name || "Paciente"
+      const serviceName = serviceResult.data?.name || "Serviço"
+
+      await supabase.from("financial_entries").insert({
+        tenant_id: tenantId,
+        type: "receivable",
+        description: `${serviceName} - ${patientName}`,
+        amount: currentApt.total_cost,
+        due_date: new Date().toISOString().split("T")[0],
+        status: "paid",
+        paid_at: new Date().toISOString(),
+        category: "Sessão",
+        appointment_id: id,
+      })
+    }
+
     revalidatePath("/appointments")
+    revalidatePath("/financial/receivable")
     return { success: true }
   } catch (err: any) {
     console.error("Erro em updateAppointment:", err)

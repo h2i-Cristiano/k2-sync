@@ -29,3 +29,12 @@ export function buildCommissionMessage(params: {
   const { professionalName, serviceName, commissionPercent, commissionAmount } = params
   return `Olá ${professionalName}! 📊\n\nSua comissão pelo atendimento de *${serviceName}* foi registrada.\n\nPercentual: ${commissionPercent}%\nValor: R$ ${commissionAmount.toFixed(2)}`
 }
+
+export function buildDepositMessage(params: {
+  patientName: string
+  serviceName: string
+  amount: number
+}): string {
+  const { patientName, serviceName, amount } = params
+  return `Olá ${patientName}! 👋\n\nSeu agendamento de *${serviceName}* foi confirmado.\n\n💰 Valor da entrada: R$ ${amount.toFixed(2)}\n\nPara garantir sua vaga, realize o pagamento antecipado.\n\nAguardamos você! 🌿`
+}

@@ -15,15 +15,17 @@ import { Textarea } from "@/components/ui/textarea"
 import { fetchServices, ServiceDef } from "@/lib/services"
 
 interface AppointmentFormProps {
-  patients: { id: string; full_name: string }[]
+  patients: { id: string; full_name: string; phone?: string }[]
   initialData?: any
-  onSuccess?: () => void
+  onSuccess?: (result?: { depositEntryId?: string | null; depositAmount?: number; patientPhone?: string; patientName?: string; serviceName?: string }) => void
   onCancel?: () => void
 }
 
 export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: AppointmentFormProps) {
   const [saving, setSaving] = useState(false)
   const [services, setServices] = useState<ServiceDef[]>([])
+  const [chargeDeposit, setChargeDeposit] = useState(false)
+  const [depositAmount, setDepositAmount] = useState<number>(0)
 
   useEffect(() => {
     fetchServices().then(setServices)
@@ -71,7 +73,10 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
     if (initialData?.id) {
       result = await updateAppointment(initialData.id, formattedData)
     } else {
-      result = await createAppointment(formattedData)
+      result = await createAppointment({
+        ...formattedData,
+        depositAmount: chargeDeposit && depositAmount > 0 ? depositAmount : undefined,
+      })
     }
 
     setSaving(false)
@@ -80,7 +85,21 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       return
     }
     toast.success(initialData?.id ? "Agendamento atualizado!" : "Agendamento criado!")
-    onSuccess?.()
+
+    const r = result as any
+    if (chargeDeposit && depositAmount > 0 && r.depositEntryId) {
+      const patient = patients.find(p => p.id === form.getValues("patient_id"))
+      const svc = services.find(s => s.id === form.getValues("service_type"))
+      onSuccess?.({
+        depositEntryId: r.depositEntryId,
+        depositAmount,
+        patientPhone: patient?.phone,
+        patientName: patient?.full_name,
+        serviceName: svc?.name,
+      })
+    } else {
+      onSuccess?.()
+    }
   }
 
   const handleServiceChange = (value: string | null) => {
@@ -248,6 +267,35 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
             step="0.01"
             {...form.register("travel_cost")}
           />
+        </div>
+      )}
+
+      {/* Deposit (only on create) */}
+      {!initialData?.id && (
+        <div className="space-y-3 p-3 rounded-xl border border-border/60 bg-muted/30">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="charge_deposit"
+              checked={chargeDeposit}
+              onCheckedChange={setChargeDeposit}
+            />
+            <Label htmlFor="charge_deposit" className="text-sm font-medium">Cobrar entrada</Label>
+          </div>
+          {chargeDeposit && (
+            <div className="space-y-1">
+              <Label htmlFor="deposit_amount" className="text-xs">Valor da entrada (R$) *</Label>
+              <Input
+                id="deposit_amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={depositAmount || ""}
+                onChange={(e) => setDepositAmount(Number(e.target.value))}
+                placeholder="Digite o valor"
+                className="h-10 rounded-lg"
+              />
+            </div>
+          )}
         </div>
       )}
 

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, ChevronLeft, ChevronRight, User, MapPin, Pencil, CalendarDays, ChevronDown } from "lucide-react"
+import { Plus, ChevronLeft, ChevronRight, User, MapPin, Pencil, CalendarDays, ChevronDown, MessageCircle } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,7 @@ import { fetchServices, getServiceById, ServiceDef } from "@/lib/services"
 import { useSearchParams } from "next/navigation"
 import { updateAppointment } from "@/lib/actions/appointment.actions"
 import { toast } from "sonner"
+import { getWhatsAppUrl, buildDepositMessage } from "@/lib/whatsapp"
 
 const AppointmentForm = dynamic(
   () => import("@/components/forms/AppointmentForm").then((mod) => ({ default: mod.AppointmentForm })),
@@ -83,6 +84,7 @@ function AppointmentsPageInner() {
   const [view, setView] = useState<"day" | "list">("day")
   const [activeFilter, setActiveFilter] = useState("all")
   const [services, setServices] = useState<ServiceDef[]>([])
+  const [depositResult, setDepositResult] = useState<{ depositAmount: number; patientPhone?: string; patientName: string; serviceName: string } | null>(null)
   const supabase = useMemo(() => createClient(), [])
 
   const year = selectedDate.getFullYear()
@@ -120,7 +122,7 @@ function AppointmentsPageInner() {
   }, [supabase, year, month])
 
   const fetchPatients = useCallback(async () => {
-    const { data } = await supabase.from("patients").select("id, full_name").order("full_name")
+    const { data } = await supabase.from("patients").select("id, full_name, phone").order("full_name")
     setPatients(data || [])
   }, [supabase])
 
@@ -237,11 +239,19 @@ function AppointmentsPageInner() {
                 <AppointmentForm
                   patients={patients}
                   initialData={editingAppointment}
-                  onSuccess={() => {
+                  onSuccess={(result) => {
                     setIsOpen(false)
                     setEditingAppointment(null)
                     fetchAppointmentsForDay()
                     fetchMonthAppointments()
+                    if (result?.depositEntryId && result.depositAmount) {
+                      setDepositResult({
+                        depositAmount: result.depositAmount,
+                        patientPhone: result.patientPhone,
+                        patientName: result.patientName || "Paciente",
+                        serviceName: result.serviceName || "Serviço",
+                      })
+                    }
                   }}
                   onCancel={() => { setIsOpen(false); setEditingAppointment(null) }}
                 />
@@ -573,6 +583,45 @@ function AppointmentsPageInner() {
           )}
         </div>
       </div>
+
+      {/* Deposit WhatsApp Banner */}
+      {depositResult && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-sm">
+          <Card className="glass-card border-emerald-500/30 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">Entrada registrada!</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    R$ {depositResult.depositAmount.toFixed(2)} — {depositResult.serviceName}
+                  </p>
+                </div>
+                <div className="flex gap-1.5">
+                  {depositResult.patientPhone && (
+                    <Button
+                      size="sm"
+                      className="rounded-lg h-8 bg-emerald-600 hover:bg-emerald-700 text-white"
+                      onClick={() => {
+                        const msg = buildDepositMessage({
+                          patientName: depositResult.patientName,
+                          serviceName: depositResult.serviceName,
+                          amount: depositResult.depositAmount,
+                        })
+                        window.open(getWhatsAppUrl(depositResult.patientPhone!, msg), "_blank")
+                      }}
+                    >
+                      <MessageCircle className="h-3.5 w-3.5 mr-1" /> WhatsApp
+                    </Button>
+                  )}
+                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg" onClick={() => setDepositResult(null)}>
+                    ✕
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

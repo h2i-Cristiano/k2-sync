@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Pencil, Trash2, ArrowDownCircle, Save, X, CalendarClock } from "lucide-react"
+import { Plus, Pencil, Trash2, ArrowDownCircle, Save, X, CalendarClock, Calendar, ExternalLink } from "lucide-react"
 import { toast } from "sonner"
+import Link from "next/link"
 
 interface FinancialEntry {
   id: string
@@ -20,32 +21,65 @@ interface FinancialEntry {
   category: string | null
   notes: string | null
   paid_at: string | null
+  appointment_id: string | null
   created_at: string
 }
 
-const CATEGORIES = ["Aluguel", "Fornecedores", "Salários", "Impostos", "Utilidades", "Manutenção", "Outros"]
+interface Category {
+  id: string
+  name: string
+}
 
 export default function PayablePage() {
   const [entries, setEntries] = useState<FinancialEntry[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [showNew, setShowNew] = useState(false)
   const [editing, setEditing] = useState<string | null>(null)
   const [form, setForm] = useState({ description: "", amount: 0, due_date: "", category: "Outros", notes: "" })
+  const [newCategoryName, setNewCategoryName] = useState("")
+  const [showNewCategory, setShowNewCategory] = useState(false)
   const [tenantId, setTenantId] = useState<string | null>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
-  const fetchEntries = async () => {
+  const fetchData = async () => {
     const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      const { data: profile } = await supabase.from("profiles").select("tenant_id").eq("id", user.id).single()
-      if (profile) setTenantId(profile.tenant_id)
-    }
-    const { data } = await supabase.from("financial_entries").select("*").eq("type", "payable").order("due_date", { ascending: false })
-    setEntries((data || []) as FinancialEntry[])
+    if (!user) { setLoading(false); return }
+
+    const { data: profile } = await supabase.from("profiles").select("tenant_id").eq("id", user.id).single()
+    if (!profile) { setLoading(false); return }
+
+    setTenantId(profile.tenant_id)
+
+    const [entriesResult, categoriesResult] = await Promise.all([
+      supabase.from("financial_entries").select("*").eq("type", "payable").order("due_date", { ascending: false }),
+      supabase.from("financial_categories").select("id, name").eq("type", "payable").order("name"),
+    ])
+
+    setEntries((entriesResult.data || []) as FinancialEntry[])
+    setCategories((categoriesResult.data || []) as Category[])
     setLoading(false)
   }
 
-  useEffect(() => { fetchEntries() }, [])
+  useEffect(() => { fetchData() }, [])
+
+  const allCategories = useMemo(() => {
+    const dbNames = categories.map(c => c.name)
+    const defaults = ["Aluguel", "Fornecedores", "Salários", "Impostos", "Utilidades", "Manutenção", "Outros"]
+    const merged = [...new Set([...defaults, ...dbNames])]
+    return merged.sort()
+  }, [categories])
+
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim() || !tenantId) return
+    const { error } = await supabase.from("financial_categories").insert({ tenant_id: tenantId, type: "payable", name: newCategoryName.trim() })
+    if (error) { toast.error("Erro ao criar categoria"); return }
+    toast.success("Categoria criada!")
+    setNewCategoryName("")
+    setShowNewCategory(false)
+    const { data } = await supabase.from("financial_categories").select("id, name").eq("type", "payable").order("name")
+    setCategories((data || []) as Category[])
+  }
 
   const handleSave = async (id?: string) => {
     if (!form.description.trim()) { toast.error("Descrição é obrigatória"); return }
@@ -65,7 +99,7 @@ export default function PayablePage() {
     setEditing(null)
     setShowNew(false)
     setForm({ description: "", amount: 0, due_date: "", category: "Outros", notes: "" })
-    fetchEntries()
+    fetchData()
   }
 
   const handleDelete = async (id: string) => {
@@ -73,14 +107,14 @@ export default function PayablePage() {
     const { error } = await supabase.from("financial_entries").delete().eq("id", id)
     if (error) { toast.error("Erro ao excluir"); return }
     toast.success("Conta excluída!")
-    fetchEntries()
+    fetchData()
   }
 
   const handleMarkPaid = async (id: string) => {
     const { error } = await supabase.from("financial_entries").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", id)
     if (error) { toast.error("Erro ao marcar como pago"); return }
     toast.success("Conta marcada como paga!")
-    fetchEntries()
+    fetchData()
   }
 
   const pendingEntries = entries.filter(e => e.status === "pending")
@@ -99,7 +133,6 @@ export default function PayablePage() {
         </Button>
       </div>
 
-      {/* Summary */}
       <div className="grid grid-cols-2 gap-4">
         <Card className="glass-card">
           <CardContent className="p-4 text-center">
@@ -115,7 +148,6 @@ export default function PayablePage() {
         </Card>
       </div>
 
-      {/* New Entry Form */}
       {showNew && (
         <Card className="glass-card border-primary/30">
           <CardContent className="p-5">
@@ -123,24 +155,34 @@ export default function PayablePage() {
               <div className="space-y-1"><Label className="text-xs">Descrição *</Label><Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Ex: Aluguel..." className="h-10 rounded-lg" /></div>
               <div className="space-y-1"><Label className="text-xs">Valor (R$) *</Label><Input type="number" step="0.01" min="0.01" value={form.amount || ""} onChange={e => setForm(f => ({ ...f, amount: Number(e.target.value) }))} className="h-10 rounded-lg" /></div>
               <div className="space-y-1"><Label className="text-xs">Vencimento *</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} className="h-10 rounded-lg" /></div>
-              <div className="space-y-1"><Label className="text-xs">Categoria</Label>
-                <div className="flex flex-wrap gap-1.5">
-                  {CATEGORIES.map(c => (
-                    <button key={c} onClick={() => setForm(f => ({ ...f, category: c }))} className={`px-2 py-1 rounded-lg text-xs font-medium transition-colors ${form.category === c ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{c}</button>
-                  ))}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">Categoria</Label>
+                  <button type="button" onClick={() => setShowNewCategory(!showNewCategory)} className="text-[10px] text-primary hover:underline">+ Nova</button>
                 </div>
+                {showNewCategory ? (
+                  <div className="flex gap-1">
+                    <Input value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder="Nome da categoria" className="h-8 rounded-lg text-xs" onKeyDown={e => e.key === "Enter" && handleAddCategory()} />
+                    <Button size="sm" className="h-8 rounded-lg px-2" onClick={handleAddCategory}><Save className="h-3 w-3" /></Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {allCategories.map(c => (
+                      <button key={c} onClick={() => setForm(f => ({ ...f, category: c }))} className={`px-2 py-1 rounded-lg text-xs font-medium transition-colors ${form.category === c ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{c}</button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <div className="mt-3"><Label className="text-xs">Observações</Label><Input value={form.notes || ""} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Opcional..." className="h-9 rounded-lg" /></div>
             <div className="flex gap-2 mt-4">
               <Button size="sm" onClick={() => handleSave()} className="rounded-lg"><Save className="h-3.5 w-3.5 mr-1" /> Salvar</Button>
-              <Button size="sm" variant="ghost" onClick={() => { setShowNew(false); setForm({ description: "", amount: 0, due_date: "", category: "Outros", notes: "" }) }} className="rounded-lg"><X className="h-3.5 w-3.5 mr-1" /> Cancelar</Button>
+              <Button size="sm" variant="ghost" onClick={() => { setShowNew(false); setShowNewCategory(false); setForm({ description: "", amount: 0, due_date: "", category: "Outros", notes: "" }) }} className="rounded-lg"><X className="h-3.5 w-3.5 mr-1" /> Cancelar</Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Pending Entries */}
       <Card className="glass-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-bold flex items-center gap-2">
@@ -176,6 +218,11 @@ export default function PayablePage() {
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           {entry.category && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{entry.category}</Badge>}
                           <span>Vence: {new Date(entry.due_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+                          {entry.appointment_id && (
+                            <Link href="/appointments" className="inline-flex items-center gap-0.5 text-primary hover:underline">
+                              <Calendar className="h-3 w-3" /> Agendamento
+                            </Link>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -193,7 +240,6 @@ export default function PayablePage() {
         </CardContent>
       </Card>
 
-      {/* Paid Entries */}
       <Card className="glass-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-bold flex items-center gap-2">
@@ -217,6 +263,11 @@ export default function PayablePage() {
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       {entry.category && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{entry.category}</Badge>}
                       <span>Pago em: {entry.paid_at ? new Date(entry.paid_at).toLocaleDateString("pt-BR") : "-"}</span>
+                      {entry.appointment_id && (
+                        <Link href="/appointments" className="inline-flex items-center gap-0.5 text-primary hover:underline">
+                          <Calendar className="h-3 w-3" /> Agendamento
+                        </Link>
+                      )}
                     </div>
                   </div>
                   <p className="font-semibold text-sm text-emerald-600">R$ {Number(entry.amount).toFixed(2)}</p>
