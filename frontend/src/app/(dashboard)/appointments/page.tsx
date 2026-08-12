@@ -20,7 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getServiceById } from "@/lib/services"
+import { fetchServices, getServiceById, ServiceDef } from "@/lib/services"
 import { useSearchParams } from "next/navigation"
 import { updateAppointment } from "@/lib/actions/appointment.actions"
 import { toast } from "sonner"
@@ -33,8 +33,7 @@ const AppointmentForm = dynamic(
 const statusColors: Record<string, string> = {
   scheduled: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30",
   confirmed: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30 font-semibold",
-  in_progress: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30 font-semibold animate-pulse",
-  completed: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30",
+  completed: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
   cancelled: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30",
   no_show: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30",
 }
@@ -42,7 +41,6 @@ const statusColors: Record<string, string> = {
 const statusLabels: Record<string, string> = {
   scheduled: "Agendado",
   confirmed: "Confirmado",
-  in_progress: "Em andamento",
   completed: "Concluído",
   cancelled: "Cancelado",
   no_show: "Não Compareceu",
@@ -84,6 +82,7 @@ function AppointmentsPageInner() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [view, setView] = useState<"day" | "list">("day")
   const [activeFilter, setActiveFilter] = useState("all")
+  const [services, setServices] = useState<ServiceDef[]>([])
   const supabase = createClient()
 
   const year = selectedDate.getFullYear()
@@ -125,7 +124,7 @@ function AppointmentsPageInner() {
     setPatients(data || [])
   }, [supabase])
 
-  const handleStatusChange = useCallback(async (appointmentId: string, newStatus: "scheduled" | "confirmed" | "in_progress" | "completed" | "cancelled" | "no_show") => {
+  const handleStatusChange = useCallback(async (appointmentId: string, newStatus: "scheduled" | "confirmed" | "completed" | "cancelled" | "no_show") => {
     const previousAppointments = [...appointments]
     const previousMonthAppointments = [...allMonthAppointments]
 
@@ -147,7 +146,10 @@ function AppointmentsPageInner() {
     }
   }, [appointments, allMonthAppointments])
 
-  useEffect(() => { fetchPatients() }, [fetchPatients])
+  useEffect(() => {
+    fetchPatients()
+    fetchServices().then(setServices)
+  }, [fetchPatients])
   useEffect(() => { fetchAppointmentsForDay() }, [fetchAppointmentsForDay])
   useEffect(() => { fetchMonthAppointments() }, [fetchMonthAppointments])
 
@@ -326,7 +328,7 @@ function AppointmentsPageInner() {
                     return acc
                   }, {})
                 ).map(([type, count]) => {
-                  const svc = getServiceById(type)
+                  const svc = getServiceById(services, type)
                   return (
                     <div key={type} className="flex items-center gap-2 text-xs">
                       <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: svc?.color || "#6B7280" }} />
@@ -419,7 +421,7 @@ function AppointmentsPageInner() {
                       {hourAppointments.map((apt) => {
                         const aptTime = new Date(apt.scheduled_at)
                         const timeStr = aptTime.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-                        const svc = getServiceById(apt.service_type)
+                        const svc = getServiceById(services, apt.service_type)
 
                         return (
                           <div
@@ -500,7 +502,7 @@ function AppointmentsPageInner() {
               {filteredAppointments.map((apt) => {
                 const aptTime = new Date(apt.scheduled_at)
                 const timeStr = aptTime.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-                const svc = getServiceById(apt.service_type)
+                const svc = getServiceById(services, apt.service_type)
 
                 return (
                   <div

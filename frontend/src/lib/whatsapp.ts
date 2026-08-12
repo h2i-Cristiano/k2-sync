@@ -1,0 +1,31 @@
+export function getWhatsAppUrl(phone: string, message: string): string {
+  const cleanPhone = phone.replace(/\D/g, "")
+  const fullPhone = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`
+  return `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`
+}
+
+export function buildPaymentMessage(params: {
+  patientName: string
+  serviceName: string
+  amount: number
+  pixKey?: string
+  status: "scheduled" | "completed"
+}): string {
+  const { patientName, serviceName, amount, pixKey, status } = params
+
+  if (status === "scheduled") {
+    return `Olá ${patientName}! 👋\n\nSeu agendamento de *${serviceName}* foi confirmado.\n\n💰 Valor: R$ ${amount.toFixed(2)}${pixKey ? `\n\nPara pagamento antecipado, utilize a chave PIX:\n${pixKey}` : ""}\n\nAguardamos você! 🌿`
+  }
+
+  return `Olá ${patientName}! 👋\n\nSeu atendimento de *${serviceName}* foi concluído com sucesso!\n\n💰 Valor: R$ ${amount.toFixed(2)}${pixKey ? `\n\nPara pagamento, utilize a chave PIX:\n${pixKey}` : ""}\n\nObrigado pela confiança! 🌿`
+}
+
+export function buildCommissionMessage(params: {
+  professionalName: string
+  serviceName: string
+  commissionPercent: number
+  commissionAmount: number
+}): string {
+  const { professionalName, serviceName, commissionPercent, commissionAmount } = params
+  return `Olá ${professionalName}! 📊\n\nSua comissão pelo atendimento de *${serviceName}* foi registrada.\n\nPercentual: ${commissionPercent}%\nValor: R$ ${commissionAmount.toFixed(2)}`
+}

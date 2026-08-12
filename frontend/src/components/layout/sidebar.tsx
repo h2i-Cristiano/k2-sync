@@ -37,6 +37,8 @@ import {
   ChevronLeft,
   ChevronDown,
   ClipboardList,
+  ArrowDownCircle,
+  ArrowUpCircle,
 } from "lucide-react"
 
 interface NavItem {
@@ -68,14 +70,16 @@ const patientSubItems: NavItem[] = [
 ]
 
 const financeNav: NavItem[] = [
-  { href: "/financial", label: "Financeiro", icon: CreditCard, disabled: true },
-  { href: "/commissions", label: "Comissoes", icon: Receipt, disabled: true },
+  { href: "/financial", label: "Financeiro", icon: CreditCard },
+  { href: "/financial/charges", label: "Cobrancas", icon: Receipt },
+  { href: "/financial/payable", label: "Contas a Pagar", icon: ArrowDownCircle },
+  { href: "/financial/receivable", label: "Contas a Receber", icon: ArrowUpCircle },
 ]
 
 const operationalNav: NavItem[] = [
-  { href: "/services", label: "Servicos", icon: Stethoscope, disabled: true },
-  { href: "/products", label: "Produtos", icon: ShoppingBag, disabled: true },
-  { href: "/stock", label: "Estoque", icon: Warehouse, disabled: true },
+  { href: "/services", label: "Servicos", icon: Stethoscope },
+  { href: "/products", label: "Produtos", icon: ShoppingBag },
+  { href: "/stock", label: "Estoque", icon: Warehouse },
 ]
 
 const crmNav: NavItem[] = [

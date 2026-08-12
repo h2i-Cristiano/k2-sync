@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { PatientForm } from "@/components/forms/PatientForm"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { getServiceById } from "@/lib/services"
+import { getServiceById, fetchServices, type ServiceDef } from "@/lib/services"
 
 export default function PatientDetailPage() {
   const params = useParams()
@@ -20,20 +20,23 @@ export default function PatientDetailPage() {
   const [patient, setPatient] = useState<any>(null)
   const [anamnesis, setAnamnesis] = useState<any[]>([])
   const [appointments, setAppointments] = useState<any[]>([])
+  const [services, setServices] = useState<ServiceDef[]>([])
   const [loading, setLoading] = useState(true)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const supabase = createClient()
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const [{ data: p }, { data: a }, { data: appts }] = await Promise.all([
+    const [{ data: p }, { data: a }, { data: appts }, svcs] = await Promise.all([
       supabase.from("patients").select("*").eq("id", patientId).single(),
       supabase.from("anamnesis").select("*").eq("patient_id", patientId).order("created_at", { ascending: false }),
       supabase.from("appointments").select("*").eq("patient_id", patientId).order("scheduled_at", { ascending: false }),
+      fetchServices(),
     ])
     setPatient(p)
     setAnamnesis(a || [])
     setAppointments(appts || [])
+    setServices(svcs)
     setLoading(false)
   }, [supabase, patientId])
 
@@ -323,7 +326,7 @@ export default function PatientDetailPage() {
               ) : (
                 <div className="space-y-3">
                   {appointments.map((appt) => {
-                    const svc = getServiceById(appt.service_type)
+                    const svc = getServiceById(services, appt.service_type)
                     return (
                       <div key={appt.id} className="p-4 border border-border/50 bg-muted/10 rounded-xl flex justify-between items-center hover:bg-muted/30 transition-colors">
                         <div className="flex items-center gap-3">
