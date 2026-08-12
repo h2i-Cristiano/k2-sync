@@ -137,11 +137,17 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
   const selectedService = services.find(s => s.id === watchServiceType)
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+    <form onSubmit={(e) => {
+      console.log("=== FORM SUBMIT CLICKED ===")
+      console.log("Form values:", form.getValues())
+      console.log("Form errors:", form.formState.errors)
+      console.log("Form isValid:", form.formState.isValid)
+      form.handleSubmit(onSubmit)(e)
+    }} className="space-y-4 py-4">
       {/* Patient */}
       <div className="space-y-2">
         <Label htmlFor="patient_id">Paciente *</Label>
-        <Select onValueChange={(val) => { if (val) form.setValue("patient_id", val) }} defaultValue={form.watch("patient_id") || undefined}>
+        <Select onValueChange={(val) => { if (val) form.setValue("patient_id", val) }} value={form.watch("patient_id") || undefined}>
           <SelectTrigger id="patient_id" className={`w-full h-12 rounded-xl ${form.formState.errors.patient_id ? "border-destructive" : ""}`}>
             <SelectValue placeholder="Selecione o paciente" />
           </SelectTrigger>
@@ -159,7 +165,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       {/* Service Type */}
       <div className="space-y-2">
         <Label htmlFor="service_type">Tipo de Serviço *</Label>
-        <Select onValueChange={handleServiceChange} defaultValue={form.watch("service_type") || undefined}>
+        <Select onValueChange={handleServiceChange} value={form.watch("service_type") || undefined}>
           <SelectTrigger id="service_type" className={`w-full h-12 rounded-xl ${form.formState.errors.service_type ? "border-destructive" : ""}`}>
             <SelectValue placeholder="Selecione o serviço" />
           </SelectTrigger>
@@ -220,7 +226,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
-          <Select onValueChange={(val) => { if (val) form.setValue("status", val as AppointmentCreateFormValues["status"]) }} defaultValue={form.watch("status") || "scheduled"}>
+          <Select onValueChange={(val) => { if (val) form.setValue("status", val as AppointmentCreateFormValues["status"]) }} value={form.watch("status") || "scheduled"}>
             <SelectTrigger id="status" className="w-full h-12 rounded-xl">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
