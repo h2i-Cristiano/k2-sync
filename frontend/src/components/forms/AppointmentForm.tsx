@@ -8,7 +8,6 @@ import { createAppointment, updateAppointment } from "@/lib/actions/appointment.
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
@@ -67,32 +66,23 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
   const commissionAmount = Number(watchTotalCost) * (Number(watchCommissionPercent) / 100)
 
   async function onSubmit(data: AppointmentCreateFormValues) {
-    console.log("=== FORM SUBMIT ===")
-    console.log("form data:", data)
-    console.log("form errors:", form.formState.errors)
-    console.log("services:", services)
-    console.log("commissionAmount:", commissionAmount)
     setSaving(true)
+    const { commission_amount: _ignored, ...dataWithoutCommission } = data as any
     const formattedData = {
-      ...data,
+      ...dataWithoutCommission,
       scheduled_at: new Date(data.scheduled_at).toISOString(),
-      commission_amount: commissionAmount,
     }
-    console.log("Formatted data:", formattedData)
 
     let result
     if (initialData?.id) {
-      console.log("Updating appointment:", initialData.id, formattedData)
       result = await updateAppointment(initialData.id, formattedData)
     } else {
-      console.log("Creating appointment:", formattedData)
       result = await createAppointment({
         ...formattedData,
         depositAmount: chargeDeposit && depositAmount > 0 ? depositAmount : undefined,
       })
     }
 
-    console.log("Server result:", result)
     setSaving(false)
     if (result.error) {
       toast.error(result.error)
@@ -116,11 +106,10 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
     }
   }
 
-  const handleServiceChange = (value: string | null) => {
-    console.log("Service selected:", value)
+  const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value
     if (!value) return
     const svc = services.find(s => s.id === value)
-    console.log("Service found:", !!svc, svc?.name)
     if (svc) {
       form.setValue("service_type", value)
       form.setValue("duration_minutes", svc.duration_minutes)
@@ -130,33 +119,27 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       if (svc.commission_percent > 0) {
         form.setValue("commission_percent", svc.commission_percent)
       }
-      console.log("Form updated - service_type:", value, "duration:", svc.duration_minutes, "price:", svc.price)
     }
   }
 
   const selectedService = services.find(s => s.id === watchServiceType)
 
   return (
-    <form onSubmit={(e) => {
-      console.log("=== FORM SUBMIT CLICKED ===")
-      console.log("Form values:", form.getValues())
-      console.log("Form errors:", form.formState.errors)
-      console.log("Form isValid:", form.formState.isValid)
-      form.handleSubmit(onSubmit)(e)
-    }} className="space-y-4 py-4">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
       {/* Patient */}
       <div className="space-y-2">
         <Label htmlFor="patient_id">Paciente *</Label>
-        <Select onValueChange={(val) => { if (val) form.setValue("patient_id", val) }} defaultValue={form.getValues("patient_id") || undefined}>
-          <SelectTrigger id="patient_id" className={`w-full h-12 rounded-xl ${form.formState.errors.patient_id ? "border-destructive" : ""}`}>
-            <SelectValue placeholder="Selecione o paciente" />
-          </SelectTrigger>
-          <SelectContent>
-            {patients.map((p) => (
-              <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <select
+          id="patient_id"
+          value={form.watch("patient_id") || ""}
+          onChange={(e) => form.setValue("patient_id", e.target.value)}
+          className={`flex w-full h-12 rounded-xl border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 ${form.formState.errors.patient_id ? "border-destructive" : ""}`}
+        >
+          <option value="">Selecione o paciente</option>
+          {patients.map((p) => (
+            <option key={p.id} value={p.id}>{p.full_name}</option>
+          ))}
+        </select>
         {form.formState.errors.patient_id && (
           <p className="text-sm font-medium text-destructive">{form.formState.errors.patient_id.message}</p>
         )}
@@ -165,22 +148,17 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       {/* Service Type */}
       <div className="space-y-2">
         <Label htmlFor="service_type">Tipo de Serviço *</Label>
-        <Select onValueChange={handleServiceChange} defaultValue={form.getValues("service_type") || undefined}>
-          <SelectTrigger id="service_type" className={`w-full h-12 rounded-xl ${form.formState.errors.service_type ? "border-destructive" : ""}`}>
-            <SelectValue placeholder="Selecione o serviço" />
-          </SelectTrigger>
-          <SelectContent>
-            {services.map((svc) => (
-              <SelectItem key={svc.id} value={svc.id}>
-                <div className="flex items-center gap-2">
-                  <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: svc.color }} />
-                  <span>{svc.name}</span>
-                  <span className="text-xs text-muted-foreground ml-auto">{svc.duration_minutes}min</span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <select
+          id="service_type"
+          value={form.watch("service_type") || ""}
+          onChange={handleServiceChange}
+          className={`flex w-full h-12 rounded-xl border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 ${form.formState.errors.service_type ? "border-destructive" : ""}`}
+        >
+          <option value="">Selecione o serviço</option>
+          {services.map((svc) => (
+            <option key={svc.id} value={svc.id}>{svc.name} ({svc.duration_minutes}min)</option>
+          ))}
+        </select>
         {selectedService && (
           <div className="flex items-center gap-2 mt-1">
             <div className="h-3 w-3 rounded-full" style={{ backgroundColor: selectedService.color }} />
@@ -226,17 +204,17 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
-          <Select onValueChange={(val) => { if (val) form.setValue("status", val as AppointmentCreateFormValues["status"]) }} defaultValue={form.getValues("status") || "scheduled"}>
-            <SelectTrigger id="status" className="w-full h-12 rounded-xl">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="scheduled">Agendado</SelectItem>
-              <SelectItem value="confirmed">Confirmado</SelectItem>
-              <SelectItem value="completed">Concluído</SelectItem>
-              <SelectItem value="cancelled">Cancelado</SelectItem>
-            </SelectContent>
-          </Select>
+          <select
+            id="status"
+            value={form.watch("status") || "scheduled"}
+            onChange={(e) => form.setValue("status", e.target.value as AppointmentCreateFormValues["status"])}
+            className="flex w-full h-12 rounded-xl border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            <option value="scheduled">Agendado</option>
+            <option value="confirmed">Confirmado</option>
+            <option value="completed">Concluído</option>
+            <option value="cancelled">Cancelado</option>
+          </select>
         </div>
         <div className="flex items-center space-x-2 pt-8">
           <Switch
