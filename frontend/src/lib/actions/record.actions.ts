@@ -1,19 +1,26 @@
-"use server"
+﻿"use server"
 
+import { z } from "zod"
 import { revalidatePath } from "next/cache"
-import { recordSchema, RecordFormValues } from "@/lib/validations/record"
+import { recordCreateSchema, recordUpdateSchema, RecordCreateFormValues, RecordUpdateFormValues } from "@/lib/validations/record"
 import { getUserAndTenant } from "@/lib/auth-helpers"
 
-export async function createRecord(data: RecordFormValues) {
+const uuidSchema = z.string().uuid("ID inválido")
+
+export async function createRecord(data: RecordCreateFormValues) {
   try {
-    const parsed = recordSchema.parse(data)
+    const parsed = recordCreateSchema.parse(data)
     const { supabase, user, tenantId } = await getUserAndTenant()
 
-    const { error } = await supabase.from("medical_records").insert({
-      ...parsed,
-      tenant_id: tenantId,
-      professional_id: user.id,
-    })
+    const { data: newRecord, error } = await supabase
+      .from("medical_records")
+      .insert({
+        ...parsed,
+        tenant_id: tenantId,
+        professional_id: user.id,
+      })
+      .select()
+      .single()
 
     if (error) {
       console.error("Erro ao criar prontuário:", error)
@@ -21,18 +28,18 @@ export async function createRecord(data: RecordFormValues) {
     }
     
     revalidatePath("/records")
-    return { success: true }
+    return { data: newRecord }
   } catch (err: any) {
     console.error("Erro em createRecord:", err)
     if (err.message === "Não autenticado") return { error: "Não autorizado." }
-    if (err.message.includes("Tenant não encontrado")) return { error: err.message }
     return { error: "Dados inválidos ou erro interno." }
   }
 }
 
-export async function updateRecord(id: string, data: RecordFormValues) {
+export async function updateRecord(id: string, data: RecordUpdateFormValues) {
   try {
-    const parsed = recordSchema.parse(data)
+    uuidSchema.parse(id)
+    const parsed = recordUpdateSchema.parse(data)
     const { supabase, tenantId } = await getUserAndTenant()
 
     const { error } = await supabase
@@ -57,6 +64,7 @@ export async function updateRecord(id: string, data: RecordFormValues) {
 
 export async function deleteRecord(id: string) {
   try {
+    uuidSchema.parse(id)
     const { supabase, tenantId } = await getUserAndTenant()
 
     const { error } = await supabase

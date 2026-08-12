@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { appointmentSchema, AppointmentFormValues } from "@/lib/validations/appointment"
+import { appointmentCreateSchema, AppointmentCreateFormValues } from "@/lib/validations/appointment"
 import { createAppointment, updateAppointment } from "@/lib/actions/appointment.actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,14 +32,14 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
         return d.toISOString().slice(0, 16)
       })()
 
-  const form = useForm<AppointmentFormValues>({
-    resolver: zodResolver(appointmentSchema) as any,
+  const form = useForm<AppointmentCreateFormValues>({
+    resolver: zodResolver(appointmentCreateSchema) as any,
     defaultValues: {
       patient_id: initialData?.patient_id || "",
-      service_type: (initialData?.service_type || "outro") as AppointmentFormValues["service_type"],
+      service_type: (initialData?.service_type || "outro") as AppointmentCreateFormValues["service_type"],
       scheduled_at: defaultDate,
       duration_minutes: initialData?.duration_minutes || 60,
-      status: (initialData?.status || "scheduled") as AppointmentFormValues["status"],
+      status: (initialData?.status || "scheduled") as AppointmentCreateFormValues["status"],
       notes: initialData?.notes || "",
       is_home_visit: initialData?.is_home_visit || false,
       travel_cost: initialData?.travel_cost || 0,
@@ -50,34 +50,34 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
   const watchServiceType = form.watch("service_type")
   const watchIsHomeVisit = form.watch("is_home_visit")
 
-  async function onSubmit(data: AppointmentFormValues) {
+  async function onSubmit(data: AppointmentCreateFormValues) {
     setSaving(true)
-    try {
-      const formattedData = {
-        ...data,
-        scheduled_at: new Date(data.scheduled_at).toISOString(),
-      }
-
-      if (initialData?.id) {
-        await updateAppointment(initialData.id, formattedData)
-        toast.success("Agendamento atualizado com sucesso!")
-      } else {
-        await createAppointment(formattedData)
-        toast.success("Agendamento criado com sucesso!")
-      }
-      onSuccess?.()
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao salvar agendamento")
-    } finally {
-      setSaving(false)
+    const formattedData = {
+      ...data,
+      scheduled_at: new Date(data.scheduled_at).toISOString(),
     }
+
+    let result
+    if (initialData?.id) {
+      result = await updateAppointment(initialData.id, formattedData)
+    } else {
+      result = await createAppointment(formattedData)
+    }
+
+    setSaving(false)
+    if (result.error) {
+      toast.error(result.error)
+      return
+    }
+    toast.success(initialData?.id ? "Agendamento atualizado com sucesso!" : "Agendamento criado com sucesso!")
+    onSuccess?.()
   }
 
   const handleServiceChange = (value: string | null) => {
     if (!value) return
     const svc = getServiceById(value)
     if (svc) {
-      form.setValue("service_type", value as AppointmentFormValues["service_type"])
+      form.setValue("service_type", value as AppointmentCreateFormValues["service_type"])
       form.setValue("duration_minutes", svc.defaultDuration)
       if (!initialData?.total_cost && svc.defaultPrice > 0) {
         form.setValue("total_cost", svc.defaultPrice)
@@ -109,10 +109,10 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
 
       {/* Service Type */}
       <div className="space-y-2">
-        <Label htmlFor="service_type">Tipo de Serviço *</Label>
+        <Label htmlFor="service_type">Tipo de Servico *</Label>
         <Select onValueChange={handleServiceChange} defaultValue={String(form.watch("service_type") ?? "outro")}>
           <SelectTrigger id="service_type" className={`w-full h-12 rounded-xl ${form.formState.errors.service_type ? "border-destructive" : ""}`}>
-            <SelectValue placeholder="Selecione o serviço" />
+            <SelectValue placeholder="Selecione o servico" />
           </SelectTrigger>
           <SelectContent>
             {SERVICES.map((svc) => (
@@ -130,7 +130,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
           <div className="flex items-center gap-2 mt-1">
             <div className="h-3 w-3 rounded-full" style={{ backgroundColor: selectedService.color }} />
             <span className="text-xs text-muted-foreground">
-              {selectedService.defaultDuration}min · R$ {selectedService.defaultPrice.toFixed(0)}
+              {selectedService.defaultDuration}min � R$ {selectedService.defaultPrice.toFixed(0)}
             </span>
           </div>
         )}
@@ -154,7 +154,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="duration_minutes">Duração (min) *</Label>
+          <Label htmlFor="duration_minutes">Duracao (min) *</Label>
           <Input
             id="duration_minutes"
             type="number"
@@ -171,7 +171,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
-          <Select onValueChange={(val) => { if (val) form.setValue("status", val as AppointmentFormValues["status"]) }} defaultValue={String(form.watch("status") ?? "scheduled")}>
+          <Select onValueChange={(val) => { if (val) form.setValue("status", val as AppointmentCreateFormValues["status"]) }} defaultValue={String(form.watch("status") ?? "scheduled")}>
             <SelectTrigger id="status" className="w-full h-12 rounded-xl">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -179,9 +179,6 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
               <SelectItem value="scheduled">Agendado</SelectItem>
               <SelectItem value="confirmed">Confirmado</SelectItem>
               <SelectItem value="in_progress">Em Andamento</SelectItem>
-              <SelectItem value="completed">Concluído</SelectItem>
-              <SelectItem value="cancelled">Cancelado</SelectItem>
-              <SelectItem value="no_show">Não Compareceu</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -220,10 +217,10 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
 
       {/* Notes */}
       <div className="space-y-2">
-        <Label htmlFor="notes">Observações Adicionais</Label>
+        <Label htmlFor="notes">Observacoes Adicionais</Label>
         <Textarea
           id="notes"
-          placeholder="Anotações para o agendamento..."
+          placeholder="Anotacoes para o agendamento..."
           {...form.register("notes")}
           className="resize-none"
         />

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { useTheme } from "next-themes"
@@ -26,33 +26,32 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const loadProfile = async () => {
-      try {
-        const { user, profile: p } = await getProfile()
-        setProfile(p)
-        setFullName(p?.full_name || user.user_metadata?.full_name || "")
-        setPhone(p?.phone || "")
-      } catch {
-        toast.error("Erro ao carregar perfil")
+      const result = await getProfile()
+      if (result.error) {
+        toast.error(result.error)
+        return
       }
+      setProfile(result.profile)
+      setFullName(result.profile?.full_name || result.user?.user_metadata?.full_name || "")
+      setPhone(result.profile?.phone || "")
     }
     loadProfile()
   }, [])
 
   const handleSaveProfile = async () => {
     setSaving(true)
-    try {
-      await updateProfile({ full_name: fullName, phone })
-      toast.success("Perfil atualizado com sucesso!")
-    } catch {
-      toast.error("Erro ao salvar perfil.")
-    } finally {
-      setSaving(false)
+    const result = await updateProfile({ full_name: fullName, phone })
+    setSaving(false)
+    if (result.error) {
+      toast.error(result.error)
+      return
     }
+    toast.success("Perfil atualizado com sucesso!")
   }
 
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
-      toast.error("As senhas nao conferem.")
+      toast.error("As senhas não conferem.")
       return
     }
     if (newPassword.length < 6) {
@@ -60,16 +59,15 @@ export default function SettingsPage() {
       return
     }
     setChangingPassword(true)
-    try {
-      await updatePassword(newPassword)
-      toast.success("Senha atualizada com sucesso!")
-      setNewPassword("")
-      setConfirmPassword("")
-    } catch {
-      toast.error("Erro ao alterar senha.")
-    } finally {
-      setChangingPassword(false)
+    const result = await updatePassword(newPassword)
+    setChangingPassword(false)
+    if (result.error) {
+      toast.error(result.error)
+      return
     }
+    toast.success("Senha atualizada com sucesso!")
+    setNewPassword("")
+    setConfirmPassword("")
   }
 
   const initials = fullName
@@ -82,32 +80,32 @@ export default function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-10">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Configuracoes</h1>
-        <p className="text-muted-foreground mt-1">Gerencie suas preferencias, aparencia e seguranca do sistema.</p>
+        <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
+        <p className="text-muted-foreground mt-1">Gerencie suas preferências, aparência e segurança do sistema.</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-muted/50 p-1 w-full justify-start overflow-x-auto">
           <TabsTrigger value="appearance" className="flex items-center gap-2">
-            <Monitor className="h-4 w-4" /> Aparencia
+            <Monitor className="h-4 w-4" /> Aparência
           </TabsTrigger>
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" /> Perfil
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" /> Notificacoes
+            <Bell className="h-4 w-4" /> Notificações
           </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" /> Seguranca
+            <Shield className="h-4 w-4" /> Segurança
           </TabsTrigger>
         </TabsList>
 
-        {/* Aparencia */}
+        {/* Aparência */}
         <TabsContent value="appearance" className="space-y-6">
           <Card className="shadow-sm">
             <CardHeader>
               <CardTitle>Tema do Sistema</CardTitle>
-              <CardDescription>Personalize a aparencia do K2-Sync.</CardDescription>
+              <CardDescription>Personalize a aparência do K2-Sync.</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div
@@ -135,7 +133,7 @@ export default function SettingsPage() {
                 <div className="h-12 w-12 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center mb-3">
                   <Monitor className="h-6 w-6 text-slate-600 dark:text-slate-300" />
                 </div>
-                <span className="font-medium">Automatico (Sistema)</span>
+                <span className="font-medium">Automático (Sistema)</span>
               </div>
             </CardContent>
           </Card>
@@ -145,8 +143,8 @@ export default function SettingsPage() {
         <TabsContent value="profile" className="space-y-6">
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle>Informacoes Pessoais</CardTitle>
-              <CardDescription>Atualize seus dados que aparecerao para os pacientes.</CardDescription>
+              <CardTitle>Informações Pessoais</CardTitle>
+              <CardDescription>Atualize seus dados que aparecerão para os pacientes.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-6 mb-6">
@@ -167,23 +165,23 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label>Email</Label>
                   <Input value={profile?.id ? "" : ""} disabled className="bg-muted" />
-                  <p className="text-xs text-muted-foreground">Email nao pode ser alterado aqui.</p>
+                  <p className="text-xs text-muted-foreground">Email não pode ser alterado aqui.</p>
                 </div>
               </div>
             </CardContent>
             <CardFooter className="border-t pt-6">
               <Button onClick={handleSaveProfile} disabled={saving} className="ml-auto">
-                {saving ? "Salvando..." : <><Save className="mr-2 h-4 w-4" /> Salvar Alteracoes</>}
+                {saving ? "Salvando..." : <><Save className="mr-2 h-4 w-4" /> Salvar Alterações</>}
               </Button>
             </CardFooter>
           </Card>
         </TabsContent>
 
-        {/* Notificacoes */}
+        {/* Notificações */}
         <TabsContent value="notifications" className="space-y-6">
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle>Preferencias de Notificacao</CardTitle>
+              <CardTitle>Preferências de Notificação</CardTitle>
               <CardDescription>Escolha como deseja ser avisado sobre eventos importantes.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -202,7 +200,7 @@ export default function SettingsPage() {
                   <Smartphone className="h-5 w-5 text-primary" />
                   <div className="space-y-0.5">
                     <Label className="text-base font-medium">Lembretes por WhatsApp</Label>
-                    <p className="text-sm text-muted-foreground">Envio automatico via Evolution API (em breve).</p>
+                    <p className="text-sm text-muted-foreground">Envio automático via Evolution API (em breve).</p>
                   </div>
                 </div>
                 <Switch disabled />
@@ -211,7 +209,7 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* Seguranca */}
+        {/* Segurança */}
         <TabsContent value="security" className="space-y-6">
           <Card className="shadow-sm">
             <CardHeader>
@@ -222,7 +220,7 @@ export default function SettingsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Nova Senha</Label>
-                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Minimo 6 caracteres" />
+                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mínimo 8 caracteres" />
                 </div>
                 <div className="space-y-2">
                   <Label>Confirmar Nova Senha</Label>

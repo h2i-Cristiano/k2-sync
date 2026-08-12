@@ -1,12 +1,15 @@
-"use server"
+﻿"use server"
 
-import { appointmentSchema, AppointmentFormValues } from "@/lib/validations/appointment"
+import { z } from "zod"
+import { appointmentCreateSchema, appointmentUpdateSchema, AppointmentCreateFormValues, AppointmentUpdateFormValues } from "@/lib/validations/appointment"
 import { revalidatePath } from "next/cache"
 import { getUserAndTenant } from "@/lib/auth-helpers"
 
-export async function createAppointment(data: AppointmentFormValues) {
+const uuidSchema = z.string().uuid("ID inválido")
+
+export async function createAppointment(data: AppointmentCreateFormValues) {
   try {
-    const validatedData = appointmentSchema.parse(data)
+    const validatedData = appointmentCreateSchema.parse(data)
     const { supabase, tenantId, user } = await getUserAndTenant()
 
     const { data: newAppointment, error } = await supabase
@@ -30,14 +33,14 @@ export async function createAppointment(data: AppointmentFormValues) {
   } catch (err: any) {
     console.error("Erro em createAppointment:", err)
     if (err.message === "Não autenticado") return { error: "Não autorizado." }
-    if (err.message.includes("Tenant não encontrado")) return { error: err.message }
     return { error: "Os dados enviados são inválidos." }
   }
 }
 
-export async function updateAppointment(id: string, data: Partial<AppointmentFormValues>) {
+export async function updateAppointment(id: string, data: Partial<AppointmentUpdateFormValues>) {
   try {
-    const validatedData = appointmentSchema.partial().parse(data)
+    uuidSchema.parse(id)
+    const validatedData = appointmentUpdateSchema.parse(data)
     const { supabase, tenantId } = await getUserAndTenant()
 
     const { error } = await supabase
@@ -56,12 +59,13 @@ export async function updateAppointment(id: string, data: Partial<AppointmentFor
   } catch (err: any) {
     console.error("Erro em updateAppointment:", err)
     if (err.message === "Não autenticado") return { error: "Não autorizado." }
-    return { error: "Erro interno ou dados inválidos." }
+    return { error: "Dados inválidos ou erro interno." }
   }
 }
 
 export async function deleteAppointment(id: string) {
   try {
+    uuidSchema.parse(id)
     const { supabase, tenantId } = await getUserAndTenant()
     
     const { error } = await supabase

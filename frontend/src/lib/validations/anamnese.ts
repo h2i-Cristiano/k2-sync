@@ -1,16 +1,23 @@
-import { z } from "zod"
+﻿import { z } from "zod"
 
 const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/
 
-export const anamneseSchema = z.object({
+export const anamneseCreateSchema = z.object({
   patient_id: z.string().uuid("Paciente é obrigatório"),
-  professional_id: z.string().uuid().optional(),
   form_type: z.enum(['massage', 'facial', 'body', 'general', 'dental', 'salon']),
   data: z.record(z.string(), z.any()).default({}),
-  status: z.enum(['draft', 'completed', 'signed']).default('draft'),
+  status: z.enum(['draft', 'completed']).default('draft'),
 })
 
-export type AnamneseFormValues = z.infer<typeof anamneseSchema>
+export const anamneseUpdateSchema = z.object({
+  patient_id: z.string().uuid("Paciente é obrigatório").optional(),
+  form_type: z.enum(['massage', 'facial', 'body', 'general', 'dental', 'salon']).optional(),
+  data: z.record(z.string(), z.any()).optional(),
+  status: z.enum(['draft', 'completed']).optional(),
+})
+
+export type AnamneseCreateFormValues = z.infer<typeof anamneseCreateSchema>
+export type AnamneseUpdateFormValues = z.infer<typeof anamneseUpdateSchema>
 
 export const anamneseDataSchema = z.object({
   chief_complaint: z.string().optional(),

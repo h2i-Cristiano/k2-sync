@@ -1,12 +1,15 @@
-"use server"
+﻿"use server"
 
-import { anamneseSchema, AnamneseFormValues } from "@/lib/validations/anamnese"
+import { z } from "zod"
+import { anamneseCreateSchema, anamneseUpdateSchema, AnamneseCreateFormValues, AnamneseUpdateFormValues } from "@/lib/validations/anamnese"
 import { revalidatePath } from "next/cache"
 import { getUserAndTenant } from "@/lib/auth-helpers"
 
-export async function createAnamnese(data: AnamneseFormValues) {
+const uuidSchema = z.string().uuid("ID inválido")
+
+export async function createAnamnese(data: AnamneseCreateFormValues) {
   try {
-    const validatedData = anamneseSchema.parse(data)
+    const validatedData = anamneseCreateSchema.parse(data)
     const { supabase, tenantId, user } = await getUserAndTenant()
 
     const { data: newAnamnese, error } = await supabase
@@ -30,14 +33,14 @@ export async function createAnamnese(data: AnamneseFormValues) {
   } catch (err: any) {
     console.error("Erro em createAnamnese:", err)
     if (err.message === "Não autenticado") return { error: "Não autorizado." }
-    if (err.message.includes("Tenant não encontrado")) return { error: err.message }
     return { error: "Os dados enviados são inválidos." }
   }
 }
 
-export async function updateAnamnese(id: string, data: Partial<AnamneseFormValues>) {
+export async function updateAnamnese(id: string, data: Partial<AnamneseUpdateFormValues>) {
   try {
-    const validatedData = anamneseSchema.partial().parse(data)
+    uuidSchema.parse(id)
+    const validatedData = anamneseUpdateSchema.parse(data)
     const { supabase, tenantId } = await getUserAndTenant()
 
     const { error } = await supabase
@@ -51,7 +54,6 @@ export async function updateAnamnese(id: string, data: Partial<AnamneseFormValue
       return { error: "Erro ao atualizar anamnese." }
     }
 
-    // Achar o patient_id para revalidate
     const { data: anamnese } = await supabase.from("anamnesis").select("patient_id").eq("id", id).single()
     if (anamnese?.patient_id) {
       revalidatePath(`/patients/${anamnese.patient_id}`)
@@ -61,6 +63,6 @@ export async function updateAnamnese(id: string, data: Partial<AnamneseFormValue
   } catch (err: any) {
     console.error("Erro em updateAnamnese:", err)
     if (err.message === "Não autenticado") return { error: "Não autorizado." }
-    return { error: "Erro interno ou dados inválidos." }
+    return { error: "Dados inválidos ou erro interno." }
   }
 }
