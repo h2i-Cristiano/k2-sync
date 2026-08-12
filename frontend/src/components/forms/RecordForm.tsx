@@ -46,7 +46,7 @@ export function RecordForm({ patients, initialData, onSuccess, onCancel }: Recor
       toast.error(result.error)
       return
     }
-    toast.success(initialData?.id ? "Prontuario atualizado!" : "Prontuario criado com sucesso!")
+    toast.success(initialData?.id ? "Prontuário atualizado!" : "Prontuário criado com sucesso!")
     form.reset()
     onSuccess?.()
   }
@@ -71,7 +71,7 @@ export function RecordForm({ patients, initialData, onSuccess, onCancel }: Recor
           {errors.patient_id && <p className="text-sm text-red-500">{errors.patient_id.message}</p>}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="session_number">Sessao N�</Label>
+          <Label htmlFor="session_number">Sessão Nº</Label>
           <Input id="session_number" type="number" {...form.register("session_number")} />
         </div>
       </div>
@@ -82,17 +82,17 @@ export function RecordForm({ patients, initialData, onSuccess, onCancel }: Recor
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="assessment">Avaliacao Clinica</Label>
-        <Textarea id="assessment" placeholder="Observacoes, diagnostico..." {...form.register("assessment")} className="resize-none" />
+        <Label htmlFor="assessment">Avaliação Clínica</Label>
+        <Textarea id="assessment" placeholder="Observações, diagnóstico..." {...form.register("assessment")} className="resize-none" />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="treatment_plan">Plano de Tratamento</Label>
-        <Textarea id="treatment_plan" placeholder="Procedimentos, orientacoes..." {...form.register("treatment_plan")} className="resize-none" />
+        <Textarea id="treatment_plan" placeholder="Procedimentos, orientações..." {...form.register("treatment_plan")} className="resize-none" />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="notes">Observacoes</Label>
+        <Label htmlFor="notes">Observações</Label>
         <Textarea id="notes" placeholder="Notas adicionais..." {...form.register("notes")} className="resize-none" />
       </div>
 
@@ -101,7 +101,7 @@ export function RecordForm({ patients, initialData, onSuccess, onCancel }: Recor
           <Button type="button" variant="ghost" onClick={onCancel}>Cancelar</Button>
         )}
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Salvando..." : (initialData?.id ? "Atualizar" : "Salvar Prontuario")}
+          {isSubmitting ? "Salvando..." : (initialData?.id ? "Atualizar" : "Salvar Prontuário")}
         </Button>
       </div>
     </form>

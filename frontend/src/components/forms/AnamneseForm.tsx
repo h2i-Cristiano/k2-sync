@@ -19,105 +19,105 @@ import { Separator } from "@/components/ui/separator"
 
 const steps = [
   "Queixa Principal",
-  "Saude",
-  "Habitos",
+  "Saúde",
+  "Hábitos",
   "Expectativas",
   "Consentimento LGPD",
 ]
 
-const LGPD_TERMS = `TERMO DE CONSENTIMENTO E PRIVACIDADE � LEI GERAL DE PROTECAO DE DADOS (LGPD)
+const LGPD_TERMS = `TERMO DE CONSENTIMENTO E PRIVACIDADE – LEI GERAL DE PROTEÇÃO DE DADOS (LGPD)
 
-1. IDENTIFICACAO DO RESPONSAVEL
-Studio Kamke, por Michele Kamke, inscrita no CNPJ sob o n [XX.XXX.XXX/XXXX-XX], doravante denominada "Estudio", e responsavel pelo tratamento dos seus dados pessoais, em conformidade com a Lei n 13.709/2018 (LGPD).
+1. IDENTIFICAÇÃO DO RESPONSÁVEL
+Studio Kamke, por Michele Kamke, inscrita no CNPJ sob o n [XX.XXX.XXX/XXXX-XX], doravante denominada "Estúdio", e responsável pelo tratamento dos seus dados pessoais, em conformidade com a Lei n 13.709/2018 (LGPD).
 
 2. FINALIDADE DO TRATAMENTO
-Os dados pessoais e dados sensiveis de saude coletados neste formulario de anamnese serao utilizados exclusivamente para:
-� Prestacao de servicos de saude, estetica e bem-estar;
-� Elaboracao de plano de tratamento personalizado;
-� Acompanhamento e evolucao do tratamento;
-� Cumprimento de obrigacoes legais e regulatorias.
+Os dados pessoais e dados sensíveis de saúde coletados neste formulário de anamnese serão utilizados exclusivamente para:
+– Prestação de serviços de saúde, estética e bem-estar;
+– Elaboração de plano de tratamento personalizado;
+– Acompanhamento e evolução do tratamento;
+– Cumprimento de obrigações legais e regulatoriais.
 
 3. DADOS COLETADOS
 Podemos coletar os seguintes dados:
-� Dados pessoais: nome, CPF, telefone, e-mail, endereco, data de nascimento, estado civil, profissao;
-� Dados de saude: alergias, medicacoes, condicoes medicas, cirurgias anteriores, habitos de vida, queixa principal;
-� Dados sensiveis: condicoes de saude especificas, gestacao;
-� Imagem: fotografias e videos capturados durante os servicos, quando autorizados.
+– Dados pessoais: nome, CPF, telefone, e-mail, endereço, data de nascimento, estado civil, profissão;
+– Dados de saúde: alergias, medicações, condições médicas, cirurgias anteriores, hábitos de vida, queixa principal;
+– Dados sensíveis: condições de saúde específicas, gestação;
+– Imagem: fotografias e vídeos capturados durante os serviços, quando autorizados.
 
 4. BASE LEGAL
-O tratamento dos seus dados e realizado com base no seu consentimento (Art. 7o, I e Art. 11, I da LGPD), de forma livre, informada e inequivoca.
+O tratamento dos seus dados é realizado com base no seu consentimento (Art. 7º, I e Art. 11, I da LGPD), de forma livre, informada e inequívoca.
 
 5. DIREITOS DO TITULAR
-Nos termos da LGPD, voce tem direito a:
-� Acesso aos seus dados pessoais armazenados;
-� Correcao de dados incompletos ou desatualizados;
-� Anonimizacao, bloqueio ou eliminacao de dados desnecessarios;
-� Portabilidade dos dados a outro fornecedor;
-� Eliminacao dos dados tratados com consentimento;
-� Informacao sobre compartilhamento de dados;
-� Revogacao do consentimento a qualquer momento.
+Nos termos da LGPD, você tem direito a:
+– Acesso aos seus dados pessoais armazenados;
+– Correção de dados incompletos ou desatualizados;
+– Anonimização, bloqueio ou eliminação de dados desnecessários;
+– Portabilidade dos dados a outro fornecedor;
+– Eliminação dos dados tratados com consentimento;
+– Informação sobre compartilhamento de dados;
+– Revogação do consentimento a qualquer momento.
 
-6. RETENCAO DOS DADOS
-Os seus dados serao mantidos pelo periodo necessario para cumprir as finalidades para as quais foram coletados, ou pelo prazo determinado pela legislacao aplicavel, o que ocorrer primeiro.
+6. RETENÇÃO DOS DADOS
+Os seus dados serão mantidos pelo período necessário para cumprir as finalidades para as quais foram coletados, ou pelo prazo determinado pela legislação aplicável, o que ocorrer primeiro.
 
 7. COMPARTILHAMENTO DE DADOS
-Seus dados poderao ser compartilhados apenas com:
-� Profissionais de saude diretamente envolvidos no seu tratamento;
-� Laboratorios e convenios, quando necessario para a prestacao do servico;
-� Autoridades competentes, quando exigido por lei.
+Seus dados poderão ser compartilhados apenas com:
+– Profissionais de saúde diretamente envolvidos no seu tratamento;
+– Laboratórios e convênios, quando necessário para a prestação do serviço;
+– Autoridades competentes, quando exigido por lei.
 
-8. SEGURANCA DOS DADOS
-Adotamos medidas tecnicas e administrativas aptas a proteger os seus dados pessoais de acessos nao autorizados e de situacoes acidentais ou ilicitas de destruicao, perda, alteracao, comunicacao ou qualquer forma de tratamento inadequado ou ilicito.
+8. SEGURANÇA DOS DADOS
+Adotamos medidas técnicas e administrativas aptas a proteger os seus dados pessoais de acessos não autorizados e de situações acidentais ou ilícitas de destruição, perda, alteração, comunicação ou qualquer forma de tratamento inadequado ou ilícito.
 
 9. COOKIES E RASTREAMENTO
-Este formulario nao utiliza cookies ou ferramentas de rastreamento para coleta de dados.
+Este formulário não utiliza cookies ou ferramentas de rastreamento para coleta de dados.
 
-10. CONTATO PARA EXERCICIO DE DIREITOS
+10. CONTATO PARA EXERCÍCIO DE DIREITOS
 Para exercer qualquer um dos direitos acima, entre em contato:
-� E-mail: contato@studiokamke.com.br
-� Telefone: (XX) 98884-5326
-� Responsavel: Michele Kamke
+– E-mail: contato@studiokamke.com.br
+– Telefone: (XX) 98884-5326
+– Responsável: Michele Kamke
 
-11. ALTERACOES DESTA POLITICA
-Esta politica pode ser atualizada a qualquer momento. Recomendamos a consulta periodica.
+11. ALTERAÇÕES DESTA POLÍTICA
+Esta política pode ser atualizada a qualquer momento. Recomendamos a consulta periódica.
 
-Ao assinar este documento, voce declara que leu, compreendeu e consentiu com o tratamento dos seus dados pessoais conforme descrito acima.`
+Ao assinar este documento, você declara que leu, compreendeu e consentiu com o tratamento dos seus dados pessoais conforme descrito acima.`
 
 const MARKETING_TERMS = `TERMO DE CONSENTIMENTO PARA USO DE IMAGEM E DEPOIMENTOS
 
 1. CONTROLADOR DOS DADOS
 Studio Kamke, por Michele Kamke, telefone: (XX) 98884-5326.
 
-2. FINALIDADE ESPECIFICA
-Autorizo o uso da minha imagem (fotografias e/ou videos) e do meu depoimento (escrito ou gravado) para as seguintes finalidades:
-� Publicacao em site oficial (studiokamke.com.br);
-� Publicacao em redes sociais (Instagram, Facebook, TikTok e afins);
-� Materiais de marketing impressos (cartazes, folders, banners);
-� Anuncios pagos em plataformas digitais;
-� Apresentacoes e eventos promovidos pelo Estudio.
+2. FINALIDADE ESPECÍFICA
+Autorizo o uso da minha imagem (fotografias e/ou vídeos) e do meu depoimento (escrito ou gravado) para as seguintes finalidades:
+– Publicação em site oficial (studiokamke.com.br);
+– Publicação em redes sociais (Instagram, Facebook, TikTok e afins);
+– Materiais de marketing impressos (cartazes, folders, banners);
+– Anúncios pagos em plataformas digitais;
+– Apresentações e eventos promovidos pelo Estúdio.
 
 3. DADOS PESSOAIS ENVOLVIDOS
-� Imagem fotografica e/ou video que contenham minha imagem e/ou voz;
-� Nome completo;
-� Depoimento (texto ou audio/video).
+– Imagem fotográfica e/ou vídeo que contenham minha imagem e/ou voz;
+– Nome completo;
+– Depoimento (texto ou áudio/vídeo).
 
-4. CANAIS DE DIVULGACAO
-Os dados acima poderao ser utilizados nos seguintes canais: site oficial, redes sociais oficiais do Estudio, materiais impressos e anuncios digitais promovidos pelo Estudio.
+4. CANAIS DE DIVULGAÇÃO
+Os dados acima poderão ser utilizados nos seguintes canais: site oficial, redes sociais oficiais do Estúdio, materiais impressos e anúncios digitais promovidos pelo Estúdio.
 
-5. PRAZO DE UTILIZACAO
-O consentimento e valido pelo prazo de 2 (dois) anos, podendo ser renovado mediante novo consentimento expresso.
+5. PRAZO DE UTILIZAÇÃO
+O consentimento é válido pelo prazo de 2 (dois) anos, podendo ser renovado mediante novo consentimento expresso.
 
-6. DIREITO DE REVOGACAO
-A qualquer momento, voce podera solicitar a remocao da sua imagem e/ou depoimento de qualquer canal, bastando entrar em contato com o Estudio. A revogacao nao afetara o tratamento realizado anteriormente.
+6. DIREITO DE REVOGAÇÃO
+A qualquer momento, você poderá solicitar a remoção da sua imagem e/ou depoimento de qualquer canal, bastando entrar em contato com o Estúdio. A revogação não afetará o tratamento realizado anteriormente.
 
 7. COMPARTILHAMENTO
-Os dados de imagem e depoimento nao serao compartilhados com terceiros, exceto quando necessario para a veiculacao nos canais de divulgacao acima listados.
+Os dados de imagem e depoimento não serão compartilhados com terceiros, exceto quando necessário para a veiculação nos canais de divulgação acima listados.
 
-8. SEGURANCA
-Adotamos medidas para proteger sua imagem e dados contra uso indevido por terceiros nao autorizados.
+8. SEGURANÇA
+Adotamos medidas para proteger sua imagem e dados contra uso indevido por terceiros não autorizados.
 
 9. CONTATO
-Studio Kamke � Por Michele Kamke
+Studio Kamke – Por Michele Kamke
 Telefone: (XX) 98884-5326
 E-mail: contato@studiokamke.com.br`
 
@@ -240,7 +240,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
         await videoRef.current.play()
       }
     } catch {
-      toast.error("Nao foi possivel acessar a camera")
+      toast.error("Não foi possível acessar a câmera")
     }
   }
 
@@ -311,7 +311,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Localizacao da dor (se houver)</Label>
+                  <Label>Localização da dor (se houver)</Label>
                   <Input placeholder="Coluna, Ombro, Joelho..." {...form.register("pain_location")} />
                 </div>
                 <div className="space-y-2">
@@ -321,7 +321,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Frequencia da dor</Label>
+                  <Label>Frequência da dor</Label>
                   <Select onValueChange={(val: string | null) => { if (val) form.setValue("pain_frequency", val) }} defaultValue={form.getValues("pain_frequency") ?? undefined}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
@@ -333,7 +333,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Duracao do problema</Label>
+                  <Label>Duração do problema</Label>
                   <Input placeholder="3 meses, 2 anos..." {...form.register("pain_duration")} />
                 </div>
               </div>
@@ -345,12 +345,12 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
           </Card>
         )}
 
-        {/* Step 1 - Saude */}
+        {/* Step 1 - Saúde */}
         {step === 1 && (
           <Card className="border-none shadow-sm bg-card animate-in fade-in zoom-in-95 duration-300">
             <CardHeader>
-              <CardTitle>Historico de Saude</CardTitle>
-              <CardDescription>Alergias, condicoes cronicas e historico medico.</CardDescription>
+              <CardTitle>Histórico de Saúde</CardTitle>
+              <CardDescription>Alergias, condições crônicas e histórico médico.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -358,31 +358,31 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
                 <Input placeholder="Lactose, Dipirona, Nenhuma..." {...form.register("allergies")} />
               </div>
               <div className="space-y-2">
-                <Label>Medicacoes em uso continuo</Label>
+                <Label>Medicações em uso contínuo</Label>
                 <Input placeholder="Losartana, Metformina..." {...form.register("medications")} />
               </div>
               <div className="space-y-2">
-                <Label>Doencas diagnosticadas</Label>
-                <Input placeholder="Diabetes, Hipertensao..." {...form.register("medical_conditions")} />
+                <Label>Doenças diagnosticadas</Label>
+                <Input placeholder="Diabetes, Hipertensão..." {...form.register("medical_conditions")} />
               </div>
               <div className="space-y-2">
                 <Label>Cirurgias anteriores</Label>
-                <Input placeholder="Apendicite, Cesarea..." {...form.register("previous_surgeries")} />
+                <Input placeholder="Apendicite, Cesárea..." {...form.register("previous_surgeries")} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Esta gr�vida?</Label>
+                  <Label>Está grávida?</Label>
                   <Select onValueChange={(val: string | null) => { if (val) form.setValue("pregnant", val) }} defaultValue={form.getValues("pregnant") ?? undefined}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="no">Nao</SelectItem>
+                      <SelectItem value="no">Não</SelectItem>
                       <SelectItem value="yes">Sim</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 {form.watch("pregnant") === "yes" && (
                   <div className="space-y-2 animate-in fade-in">
-                    <Label>Semanas de gestacao</Label>
+                    <Label>Semanas de gestação</Label>
                     <Input type="number" placeholder="Ex: 20" {...form.register("pregnancy_weeks")} />
                   </div>
                 )}
@@ -391,11 +391,11 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
           </Card>
         )}
 
-        {/* Step 2 - Habitos */}
+        {/* Step 2 - Hábitos */}
         {step === 2 && (
           <Card className="border-none shadow-sm bg-card animate-in fade-in zoom-in-95 duration-300">
             <CardHeader>
-              <CardTitle>Habitos e Estilo de Vida</CardTitle>
+              <CardTitle>Hábitos e Estilo de Vida</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -404,18 +404,18 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
                   <Select onValueChange={(val: string | null) => { if (val) form.setValue("smokes", val) }} defaultValue={form.getValues("smokes") ?? undefined}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="no">Nao</SelectItem>
+                      <SelectItem value="no">Não</SelectItem>
                       <SelectItem value="yes">Sim</SelectItem>
                       <SelectItem value="quit">Ex-fumante</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Consome alcool?</Label>
+                  <Label>Consome álcool?</Label>
                   <Select onValueChange={(val: string | null) => { if (val) form.setValue("drinks", val) }} defaultValue={form.getValues("drinks") ?? undefined}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="no">Nao</SelectItem>
+                      <SelectItem value="no">Não</SelectItem>
                       <SelectItem value="social">Socialmente</SelectItem>
                       <SelectItem value="regular">Regularmente</SelectItem>
                     </SelectContent>
@@ -423,13 +423,13 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Frequencia de exercicios fisicos</Label>
+                <Label>Frequência de exercícios físicos</Label>
                 <Select onValueChange={(val: string | null) => { if (val) form.setValue("exercise_frequency", val) }} defaultValue={form.getValues("exercise_frequency") ?? undefined}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Nunca</SelectItem>
                     <SelectItem value="rarely">Raramente</SelectItem>
-                    <SelectItem value="sometimes">As vezes</SelectItem>
+                    <SelectItem value="sometimes">Às vezes</SelectItem>
                     <SelectItem value="regular">Regularmente</SelectItem>
                     <SelectItem value="daily">Diariamente</SelectItem>
                   </SelectContent>
@@ -440,7 +440,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
                 <Select onValueChange={(val: string | null) => { if (val) form.setValue("sleep_quality", val) }} defaultValue={form.getValues("sleep_quality") ?? undefined}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="excellent">Otima</SelectItem>
+                    <SelectItem value="excellent">Ótima</SelectItem>
                     <SelectItem value="good">Boa</SelectItem>
                     <SelectItem value="fair">Regular</SelectItem>
                     <SelectItem value="poor">Ruim</SelectItem>
@@ -448,7 +448,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Nivel de estresse</Label>
+                <Label>Nível de estresse</Label>
                 <Select onValueChange={(val: string | null) => { if (val) form.setValue("stress_level", val) }} defaultValue={form.getValues("stress_level") ?? undefined}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
@@ -460,8 +460,8 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Alimentacao</Label>
-                <Input placeholder="Balanceada, Carnivora, Vegetariana..." {...form.register("diet")} />
+                <Label>Alimentação</Label>
+                <Input placeholder="Balanceada, Carnívora, Vegetariana..." {...form.register("diet")} />
               </div>
             </CardContent>
           </Card>
@@ -472,13 +472,13 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
           <Card className="border-none shadow-sm bg-card animate-in fade-in zoom-in-95 duration-300">
             <CardHeader>
               <CardTitle>Expectativas do Tratamento</CardTitle>
-              <CardDescription>O que voce espera alcancar com o tratamento?</CardDescription>
+              <CardDescription>O que você espera alcançar com o tratamento?</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Descreva suas expectativas</Label>
                 <Textarea
-                  placeholder="Reducao da dor, Melhora da mobilidade, Bem-estar geral..."
+                  placeholder="Redução da dor, Melhora da mobilidade, Bem-estar geral..."
                   className="min-h-[150px] resize-none"
                   {...form.register("expectations")}
                 />
@@ -495,7 +495,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
                 <Shield className="h-5 w-5 text-primary" />
                 Consentimento e Privacidade (LGPD)
               </CardTitle>
-              <CardDescription>Leia os termos, assine e tire uma foto para validacao.</CardDescription>
+              <CardDescription>Leia os termos, assine e tire uma foto para validação.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* LGPD Terms */}
@@ -535,7 +535,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
                   onCheckedChange={(checked) => form.setValue("consent_marketing_accepted", checked, { shouldValidate: true })}
                 />
                 <Label htmlFor="consent_marketing" className="text-sm">
-                  Autorizo o uso da minha imagem (fotos, videos) e depoimentos para finalidades de marketing e publicidade (opcional)
+                  Autorizo o uso da minha imagem (fotos, vídeos) e depoimentos para finalidades de marketing e publicidade (opcional)
                 </Label>
               </div>
 
@@ -676,7 +676,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
 
         {step < steps.length - 1 ? (
           <Button type="button" onClick={nextStep}>
-            Proximo <ArrowRight className="ml-2 h-4 w-4" />
+            Próximo <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         ) : (
           <Button type="submit" disabled={saving || !signatureData || !form.watch("consent_lgpd_accepted")}>

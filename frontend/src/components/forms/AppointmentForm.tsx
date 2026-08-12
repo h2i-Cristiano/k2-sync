@@ -109,10 +109,10 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
 
       {/* Service Type */}
       <div className="space-y-2">
-        <Label htmlFor="service_type">Tipo de Servico *</Label>
+        <Label htmlFor="service_type">Tipo de Serviço *</Label>
         <Select onValueChange={handleServiceChange} defaultValue={String(form.watch("service_type") ?? "outro")}>
           <SelectTrigger id="service_type" className={`w-full h-12 rounded-xl ${form.formState.errors.service_type ? "border-destructive" : ""}`}>
-            <SelectValue placeholder="Selecione o servico" />
+            <SelectValue placeholder="Selecione o serviço" />
           </SelectTrigger>
           <SelectContent>
             {SERVICES.map((svc) => (
@@ -130,7 +130,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
           <div className="flex items-center gap-2 mt-1">
             <div className="h-3 w-3 rounded-full" style={{ backgroundColor: selectedService.color }} />
             <span className="text-xs text-muted-foreground">
-              {selectedService.defaultDuration}min � R$ {selectedService.defaultPrice.toFixed(0)}
+              {selectedService.defaultDuration}min – R$ {selectedService.defaultPrice.toFixed(0)}
             </span>
           </div>
         )}
@@ -154,7 +154,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="duration_minutes">Duracao (min) *</Label>
+          <Label htmlFor="duration_minutes">Duração (min) *</Label>
           <Input
             id="duration_minutes"
             type="number"
@@ -217,10 +217,10 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
 
       {/* Notes */}
       <div className="space-y-2">
-        <Label htmlFor="notes">Observacoes Adicionais</Label>
+        <Label htmlFor="notes">Observações Adicionais</Label>
         <Textarea
           id="notes"
-          placeholder="Anotacoes para o agendamento..."
+          placeholder="Anotações para o agendamento..."
           {...form.register("notes")}
           className="resize-none"
         />
