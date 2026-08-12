@@ -1,41 +1,19 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
 import { patientSchema, PatientFormValues } from "@/lib/validations/patient"
 import { revalidatePath } from "next/cache"
+import { getUserAndTenant } from "@/lib/auth-helpers"
 
 export async function createPatient(data: PatientFormValues) {
   try {
-    // Validar com Zod no servidor
     const validatedData = patientSchema.parse(data)
-    
-    const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return { error: "Não autorizado." }
-    }
-
-    // Obter o tenant_id do JWT ou buscar o profile
-    // No nosso schema, patient precisa de tenant_id, e o token RLS resolve isso automaticamente
-    // Porém a coluna tenant_id no banco para patients eh NOT NULL.
-    // Vamos buscar o tenant_id do usuario
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("tenant_id")
-      .eq("id", user.id)
-      .single()
-
-    if (!profile?.tenant_id) {
-      return { error: "Erro de configuração da conta (Tenant não encontrado)." }
-    }
+    const { supabase, tenantId } = await getUserAndTenant()
 
     const { data: newPatient, error } = await supabase
       .from("patients")
       .insert({
         ...validatedData,
-        tenant_id: profile.tenant_id,
-        // Remover valores vazios que o zod possa ter deixado passar como literais se necessario
+        tenant_id: tenantId,
         birth_date: validatedData.birth_date || null
       })
       .select()
@@ -43,53 +21,66 @@ export async function createPatient(data: PatientFormValues) {
 
     if (error) {
       console.error("Erro ao criar paciente:", error)
-      return { error: error.message }
+      return { error: "Erro ao criar paciente no banco de dados." }
     }
 
     revalidatePath("/patients")
     return { data: newPatient }
 
   } catch (err: any) {
-    console.error("Erro de validação ou servidor:", err)
+    console.error("Erro em createPatient:", err)
+    if (err.message === "Não autenticado") return { error: "Não autorizado." }
+    if (err.message.includes("Tenant não encontrado")) return { error: err.message }
     return { error: "Os dados enviados são inválidos ou ocorreu um erro interno." }
   }
 }
 
 export async function updatePatient(id: string, data: Partial<PatientFormValues>) {
   try {
-    const supabase = await createClient()
+    const validatedData = patientSchema.partial().parse(data)
+    const { supabase, tenantId } = await getUserAndTenant()
+
     const { error } = await supabase
       .from("patients")
-      .update(data)
+      .update(validatedData)
       .eq("id", id)
+      .eq("tenant_id", tenantId) // Extra safety check
 
     if (error) {
-      return { error: error.message }
+      console.error("Erro ao atualizar paciente:", error)
+      return { error: "Erro ao atualizar paciente." }
     }
 
     revalidatePath("/patients")
     revalidatePath(`/patients/${id}`)
     return { success: true }
-  } catch (err) {
-    return { error: "Erro interno." }
+  } catch (err: any) {
+    console.error("Erro em updatePatient:", err)
+    if (err.message === "Não autenticado") return { error: "Não autorizado." }
+    return { error: "Dados inválidos ou erro interno." }
   }
 }
 
 export async function deletePatient(id: string) {
   try {
-    const supabase = await createClient()
+    const { supabase, tenantId } = await getUserAndTenant()
+    
     const { error } = await supabase
       .from("patients")
       .delete()
       .eq("id", id)
+      .eq("tenant_id", tenantId)
 
     if (error) {
-      return { error: error.message }
+      console.error("Erro ao excluir paciente:", error)
+      return { error: "Erro ao excluir paciente." }
     }
 
     revalidatePath("/patients")
     return { success: true }
-  } catch (err) {
+  } catch (err: any) {
+    console.error("Erro em deletePatient:", err)
+    if (err.message === "Não autenticado") return { error: "Não autorizado." }
     return { error: "Erro interno." }
   }
 }

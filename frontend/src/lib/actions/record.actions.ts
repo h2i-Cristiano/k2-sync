@@ -1,65 +1,80 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
 import { recordSchema, RecordFormValues } from "@/lib/validations/record"
-
-async function getUserAndTenant() {
-  const supabase = await createClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) throw new Error("Nao autenticado")
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("tenant_id")
-    .eq("id", user.id)
-    .single()
-
-  if (!profile) throw new Error("Perfil nao encontrado")
-
-  return { supabase, user, tenantId: profile.tenant_id }
-}
+import { getUserAndTenant } from "@/lib/auth-helpers"
 
 export async function createRecord(data: RecordFormValues) {
-  const parsed = recordSchema.parse(data)
-  const { supabase, user, tenantId } = await getUserAndTenant()
+  try {
+    const parsed = recordSchema.parse(data)
+    const { supabase, user, tenantId } = await getUserAndTenant()
 
-  const { error } = await supabase.from("medical_records").insert({
-    ...parsed,
-    tenant_id: tenantId,
-    professional_id: user.id,
-  })
+    const { error } = await supabase.from("medical_records").insert({
+      ...parsed,
+      tenant_id: tenantId,
+      professional_id: user.id,
+    })
 
-  if (error) throw new Error(error.message)
-  revalidatePath("/records")
-  return { success: true }
+    if (error) {
+      console.error("Erro ao criar prontuário:", error)
+      return { error: "Erro ao criar prontuário no banco de dados." }
+    }
+    
+    revalidatePath("/records")
+    return { success: true }
+  } catch (err: any) {
+    console.error("Erro em createRecord:", err)
+    if (err.message === "Não autenticado") return { error: "Não autorizado." }
+    if (err.message.includes("Tenant não encontrado")) return { error: err.message }
+    return { error: "Dados inválidos ou erro interno." }
+  }
 }
 
 export async function updateRecord(id: string, data: RecordFormValues) {
-  const parsed = recordSchema.parse(data)
-  const { supabase, tenantId } = await getUserAndTenant()
+  try {
+    const parsed = recordSchema.parse(data)
+    const { supabase, tenantId } = await getUserAndTenant()
 
-  const { error } = await supabase
-    .from("medical_records")
-    .update(parsed)
-    .eq("id", id)
-    .eq("tenant_id", tenantId)
+    const { error } = await supabase
+      .from("medical_records")
+      .update(parsed)
+      .eq("id", id)
+      .eq("tenant_id", tenantId)
 
-  if (error) throw new Error(error.message)
-  revalidatePath("/records")
-  return { success: true }
+    if (error) {
+      console.error("Erro ao atualizar prontuário:", error)
+      return { error: "Erro ao atualizar prontuário." }
+    }
+    
+    revalidatePath("/records")
+    return { success: true }
+  } catch (err: any) {
+    console.error("Erro em updateRecord:", err)
+    if (err.message === "Não autenticado") return { error: "Não autorizado." }
+    return { error: "Dados inválidos ou erro interno." }
+  }
 }
 
 export async function deleteRecord(id: string) {
-  const { supabase, tenantId } = await getUserAndTenant()
+  try {
+    const { supabase, tenantId } = await getUserAndTenant()
 
-  const { error } = await supabase
-    .from("medical_records")
-    .delete()
-    .eq("id", id)
-    .eq("tenant_id", tenantId)
+    const { error } = await supabase
+      .from("medical_records")
+      .delete()
+      .eq("id", id)
+      .eq("tenant_id", tenantId)
 
-  if (error) throw new Error(error.message)
-  revalidatePath("/records")
-  return { success: true }
+    if (error) {
+      console.error("Erro ao excluir prontuário:", error)
+      return { error: "Erro ao excluir prontuário." }
+    }
+    
+    revalidatePath("/records")
+    return { success: true }
+  } catch (err: any) {
+    console.error("Erro em deleteRecord:", err)
+    if (err.message === "Não autenticado") return { error: "Não autorizado." }
+    return { error: "Erro interno." }
+  }
 }

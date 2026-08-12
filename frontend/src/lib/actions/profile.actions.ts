@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 export async function getProfile() {
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) throw new Error("Nao autenticado")
+  if (authError || !user) throw new Error("Não autenticado")
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -18,29 +18,46 @@ export async function getProfile() {
 }
 
 export async function updateProfile(data: { full_name?: string; phone?: string }) {
-  const supabase = await createClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) throw new Error("Nao autenticado")
+  try {
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) throw new Error("Não autenticado")
 
-  const { error } = await supabase
-    .from("profiles")
-    .update(data)
-    .eq("id", user.id)
+    const { error } = await supabase
+      .from("profiles")
+      .update(data)
+      .eq("id", user.id)
 
-  if (error) throw new Error(error.message)
+    if (error) {
+      console.error("Erro ao atualizar perfil:", error)
+      throw new Error("Erro ao atualizar perfil no banco de dados.")
+    }
 
-  if (data.full_name) {
-    await supabase.auth.updateUser({ data: { full_name: data.full_name } })
+    if (data.full_name) {
+      await supabase.auth.updateUser({ data: { full_name: data.full_name } })
+    }
+
+    revalidatePath("/settings")
+    revalidatePath("/dashboard")
+    return { success: true }
+  } catch (err: any) {
+    if (err.message === "Não autenticado") throw err
+    throw new Error("Ocorreu um erro ao atualizar o perfil.")
   }
-
-  revalidatePath("/settings")
-  revalidatePath("/dashboard")
-  return { success: true }
 }
 
 export async function updatePassword(newPassword: string) {
-  const supabase = await createClient()
-  const { error } = await supabase.auth.updateUser({ password: newPassword })
-  if (error) throw new Error(error.message)
-  return { success: true }
+  try {
+    const supabase = await createClient()
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    
+    if (error) {
+      console.error("Erro ao atualizar senha:", error)
+      throw new Error("Erro ao atualizar a senha.")
+    }
+    
+    return { success: true }
+  } catch (err: any) {
+    throw new Error("Não foi possível atualizar a senha no momento.")
+  }
 }
