@@ -28,7 +28,7 @@ const steps = [
 const LGPD_TERMS = `TERMO DE CONSENTIMENTO E PRIVACIDADE — LEI GERAL DE PROTEÇÃO DE DADOS (LGPD)
 
 1. IDENTIFICAÇÃO DO RESPONSÁVEL
-A [Nome da Clínica], inscrita no CNPJ sob o nº [XX.XXX.XXX/XXXX-XX], doravante denominada "Clínica", é responsável pelo tratamento dos seus dados pessoais, em conformidade com a Lei nº 13.709/2018 (LGPD).
+Studio Kamke, por Michele Kamke, inscrita no CNPJ sob o nº [XX.XXX.XXX/XXXX-XX], doravante denominada "Estúdio", é responsável pelo tratamento dos seus dados pessoais, em conformidade com a Lei nº 13.709/2018 (LGPD).
 
 2. FINALIDADE DO TRATAMENTO
 Os dados pessoais e dados sensíveis de saúde coletados neste formulário de anamnese serão utilizados exclusivamente para:
@@ -41,7 +41,8 @@ Os dados pessoais e dados sensíveis de saúde coletados neste formulário de an
 Podemos coletar os seguintes dados:
 • Dados pessoais: nome, CPF, telefone, e-mail, endereço, data de nascimento, estado civil, profissão;
 • Dados de saúde: alergias, medicações, condições médicas, cirurgias anteriores, hábitos de vida, queixa principal;
-• Dados sensíveis: condições de saúde específicas, gestação.
+• Dados sensíveis: condições de saúde específicas, gestação;
+• Imagem: fotografias e vídeos capturados durante os serviços, quando autorizados.
 
 4. BASE LEGAL
 O tratamento dos seus dados é realizado com base no seu consentimento (Art. 7º, I e Art. 11, I da LGPD), de forma livre, informada e inequívoca.
@@ -73,14 +74,52 @@ Este formulário não utiliza cookies ou ferramentas de rastreamento para coleta
 
 10. CONTATO PARA EXERCÍCIO DE DIREITOS
 Para exercer qualquer um dos direitos acima, entre em contato:
-• E-mail: [email@clinica.com]
-• Telefone: [(XX) XXXXX-XXXX]
-• Endereço: [Endereço completo]
+• E-mail: contato@studiokamke.com.br
+• Telefone: (XX) 98884-5326
+• Responsável: Michele Kamke
 
 11. ALTERAÇÕES DESTA POLÍTICA
 Esta política pode ser atualizada a qualquer momento. Recomendamos a consulta periódica.
 
 Ao assinar este documento, você declara que leu, compreendeu e consentiu com o tratamento dos seus dados pessoais conforme descrito acima.`
+
+const MARKETING_TERMS = `TERMO DE CONSENTIMENTO PARA USO DE IMAGEM E DEPOIMENTOS
+
+1. CONTROLADOR DOS DADOS
+Studio Kamke, por Michele Kamke, telefone: (XX) 98884-5326.
+
+2. FINALIDADE ESPECÍFICA
+Autorizo o uso da minha imagem (fotografias e/ou vídeos) e do meu depoimento (escrito ou gravado) para as seguintes finalidades:
+• Publicação em site oficial (studiokamke.com.br);
+• Publicação em redes sociais (Instagram, Facebook, TikTok e afins);
+• Materiais de marketing impressos (cartazes, folders, banners);
+• Anúncios pagos em plataformas digitais;
+• Apresentações e eventos promovidos pelo Estúdio.
+
+3. DADOS PESSOAIS ENVOLVIDOS
+• Imagem fotográfica e/ou vídeo que contenham minha imagem e/ou voz;
+• Nome completo;
+• Depoimento (texto ou áudio/video).
+
+4. CANAIS DE DIVULGAÇÃO
+Os dados acima poderão ser utilizados nos seguintes canais: site oficial, redes sociais oficiais do Estúdio, materiais impressos e anúncios digitais promovidos pelo Estúdio.
+
+5. PRAZO DE UTILIZAÇÃO
+O consentimento é válido pelo prazo de 2 (dois) anos, podendo ser renovado mediante novo consentimento expresso.
+
+6. DIREITO DE REVOGAÇÃO
+A qualquer momento, você poderá solicitar a remoção da sua imagem e/ou depoimento de qualquer canal, bastando entrar em contato com o Estúdio. A revogação não afetará o tratamento realizado anteriormente.
+
+7. COMPARTILHAMENTO
+Os dados de imagem e depoimento não serão compartilhados com terceiros, exceto quando necessário para a veiculação nos canais de divulgação acima listados.
+
+8. SEGURANÇA
+Adotamos medidas para proteger sua imagem e dados contra uso indevido por terceiros não autorizados.
+
+9. CONTATO
+Studio Kamke — Por Michele Kamke
+Telefone: (XX) 98884-5326
+E-mail: contato@studiokamke.com.br`
 
 interface AnamneseFormProps {
   patientId: string
@@ -127,6 +166,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
       consent_photo: "",
       consent_photo_timestamp: "",
       consent_lgpd_accepted: false,
+      consent_marketing_accepted: false,
     },
   })
 
@@ -479,6 +519,26 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
               {form.formState.errors.consent_lgpd_accepted && (
                 <p className="text-sm font-medium text-destructive">{form.formState.errors.consent_lgpd_accepted.message}</p>
               )}
+
+              <Separator />
+
+              {/* Marketing Consent */}
+              <div className="rounded-xl border bg-muted/20 p-1">
+                <div className="max-h-[150px] overflow-y-auto rounded-lg bg-white p-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap dark:bg-white/[0.03]">
+                  {MARKETING_TERMS}
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="consent_marketing"
+                  checked={form.watch("consent_marketing_accepted") ?? false}
+                  onCheckedChange={(checked) => form.setValue("consent_marketing_accepted", checked, { shouldValidate: true })}
+                />
+                <Label htmlFor="consent_marketing" className="text-sm font-medium">
+                  Autorizo o uso da minha imagem (fotos, vídeos) e depoimentos para finalidades de marketing e publicidade (opcional)
+                </Label>
+              </div>
 
               <Separator />
 

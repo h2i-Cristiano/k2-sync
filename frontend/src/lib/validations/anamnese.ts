@@ -44,6 +44,7 @@ export const anamneseDataSchema = z.object({
   consent_photo: z.string().optional(),
   consent_photo_timestamp: z.string().optional(),
   consent_lgpd_accepted: z.boolean().refine(val => val === true, "Você deve aceitar os termos LGPD"),
+  consent_marketing_accepted: z.boolean(),
 })
 
 export type AnamneseDataValues = z.infer<typeof anamneseDataSchema>
