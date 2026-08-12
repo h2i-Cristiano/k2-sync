@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { patientSchema, PatientFormValues } from "@/lib/validations/patient"
 import { createPatient, updatePatient } from "@/lib/actions/patient.actions"
@@ -55,6 +55,8 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
       notes: "",
     },
   })
+
+  const watchGender = useWatch({ control: form.control, name: "gender" })
 
   const { formState: { isSubmitting, errors } } = form
 
@@ -166,7 +168,7 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
           </div>
           <div className="space-y-2">
             <Label>Genero *</Label>
-            <Select onValueChange={(val) => { if (val) form.setValue("gender", val as "M" | "F" | "O") }} defaultValue={form.watch("gender") ?? undefined}>
+            <Select onValueChange={(val) => { if (val) form.setValue("gender", val as "M" | "F" | "O") }} defaultValue={watchGender ?? undefined}>
               <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="M">Masculino</SelectItem>

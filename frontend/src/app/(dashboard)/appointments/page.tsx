@@ -1,12 +1,12 @@
 ﻿"use client"
 
-import { useEffect, useState, useCallback, Suspense } from "react"
+import { useEffect, useState, useCallback, Suspense, useMemo } from "react"
 import dynamic from "next/dynamic"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, ChevronLeft, ChevronRight, User, MapPin, Pencil, CalendarDays, Filter, ChevronDown } from "lucide-react"
+import { Plus, ChevronLeft, ChevronRight, User, MapPin, Pencil, CalendarDays, ChevronDown } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -83,7 +83,7 @@ function AppointmentsPageInner() {
   const [view, setView] = useState<"day" | "list">("day")
   const [activeFilter, setActiveFilter] = useState("all")
   const [services, setServices] = useState<ServiceDef[]>([])
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const year = selectedDate.getFullYear()
   const month = selectedDate.getMonth()

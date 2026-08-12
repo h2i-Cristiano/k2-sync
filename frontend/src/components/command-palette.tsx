@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useEffect, useState, useCallback, useRef } from "react"
+import { useEffect, useState, useCallback, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
@@ -28,15 +28,15 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
-  const navigationItems: SearchResult[] = [
+  const navigationItems: SearchResult[] = useMemo(() => [
     { id: "nav-dashboard", title: "Dashboard", href: "/dashboard", icon: ArrowRight, type: "navigation" },
     { id: "nav-appointments", title: "Agenda", href: "/appointments", icon: Calendar, type: "navigation" },
     { id: "nav-patients", title: "Pacientes", href: "/patients", icon: Users, type: "navigation" },
     { id: "nav-records", title: "Prontuários", href: "/records", icon: FileText, type: "navigation" },
     { id: "nav-settings", title: "Configurações", href: "/settings", icon: Settings, type: "navigation" },
-  ]
+  ], [])
 
   const searchPatients = useCallback(async (searchQuery: string) => {
     if (!searchQuery || searchQuery.length < 2) {
@@ -68,7 +68,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     } finally {
       setLoading(false)
     }
-  }, [supabase])
+  }, [supabase, navigationItems])
 
   useEffect(() => {
     if (open) {
@@ -77,7 +77,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       setSelectedIndex(0)
       setTimeout(() => inputRef.current?.focus(), 100)
     }
-  }, [open])
+  }, [open, navigationItems])
 
   useEffect(() => {
     const timer = setTimeout(() => {

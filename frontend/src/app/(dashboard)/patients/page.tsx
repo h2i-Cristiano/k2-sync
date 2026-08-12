@@ -1,13 +1,13 @@
 ﻿"use client"
 
-import { useEffect, useState, useCallback, Suspense } from "react"
+import { useEffect, useState, useCallback, Suspense, useMemo } from "react"
 import dynamic from "next/dynamic"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, Search, FileText, Users, Eye, Trash2, Calendar, UserPlus, X } from "lucide-react"
+import { Plus, Search, FileText, Users, Eye, Trash2, Calendar, X } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -41,7 +41,7 @@ export default function PatientsPage() {
   const [newPatientId, setNewPatientId] = useState<string | null>(null)
   const [showSchedulePrompt, setShowSchedulePrompt] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const fetchPatients = useCallback(async () => {
     setLoading(true)

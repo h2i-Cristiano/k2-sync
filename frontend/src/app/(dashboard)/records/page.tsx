@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -24,12 +24,12 @@ export default function RecordsPage() {
   const [isOpen, setIsOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<any>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const fetchRecords = useCallback(async () => {
     const { data } = await supabase
       .from("medical_records")
-      .select("*, patients(full_name)")
+      .select("id, session_number, chief_complaint, assessment, status, created_at, patients(full_name)")
       .order("created_at", { ascending: false })
     setRecords(data || [])
     setLoading(false)

@@ -1,7 +1,7 @@
 ﻿"use client"
 
-import { useState, useRef, useCallback, useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { useState, useRef, useEffect } from "react"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { anamneseDataSchema, AnamneseDataValues } from "@/lib/validations/anamnese"
 import { createAnamnese } from "@/lib/actions/anamnese.actions"
@@ -169,6 +169,10 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
       consent_marketing_accepted: false,
     },
   })
+
+  const watchPregnant = useWatch({ control: form.control, name: "pregnant" })
+  const watchConsentLgpd = useWatch({ control: form.control, name: "consent_lgpd_accepted" })
+  const watchConsentMarketing = useWatch({ control: form.control, name: "consent_marketing_accepted" })
 
   useEffect(() => {
     return () => {
@@ -380,7 +384,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
                     </SelectContent>
                   </Select>
                 </div>
-                {form.watch("pregnant") === "yes" && (
+                {watchPregnant === "yes" && (
                   <div className="space-y-2 animate-in fade-in">
                     <Label>Semanas de gestação</Label>
                     <Input type="number" placeholder="Ex: 20" {...form.register("pregnancy_weeks")} />
@@ -508,7 +512,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
               <div className="flex items-center space-x-2">
                 <Switch
                   id="consent_lgpd_read"
-                  checked={form.watch("consent_lgpd_accepted")}
+                  checked={watchConsentLgpd}
                   onCheckedChange={(checked) => form.setValue("consent_lgpd_accepted", checked, { shouldValidate: true })}
                 />
                 <Label htmlFor="consent_lgpd_read" className="text-sm font-medium">
@@ -531,7 +535,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
               <div className="flex items-center space-x-2">
                 <Switch
                   id="consent_marketing"
-                  checked={form.watch("consent_marketing_accepted") ?? false}
+                  checked={watchConsentMarketing ?? false}
                   onCheckedChange={(checked) => form.setValue("consent_marketing_accepted", checked, { shouldValidate: true })}
                 />
                 <Label htmlFor="consent_marketing" className="text-sm">
@@ -651,7 +655,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
               <div className="flex items-center space-x-2 rounded-xl border bg-muted/20 p-4">
                 <Switch
                   id="consent_final"
-                  checked={!!signatureData && form.watch("consent_lgpd_accepted")}
+                  checked={!!signatureData && watchConsentLgpd}
                   disabled
                 />
                 <Label htmlFor="consent_final" className="text-sm">
@@ -679,7 +683,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
             Próximo <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         ) : (
-          <Button type="submit" disabled={saving || !signatureData || !form.watch("consent_lgpd_accepted")}>
+          <Button type="submit" disabled={saving || !signatureData || !watchConsentLgpd}>
             {saving ? "Salvando..." : "Salvar Anamnese"}
             {!saving && <Check className="ml-2 h-4 w-4" />}
           </Button>

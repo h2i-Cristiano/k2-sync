@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { appointmentCreateSchema, AppointmentCreateFormValues } from "@/lib/validations/appointment"
 import { createAppointment, updateAppointment } from "@/lib/actions/appointment.actions"
@@ -53,10 +53,10 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
     },
   })
 
-  const watchServiceType = form.watch("service_type")
-  const watchIsHomeVisit = form.watch("is_home_visit")
-  const watchTotalCost = form.watch("total_cost") || 0
-  const watchCommissionPercent = form.watch("commission_percent") || 0
+  const watchServiceType = useWatch({ control: form.control, name: "service_type" })
+  const watchIsHomeVisit = useWatch({ control: form.control, name: "is_home_visit" })
+  const watchTotalCost = useWatch({ control: form.control, name: "total_cost" }) || 0
+  const watchCommissionPercent = useWatch({ control: form.control, name: "commission_percent" }) || 0
   const commissionAmount = Number(watchTotalCost) * (Number(watchCommissionPercent) / 100)
 
   async function onSubmit(data: AppointmentCreateFormValues) {

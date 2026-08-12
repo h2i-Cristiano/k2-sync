@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { recordCreateSchema, RecordCreateFormValues } from "@/lib/validations/record"
 import { createRecord, updateRecord } from "@/lib/actions/record.actions"
@@ -51,7 +51,7 @@ export function RecordForm({ patients, initialData, onSuccess, onCancel }: Recor
     onSuccess?.()
   }
 
-  const patientId = String(form.watch("patient_id") ?? "")
+  const patientId = String(useWatch({ control: form.control, name: "patient_id" }) ?? "")
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
