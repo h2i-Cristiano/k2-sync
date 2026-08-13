@@ -24,7 +24,7 @@ import { fetchServices, getServiceById, ServiceDef } from "@/lib/services"
 import { useSearchParams } from "next/navigation"
 import { updateAppointment } from "@/lib/actions/appointment.actions"
 import { toast } from "sonner"
-import { getWhatsAppUrl, buildDepositMessage } from "@/lib/whatsapp"
+import { getWhatsAppUrl, buildPaymentMessage } from "@/lib/whatsapp"
 
 const AppointmentForm = dynamic(
   () => import("@/components/forms/AppointmentForm").then((mod) => ({ default: mod.AppointmentForm })),
@@ -84,7 +84,6 @@ function AppointmentsPageInner() {
   const [view, setView] = useState<"day" | "list">("day")
   const [activeFilter, setActiveFilter] = useState("all")
   const [services, setServices] = useState<ServiceDef[]>([])
-  const [depositResult, setDepositResult] = useState<{ depositAmount: number; patientPhone?: string; patientName: string; serviceName: string } | null>(null)
   const supabase = useMemo(() => createClient(), [])
 
   const year = selectedDate.getFullYear()
@@ -147,6 +146,21 @@ function AppointmentsPageInner() {
       toast.success(`Status alterado para "${statusLabels[newStatus] || newStatus}"`)
     }
   }, [appointments, allMonthAppointments])
+
+  const openWhatsApp = useCallback((apt: any, svc?: ServiceDef) => {
+    const phone = apt.patients?.phone
+    if (!phone) {
+      toast.error("Paciente sem telefone cadastrado")
+      return
+    }
+    const msg = buildPaymentMessage({
+      patientName: apt.patients.full_name || "Paciente",
+      serviceName: svc?.label || apt.service_type,
+      amount: Number(apt.total_cost) || svc?.price || 0,
+      status: apt.status === "completed" ? "completed" : "scheduled",
+    })
+    window.open(getWhatsAppUrl(phone, msg), "_blank")
+  }, [])
 
   useEffect(() => {
     fetchPatients()
@@ -239,33 +253,11 @@ function AppointmentsPageInner() {
                 <AppointmentForm
                   patients={patients}
                   initialData={editingAppointment}
-                  onSuccess={(result) => {
+                  onSuccess={() => {
                     setIsOpen(false)
                     setEditingAppointment(null)
                     fetchAppointmentsForDay()
                     fetchMonthAppointments()
-                    if (result?.depositEntryId && result.depositAmount) {
-                      setDepositResult({
-                        depositAmount: result.depositAmount,
-                        patientPhone: result.patientPhone,
-                        patientName: result.patientName || "Paciente",
-                        serviceName: result.serviceName || "Serviço",
-                      })
-                      if (result.patientPhone) {
-                        const msg = buildDepositMessage({
-                          patientName: result.patientName || "Paciente",
-                          serviceName: result.serviceName || "Serviço",
-                          amount: result.depositAmount,
-                        })
-                        toast.success("Agendamento criado! Envie a cobrança via WhatsApp.", {
-                          action: {
-                            label: "WhatsApp",
-                            onClick: () => window.open(getWhatsAppUrl(result.patientPhone!, msg), "_blank"),
-                          },
-                          duration: 10000,
-                        })
-                      }
-                    }
                   }}
                   onCancel={() => { setIsOpen(false); setEditingAppointment(null) }}
                 />
@@ -505,6 +497,15 @@ function AppointmentsPageInner() {
                                 >
                                   <Pencil className="h-3.5 w-3.5" />
                                 </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  title="Cobrar via WhatsApp"
+                                  className="h-8 w-8 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700"
+                                  onClick={(e) => { e.stopPropagation(); openWhatsApp(apt, svc) }}
+                                >
+                                  <MessageCircle className="h-3.5 w-3.5" />
+                                </Button>
                               </div>
                             </div>
                             {apt.is_home_visit && (
@@ -589,6 +590,15 @@ function AppointmentsPageInner() {
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Cobrar via WhatsApp"
+                        className="h-8 w-8 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700"
+                        onClick={(e) => { e.stopPropagation(); openWhatsApp(apt, svc) }}
+                      >
+                        <MessageCircle className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </div>
                 )
@@ -598,45 +608,7 @@ function AppointmentsPageInner() {
         </div>
       </div>
 
-      {/* Deposit WhatsApp Banner */}
-      {depositResult && (
-        <div className="fixed bottom-6 right-6 z-50 max-w-sm">
-          <Card className="glass-card border-emerald-500/30 shadow-lg">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">Entrada registrada!</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    R$ {depositResult.depositAmount.toFixed(2)} — {depositResult.serviceName}
-                  </p>
-                </div>
-                <div className="flex gap-1.5">
-                  {depositResult.patientPhone && (
-                    <Button
-                      size="sm"
-                      className="rounded-lg h-8 bg-emerald-600 hover:bg-emerald-700 text-white"
-                      onClick={() => {
-                        const msg = buildDepositMessage({
-                          patientName: depositResult.patientName,
-                          serviceName: depositResult.serviceName,
-                          amount: depositResult.depositAmount,
-                        })
-                        window.open(getWhatsAppUrl(depositResult.patientPhone!, msg), "_blank")
-                      }}
-                    >
-                      <MessageCircle className="h-3.5 w-3.5 mr-1" /> WhatsApp
-                    </Button>
-                  )}
-                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg" onClick={() => setDepositResult(null)}>
-                    ✕
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-    </div>
+      </div>
   )
 }
 

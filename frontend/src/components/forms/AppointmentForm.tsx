@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { appointmentCreateSchema, AppointmentCreateFormValues } from "@/lib/validations/appointment"
@@ -21,9 +21,14 @@ function formatLocalDatetime(d: Date): string {
 interface AppointmentFormProps {
   patients: { id: string; full_name: string; phone?: string }[]
   initialData?: any
-  onSuccess?: (result?: { depositEntryId?: string | null; depositAmount?: number; patientPhone?: string; patientName?: string; serviceName?: string }) => void
+  onSuccess?: () => void
   onCancel?: () => void
 }
+
+const selectClass = (hasError?: boolean) =>
+  `flex w-full h-12 rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 ${hasError ? "border-destructive" : ""}`
+
+const optionClass = "text-foreground bg-background"
 
 export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: AppointmentFormProps) {
   const [saving, setSaving] = useState(false)
@@ -63,9 +68,21 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
   const watchIsHomeVisit = useWatch({ control: form.control, name: "is_home_visit" })
   const watchTotalCost = useWatch({ control: form.control, name: "total_cost" }) || 0
   const watchCommissionPercent = useWatch({ control: form.control, name: "commission_percent" }) || 0
-  const commissionAmount = Number(watchTotalCost) * (Number(watchCommissionPercent) / 100)
+  const watchPatientId = useWatch({ control: form.control, name: "patient_id" })
+  const watchStatus = useWatch({ control: form.control, name: "status" })
+  const watchScheduledAt = useWatch({ control: form.control, name: "scheduled_at" }) as string
 
-  async function onSubmit(data: AppointmentCreateFormValues) {
+  const scheduledDate = watchScheduledAt?.slice(0, 10) || ""
+  const scheduledTime = watchScheduledAt?.slice(11, 16) || ""
+
+  const commissionAmount = useMemo(
+    () => Number(watchTotalCost) * (Number(watchCommissionPercent) / 100),
+    [watchTotalCost, watchCommissionPercent]
+  )
+
+  const selectedService = useMemo(() => services.find(s => s.id === watchServiceType), [services, watchServiceType])
+
+  const onSubmit = useCallback(async (data: AppointmentCreateFormValues) => {
     setSaving(true)
     const { commission_percent: _cp, commission_amount: _ca, ...dataWithoutCommission } = data as any
     const formattedData = {
@@ -88,25 +105,12 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       toast.error(result.error)
       return
     }
+
     toast.success(initialData?.id ? "Agendamento atualizado!" : "Agendamento criado!")
+    onSuccess?.()
+  }, [initialData, chargeDeposit, depositAmount, onSuccess])
 
-    const r = result as any
-    if (chargeDeposit && depositAmount > 0 && r.depositEntryId) {
-      const patient = patients.find(p => p.id === form.getValues("patient_id"))
-      const svc = services.find(s => s.id === form.getValues("service_type"))
-      onSuccess?.({
-        depositEntryId: r.depositEntryId,
-        depositAmount,
-        patientPhone: patient?.phone,
-        patientName: patient?.full_name,
-        serviceName: svc?.name,
-      })
-    } else {
-      onSuccess?.()
-    }
-  }
-
-  const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleServiceChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value
     if (!value) return
     const svc = services.find(s => s.id === value)
@@ -120,9 +124,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
         form.setValue("commission_percent", svc.commission_percent)
       }
     }
-  }
-
-  const selectedService = services.find(s => s.id === watchServiceType)
+  }, [services, initialData, form])
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
@@ -131,13 +133,13 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
         <Label htmlFor="patient_id">Paciente *</Label>
         <select
           id="patient_id"
-          value={form.watch("patient_id") || ""}
+          value={watchPatientId || ""}
           onChange={(e) => form.setValue("patient_id", e.target.value)}
-          className={`flex w-full h-12 rounded-xl border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 ${form.formState.errors.patient_id ? "border-destructive" : ""}`}
+          className={selectClass(!!form.formState.errors.patient_id)}
         >
-          <option value="">Selecione o paciente</option>
+          <option value="" className={optionClass}>Selecione o paciente</option>
           {patients.map((p) => (
-            <option key={p.id} value={p.id}>{p.full_name}</option>
+            <option key={p.id} value={p.id} className={optionClass}>{p.full_name}</option>
           ))}
         </select>
         {form.formState.errors.patient_id && (
@@ -150,13 +152,13 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
         <Label htmlFor="service_type">Tipo de Serviço *</Label>
         <select
           id="service_type"
-          value={form.watch("service_type") || ""}
+          value={watchServiceType || ""}
           onChange={handleServiceChange}
-          className={`flex w-full h-12 rounded-xl border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 ${form.formState.errors.service_type ? "border-destructive" : ""}`}
+          className={selectClass(!!form.formState.errors.service_type)}
         >
-          <option value="">Selecione o serviço</option>
+          <option value="" className={optionClass}>Selecione o serviço</option>
           {services.map((svc) => (
-            <option key={svc.id} value={svc.id}>{svc.name} ({svc.duration_minutes}min)</option>
+            <option key={svc.id} value={svc.id} className={optionClass}>{svc.name} ({svc.duration_minutes}min)</option>
           ))}
         </select>
         {selectedService && (
@@ -172,19 +174,28 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
         )}
       </div>
 
-      {/* Date + Duration */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Date + Time + Duration */}
+      <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="scheduled_at">Data e Hora *</Label>
+          <Label htmlFor="scheduled_date">Data *</Label>
           <Input
-            id="scheduled_at"
-            type="datetime-local"
-            {...form.register("scheduled_at")}
+            id="scheduled_date"
+            type="date"
+            value={scheduledDate}
+            onChange={(e) => form.setValue("scheduled_at", `${e.target.value}T${scheduledTime || "09:00"}`)}
             className={form.formState.errors.scheduled_at ? "border-destructive" : ""}
           />
-          {form.formState.errors.scheduled_at && (
-            <p className="text-sm font-medium text-destructive">{form.formState.errors.scheduled_at.message}</p>
-          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="scheduled_time">Hora *</Label>
+          <Input
+            id="scheduled_time"
+            type="time"
+            step="60"
+            value={scheduledTime}
+            onChange={(e) => form.setValue("scheduled_at", `${scheduledDate}T${e.target.value}`)}
+            className={form.formState.errors.scheduled_at ? "border-destructive" : ""}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="duration_minutes">Duração (min) *</Label>
@@ -194,11 +205,11 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
             {...form.register("duration_minutes")}
             className={form.formState.errors.duration_minutes ? "border-destructive" : ""}
           />
-          {form.formState.errors.duration_minutes && (
-            <p className="text-sm font-medium text-destructive">{form.formState.errors.duration_minutes.message}</p>
-          )}
         </div>
       </div>
+      {form.formState.errors.scheduled_at && (
+        <p className="text-sm font-medium text-destructive">{form.formState.errors.scheduled_at.message}</p>
+      )}
 
       {/* Status + Home Visit */}
       <div className="grid grid-cols-2 gap-4">
@@ -206,14 +217,14 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
           <Label htmlFor="status">Status</Label>
           <select
             id="status"
-            value={form.watch("status") || "scheduled"}
+            value={watchStatus || "scheduled"}
             onChange={(e) => form.setValue("status", e.target.value as AppointmentCreateFormValues["status"])}
-            className="flex w-full h-12 rounded-xl border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            className={selectClass()}
           >
-            <option value="scheduled">Agendado</option>
-            <option value="confirmed">Confirmado</option>
-            <option value="completed">Concluído</option>
-            <option value="cancelled">Cancelado</option>
+            <option value="scheduled" className={optionClass}>Agendado</option>
+            <option value="confirmed" className={optionClass}>Confirmado</option>
+            <option value="completed" className={optionClass}>Concluído</option>
+            <option value="cancelled" className={optionClass}>Cancelado</option>
           </select>
         </div>
         <div className="flex items-center space-x-2 pt-8">
