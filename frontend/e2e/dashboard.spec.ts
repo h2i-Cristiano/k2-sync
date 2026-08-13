@@ -6,7 +6,7 @@ test.describe('Dashboard', () => {
     await loginAsTestUser(page);
 
     await expect(page.locator('header')).toBeVisible();
-    await expect(page.getByText('K2-Sync')).toBeVisible();
+    await expect(page.locator('aside').getByText('K2-Sync')).toBeVisible();
 
     await expect(page.getByText(/pacientes/i).first()).toBeVisible();
     await expect(page.getByText(/agendamento/i).first()).toBeVisible();

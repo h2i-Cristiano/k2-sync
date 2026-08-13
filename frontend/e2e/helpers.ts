@@ -21,8 +21,8 @@ export async function login(page: Page, email = TEST_EMAIL, password = TEST_PASS
   const alreadyAuth = await isOnDashboard(page);
   if (alreadyAuth) return;
 
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/senha/i).fill(password);
+  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel('Senha', { exact: true }).fill(password);
   await page.getByRole('button', { name: /entrar/i }).click();
   await page.waitForURL(/.*\/dashboard.*/, { timeout: 15000 });
   await page.waitForTimeout(1000);
@@ -39,8 +39,8 @@ export async function ensureTestUserExists(page: Page) {
   const alreadyAuth = await isOnDashboard(page);
   if (alreadyAuth) return;
 
-  await page.getByLabel(/email/i).fill(TEST_EMAIL);
-  await page.getByLabel(/senha/i).fill(TEST_PASSWORD);
+  await page.getByLabel('Email', { exact: true }).fill(TEST_EMAIL);
+  await page.getByLabel('Senha', { exact: true }).fill(TEST_PASSWORD);
   await page.getByRole('button', { name: /entrar/i }).click();
 
   let loginSucceeded = false;
@@ -59,9 +59,9 @@ export async function ensureTestUserExists(page: Page) {
   const isSignupPage = await page.getByLabel(/nome completo/i).isVisible().catch(() => false);
   if (!isSignupPage) return;
 
-  await page.getByLabel(/nome completo/i).fill(TEST_NAME);
-  await page.getByLabel(/email/i).fill(TEST_EMAIL);
-  await page.getByLabel(/senha/i).fill(TEST_PASSWORD);
+  await page.getByLabel('Nome Completo', { exact: true }).fill(TEST_NAME);
+  await page.getByLabel('Email', { exact: true }).fill(TEST_EMAIL);
+  await page.getByLabel('Senha', { exact: true }).fill(TEST_PASSWORD);
   await page.getByRole('button', { name: /criar conta/i }).click();
 
   await page.waitForTimeout(5000);
@@ -75,7 +75,7 @@ export async function ensureTestUserExists(page: Page) {
 
 export async function waitForDashboard(page: Page) {
   await expect(page.locator('header')).toBeVisible();
-  await expect(page.getByText('K2-Sync')).toBeVisible();
+  await expect(page.locator('aside').getByText('K2-Sync')).toBeVisible();
 }
 
 export async function openDialog(page: Page, buttonText: string) {
