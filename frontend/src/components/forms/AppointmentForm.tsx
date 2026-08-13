@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useForm, useWatch, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { appointmentCreateSchema, AppointmentCreateFormValues } from "@/lib/validations/appointment"
@@ -70,6 +70,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
   const [tenantId, setTenantId] = useState<string | null>(null)
   const [pendingProductId, setPendingProductId] = useState("")
   const [addQuantity, setAddQuantity] = useState("1")
+  const materialsDirty = useRef(false)
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
@@ -104,6 +105,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
             }))
           )
         }
+        materialsDirty.current = false
       }
     }
     load()
@@ -272,6 +274,35 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
     onSuccess?.()
   }, [initialData, chargeDeposit, depositAmount, onSuccess, tenantId, materials, supabase])
 
+  const loadKitMaterials = useCallback(async (serviceId: string) => {
+    if (materialsDirty.current || !serviceId) return
+    const { data: kit } = await supabase
+      .from("service_materials")
+      .select("product_id, quantity")
+      .eq("service_id", serviceId)
+    if (!kit) return
+    const ids = (kit as any[]).map((k) => k.product_id)
+    const { data: prodData } = ids.length
+      ? await supabase.from("products").select("id, name, unit, price, cost").in("id", ids)
+      : { data: [] as any[] }
+    const byId = new Map((prodData || []).map((p: any) => [p.id, p]))
+    const next = (kit as any[])
+      .map((k) => {
+        const p = byId.get(k.product_id)
+        return p
+          ? {
+              product_id: k.product_id,
+              quantity: Number(k.quantity),
+              name: p.name,
+              unit_price: Number(p.price),
+              unit_cost: Number(p.cost),
+            }
+          : null
+      })
+      .filter(Boolean) as MaterialItem[]
+    setMaterials(next)
+  }, [supabase])
+
   const handleServiceChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value
     if (!value) return
@@ -286,7 +317,8 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
         form.setValue("commission_percent", svc.commission_percent)
       }
     }
-  }, [services, initialData, form])
+    loadKitMaterials(value)
+  }, [services, initialData, form, loadKitMaterials])
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
@@ -590,21 +622,26 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
                 <Input
                   type="number"
                   min="0"
-                  step="0.5"
+                  step="0.01"
+                  inputMode="decimal"
                   value={m.quantity}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    materialsDirty.current = true
                     setMaterials((prev) =>
                       prev.map((x) => (x.product_id === m.product_id ? { ...x, quantity: Number(e.target.value) } : x))
                     )
-                  }
-                  className="h-9 w-20 text-center"
+                  }}
+                  className="h-9 w-24 text-center"
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   className="h-9 w-9 p-0 rounded-lg text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
-                  onClick={() => setMaterials((prev) => prev.filter((x) => x.product_id !== m.product_id))}
+                  onClick={() => {
+                    materialsDirty.current = true
+                    setMaterials((prev) => prev.filter((x) => x.product_id !== m.product_id))
+                  }}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -637,7 +674,8 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
             <Input
               type="number"
               min="0"
-              step="0.5"
+              step="0.01"
+              inputMode="decimal"
               value={addQuantity}
               onChange={(e) => setAddQuantity(e.target.value)}
               className="h-10 w-24 text-center"
@@ -652,6 +690,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
                 const prod = products.find((p) => p.id === pendingProductId)
                 if (!prod) return
                 const qty = Number(addQuantity) > 0 ? Number(addQuantity) : 1
+                materialsDirty.current = true
                 setMaterials((prev) =>
                   prev.some((x) => x.product_id === prod.id)
                     ? prev.map((x) => (x.product_id === prod.id ? { ...x, quantity: x.quantity + qty } : x))

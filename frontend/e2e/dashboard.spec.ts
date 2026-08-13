@@ -32,7 +32,7 @@ test.describe('Dashboard', () => {
   test('navigation links work', async ({ page }) => {
     await loginAsTestUser(page);
 
-    // Pacientes is now a collapsible group — click "Lista de Pacientes" sub-item
+    // Pacientes is a direct link that also highlights patient detail pages
     await page.getByRole('link', { name: 'Agenda', exact: true }).first().click();
     await page.waitForURL(/.*\/appointments.*/);
     await expect(page.getByText(/agenda/i).first()).toBeVisible();
@@ -40,6 +40,11 @@ test.describe('Dashboard', () => {
     await page.getByRole('link', { name: 'Prontuarios', exact: true }).first().click();
     await page.waitForURL(/.*\/records.*/);
     await expect(page.getByText(/prontuarios/i).first()).toBeVisible();
+
+    // Pacientes is a direct link (single click), not a collapsible group
+    await page.getByRole('link', { name: 'Pacientes', exact: true }).first().click();
+    await page.waitForURL(/.*\/patients/);
+    await expect(page.getByText(/pacientes/i).first()).toBeVisible();
   });
 
   test('logout redirects to login', async ({ page }) => {

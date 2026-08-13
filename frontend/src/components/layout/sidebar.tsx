@@ -35,7 +35,6 @@ import {
   Menu,
   Leaf,
   ChevronLeft,
-  ChevronDown,
   ArrowDownCircle,
   ArrowUpCircle,
   Hand,
@@ -46,6 +45,7 @@ interface NavItem {
   label: string
   icon: React.ComponentType<{ className?: string }>
   disabled?: boolean
+  match?: string
 }
 
 interface NavGroupDef {
@@ -60,12 +60,9 @@ const mainNavGroups: NavGroupDef[] = [
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/appointments", label: "Agenda", icon: Calendar },
+      { href: "/patients", label: "Pacientes", icon: Users, match: "/patients" },
     ],
   },
-]
-
-const patientSubItems: NavItem[] = [
-  { href: "/patients", label: "Lista de Pacientes", icon: Users },
 ]
 
 const financeNav: NavItem[] = [
@@ -127,72 +124,18 @@ function NavLabel({ children, collapsed }: { children: React.ReactNode; collapse
   )
 }
 
-function PatientsNavGroup({ activeHref, collapsed }: { activeHref: string; collapsed?: boolean }) {
-  const [open, setOpen] = useState(false)
-  const isPatientsActive = activeHref.startsWith("/patients")
-
-  useEffect(() => {
-    if (isPatientsActive) setOpen(true)
-  }, [isPatientsActive])
-
-  if (collapsed) {
-    return (
-      <Link
-        href="/patients"
-        className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-          isPatientsActive
-            ? "bg-accent/15 text-accent font-semibold dark:bg-accent/20 dark:text-accent"
-            : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-black/5 dark:hover:bg-sidebar-accent/50"
-        }`}
-      >
-        <div className="relative flex items-center justify-center">
-          {isPatientsActive && (
-            <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3.5px] rounded-r-full bg-gradient-to-b from-slate-700 to-slate-900 dark:from-slate-400 dark:to-slate-500 shadow-[0_0_10px_rgba(51,65,85,0.35)]" />
-          )}
-          <Users className={`h-[19px] w-[19px] ${isPatientsActive ? "text-accent dark:text-accent" : ""}`} />
-        </div>
-      </Link>
-    )
-  }
-
-  return (
-    <div className="space-y-0.5">
-      <button
-        onClick={() => setOpen(!open)}
-        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-          isPatientsActive
-            ? "bg-accent/15 text-accent font-semibold dark:bg-accent/20 dark:text-accent"
-            : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-black/5 dark:hover:bg-sidebar-accent/50"
-        }`}
-      >
-        <div className="relative flex items-center justify-center">
-          {isPatientsActive && (
-            <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3.5px] rounded-r-full bg-gradient-to-b from-slate-700 to-slate-900 dark:from-slate-400 dark:to-slate-500 shadow-[0_0_10px_rgba(51,65,85,0.35)]" />
-          )}
-          <Users className={`h-[19px] w-[19px] ${isPatientsActive ? "text-accent dark:text-accent" : ""}`} />
-        </div>
-        <span className="flex-1 text-left">Pacientes</span>
-        <ChevronDown className={`h-4 w-4 text-sidebar-foreground/50 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div className="ml-4 pl-3.5 border-l-2 border-accent/20 space-y-0.5 mt-1">
-          {patientSubItems.map((item) => {
-            const active = item.href === "/patients" ? activeHref.startsWith("/patients") : activeHref === item.href
-            return (
-              <NavLink key={item.href} item={item} active={active} />
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-}
-
 function NavGroup({ items, activeHref, collapsed }: { items: NavItem[]; activeHref: string; collapsed?: boolean }) {
   return (
     <div className="space-y-0.5">
       {items.map((item) => (
-        <NavLink key={item.href} item={item} active={activeHref === item.href} collapsed={collapsed} />
+        <NavLink
+          key={item.href}
+          item={item}
+          active={
+            item.match ? activeHref.startsWith(item.match) : activeHref === item.href
+          }
+          collapsed={collapsed}
+        />
       ))}
     </div>
   )
@@ -248,9 +191,6 @@ function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarContentP
         {/* Principal group */}
         <NavLabel collapsed={collapsed}>Principal</NavLabel>
         <NavGroup items={mainNavGroups[0].items} activeHref={pathname} collapsed={collapsed} />
-        <div className="pt-1">
-          <PatientsNavGroup activeHref={pathname} collapsed={collapsed} />
-        </div>
         <NavGroup items={[{ href: "/records", label: "Prontuarios", icon: FileText }]} activeHref={pathname} collapsed={collapsed} />
 
         <NavLabel collapsed={collapsed}>Financeiro</NavLabel>

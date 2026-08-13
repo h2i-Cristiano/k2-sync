@@ -99,7 +99,7 @@ export default function ServicesPage() {
     setKitQty("1")
     const [materialsResult, productsResult] = await Promise.all([
       supabase.from("service_materials").select("product_id, quantity, products(name)").eq("service_id", svc.id),
-      supabase.from("products").select("id, name, unit, price, cost, active").eq("active", true).order("name"),
+      supabase.from("products").select("id, name, unit, price, cost, stock_quantity, active").eq("active", true).order("name"),
     ])
     setKitMaterials((materialsResult.data || []).map((m: any) => ({ ...m, quantity: Number(m.quantity) })))
     setAllProducts(productsResult.data || [])
@@ -118,8 +118,25 @@ export default function ServicesPage() {
     setKitQty("1")
   }
 
+  const kitProductById = (productId: string) => allProducts.find((p) => p.id === productId)
+
+  const formatQty = (n: number) =>
+    Number(n.toFixed(3)).toLocaleString("pt-BR", { maximumFractionDigits: 3 })
+
+  const sessionCostFor = (m: any) => {
+    const prod = kitProductById(m.product_id)
+    return prod ? Number(m.quantity) * Number(prod.cost) : 0
+  }
+
+  const totalSessionCost = kitMaterials.reduce((sum, m) => sum + sessionCostFor(m), 0)
+
   const saveKit = async () => {
     if (!kitService || !tenantId) return
+    const invalid = kitMaterials.find((m) => !(Number(m.quantity) > 0))
+    if (invalid) {
+      toast.error("Todas as quantidades devem ser maiores que zero")
+      return
+    }
     await supabase.from("service_materials").delete().eq("service_id", kitService.id)
     for (const m of kitMaterials) {
       const { error } = await supabase.from("service_materials").insert({
@@ -255,35 +272,61 @@ export default function ServicesPage() {
           <DialogHeader>
             <DialogTitle className="text-lg font-bold">Kit de materiais</DialogTitle>
             <DialogDescription>
-              {kitService?.name} — materiais consumidos em cada atendimento deste serviço.
+              {kitService?.name} — quantidade consumida por atendimento, na unidade do produto (ex.: 0,1 vidro • 10 ml • 2 luvas).
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             {kitMaterials.length > 0 && (
               <div className="space-y-2">
-                {kitMaterials.map((m) => (
-                  <div key={m.product_id} className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{m.products?.name || "Produto"}</p>
+                {kitMaterials.map((m) => {
+                  const prod = kitProductById(m.product_id)
+                  const qty = Number(m.quantity)
+                  const unit = prod?.unit || ""
+                  const cost = sessionCostFor(m)
+                  const stock = prod ? Number(prod.stock_quantity) : 0
+                  const sessions = qty > 0 ? Math.floor(stock / qty) : 0
+                  const low = qty > 0 && stock < qty
+                  return (
+                    <div key={m.product_id} className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{m.products?.name || "Produto"}</p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            inputMode="decimal"
+                            value={m.quantity}
+                            onChange={(e) =>
+                              setKitMaterials((prev) =>
+                                prev.map((x) => (x.product_id === m.product_id ? { ...x, quantity: Number(e.target.value) } : x))
+                              )
+                            }
+                            className="h-9 w-24 text-center"
+                            aria-label={`Quantidade por sessão de ${m.products?.name || "produto"}`}
+                          />
+                          <span className="text-xs text-muted-foreground w-7">{unit}</span>
+                        </div>
+                        <Button type="button" variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-lg text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
+                          onClick={() => setKitMaterials((prev) => prev.filter((x) => x.product_id !== m.product_id))}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                        <span>Custo/sessão: <span className="font-medium text-foreground">R$ {cost.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></span>
+                        {qty < 1 && qty > 0 && <span>= {(qty * 100).toFixed(1).replace(/\.0$/, "").replace(".", ",")}%</span>}
+                        {prod && (
+                          <span className={low ? "font-medium text-warning" : ""}>
+                            Estoque: {formatQty(stock)} {unit} • ≈ {sessions} {sessions === 1 ? "sessão" : "sessões"}
+                          </span>
+                        )}
+                        {low && <span className="font-medium text-warning">estoque não cobre 1 sessão</span>}
+                      </div>
                     </div>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      value={m.quantity}
-                      onChange={(e) =>
-                        setKitMaterials((prev) =>
-                          prev.map((x) => (x.product_id === m.product_id ? { ...x, quantity: Number(e.target.value) } : x))
-                        )
-                      }
-                      className="h-9 w-20 text-center"
-                    />
-                    <Button type="button" variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-lg text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
-                      onClick={() => setKitMaterials((prev) => prev.filter((x) => x.product_id !== m.product_id))}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
             {allProducts.length === 0 ? (
@@ -302,18 +345,32 @@ export default function ServicesPage() {
                     </option>
                   ))}
                 </select>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={kitQty}
-                  onChange={(e) => setKitQty(e.target.value)}
-                  className="h-10 w-24 text-center"
-                  aria-label="Quantidade"
-                />
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    inputMode="decimal"
+                    value={kitQty}
+                    onChange={(e) => setKitQty(e.target.value)}
+                    className="h-10 w-24 text-center"
+                    aria-label="Quantidade por sessão"
+                  />
+                  <span className="text-xs text-muted-foreground w-7">
+                    {allProducts.find((p) => p.id === kitProduct)?.unit || ""}
+                  </span>
+                </div>
                 <Button type="button" variant="secondary" className="h-10 rounded-lg" disabled={!kitProduct} onClick={addKitMaterial}>
                   <Plus className="h-4 w-4 mr-1.5" /> Adicionar
                 </Button>
+              </div>
+            )}
+            {kitMaterials.length > 0 && (
+              <div className="flex items-center justify-between rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-sm">
+                <span className="font-medium text-foreground">Custo de materiais por sessão</span>
+                <span className="font-bold text-foreground">
+                  R$ {totalSessionCost.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
               </div>
             )}
             <div className="flex justify-end gap-2 pt-2">
