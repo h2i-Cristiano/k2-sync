@@ -312,7 +312,7 @@ export function MobileSidebar() {
       >
         <Menu className="h-5 w-5" />
       </SheetTrigger>
-      <SheetContent side="left" showCloseButton className="p-0 data-[side=left]:w-[85%] data-[side=left]:sm:max-w-md glass-sidebar dark:bg-sidebar dark:border-sidebar-border">
+      <SheetContent side="left" showCloseButton className="p-0 glass-sidebar dark:bg-sidebar dark:border-sidebar-border" style={{ width: "min(85vw, 28rem)", maxWidth: "min(85vw, 28rem)" }}>
         <SidebarContent user={user} onLogout={handleLogout} />
       </SheetContent>
     </Sheet>

@@ -129,7 +129,7 @@ export default function SignupPage() {
         <form onSubmit={handleSignup}>
           <CardContent className="space-y-4">
             {error && (
-              <div className="flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+              <div role="alert" className="flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 {error}
               </div>
