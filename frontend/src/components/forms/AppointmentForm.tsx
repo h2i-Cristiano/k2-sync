@@ -522,7 +522,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       </div>
 
       {/* Costs + Commission */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="total_cost">Valor Total (R$)</Label>
           <Controller
@@ -659,7 +659,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
             <select
               value={pendingProductId}
               onChange={(e) => setPendingProductId(e.target.value)}
-              className="flex-1 h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="flex-1 h-10 min-w-0 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               <option value="" className="text-foreground bg-background">Selecione o produto</option>
               {products.map((p) => {

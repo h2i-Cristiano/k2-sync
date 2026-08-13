@@ -103,20 +103,20 @@ export default function ChargesPage() {
           ) : (
             <div className="divide-y divide-border/40">
               {pendingCharges.map((charge) => (
-                <div key={charge.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600 font-bold text-sm">
+                <div key={charge.id} className="flex flex-col gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600 font-bold text-sm shrink-0">
                       {charge.patients?.full_name?.charAt(0)?.toUpperCase() || "P"}
                     </div>
-                    <div>
-                      <p className="font-medium text-sm">{charge.patients?.full_name || "Paciente"}</p>
-                      <p className="text-xs text-muted-foreground">{charge.description || "Serviço"}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">{charge.patients?.full_name || "Paciente"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{charge.description || "Serviço"}</p>
                       {charge.due_date && (
                         <p className="text-[10px] text-muted-foreground/70">Vencimento: {new Date(charge.due_date).toLocaleDateString("pt-BR")}</p>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
                     <p className="font-semibold text-sm">R$ {Number(charge.amount).toFixed(2)}</p>
                     <Button
                       size="sm"

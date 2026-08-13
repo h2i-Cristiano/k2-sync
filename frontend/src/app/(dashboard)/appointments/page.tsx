@@ -259,7 +259,7 @@ function AppointmentsPageInner() {
               <Plus className="mr-2 h-4 w-4" />
               Novo
             </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto grid-cols-[minmax(0,1fr)]">
               <DialogHeader>
                 <DialogTitle>{editingAppointment?.id ? "Editar Agendamento" : "Novo Agendamento"}</DialogTitle>
               </DialogHeader>
@@ -447,7 +447,7 @@ function AppointmentsPageInner() {
                       <div className="absolute top-2 -left-1 h-2.5 w-2.5 rounded-full bg-border" />
                     </div>
 
-                    <div className="flex-1 pb-2">
+                    <div className="flex-1 pb-2 min-w-0">
                       {hourAppointments.map((apt) => {
                         const aptTime = new Date(apt.scheduled_at)
                         const timeStr = aptTime.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
@@ -456,15 +456,15 @@ function AppointmentsPageInner() {
                         return (
                           <div
                             key={apt.id}
-                            className="glass-card rounded-xl p-4 mb-2 hover:shadow-md transition-all duration-200 cursor-pointer group"
+                            className="glass-card rounded-xl p-4 mb-2 hover:shadow-md transition-all duration-200 cursor-pointer group min-w-0"
                             style={{ borderLeft: `3px solid ${svc?.color || "#6B7280"}` }}
                             onClick={() => { setEditingAppointment(apt); setIsOpen(true) }}
                           >
-                            <div className="flex items-start justify-between">
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="space-y-1 min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-1.5">
                                   <span className="text-sm font-bold text-foreground">{timeStr}</span>
-                                  <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: `${svc?.color}15`, color: svc?.color }}>
+                                  <span className="text-xs font-medium px-2 py-0.5 rounded-full max-w-full truncate" style={{ backgroundColor: `${svc?.color}15`, color: svc?.color }}>
                                     {svc?.label || apt.service_type}
                                   </span>
                                   <span className="text-xs text-muted-foreground">{apt.duration_minutes}min</span>
@@ -479,11 +479,11 @@ function AppointmentsPageInner() {
                                   )}
                                 </div>
                                 <p className="font-medium text-foreground flex items-center gap-1.5">
-                                  <User className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                   {apt.patients?.full_name || "Paciente Removido"}
                                 </p>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 shrink-0">
                                 <DropdownMenu>
                                   <DropdownMenuTrigger
                                     render={
@@ -565,8 +565,8 @@ function AppointmentsPageInner() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-foreground truncate">{apt.patients?.full_name || "Paciente Removido"}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: `${svc?.color}15`, color: svc?.color }}>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium max-w-full truncate" style={{ backgroundColor: `${svc?.color}15`, color: svc?.color }}>
                           {svc?.label || apt.service_type}
                         </span>
                         {apt.deposit ? (

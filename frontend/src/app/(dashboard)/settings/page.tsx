@@ -85,7 +85,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-muted/50 p-1 w-full justify-start overflow-x-auto">
+        <TabsList className="bg-muted/50 p-1 w-full justify-start flex-wrap group-data-horizontal/tabs:h-auto">
           <TabsTrigger value="appearance" className="flex items-center gap-2">
             <Monitor className="h-4 w-4" /> Aparência
           </TabsTrigger>

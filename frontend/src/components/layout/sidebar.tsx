@@ -148,7 +148,7 @@ interface SidebarContentProps {
   onToggle?: () => void
 }
 
-function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarContentProps) {
+export function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarContentProps) {
   const pathname = usePathname()
 
   const initials = user?.user_metadata?.full_name
@@ -275,23 +275,46 @@ export function Sidebar() {
   }
 
   return (
-    <>
-      {/* Desktop sidebar */}
-      <aside className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:z-50 transition-all duration-300 glass-sidebar dark:bg-sidebar dark:border-r dark:border-sidebar-border ${collapsed ? "lg:w-[68px]" : "lg:w-64"}`}>
-        <SidebarContent user={user} onLogout={handleLogout} collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
-      </aside>
+    <aside className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:z-50 transition-all duration-300 glass-sidebar dark:bg-sidebar dark:border-r dark:border-sidebar-border ${collapsed ? "lg:w-[68px]" : "lg:w-64"}`}>
+      <SidebarContent user={user} onLogout={handleLogout} collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+    </aside>
+  )
+}
 
-      {/* Mobile sidebar */}
-      <div className="lg:hidden fixed top-0 left-0 z-50">
-        <Sheet>
-          <SheetTrigger render={<Button variant="ghost" size="icon" className="h-10 w-10 m-3" />}>
-            <Menu className="h-5 w-5" />
-          </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0 border-r-0 glass-sidebar dark:bg-sidebar dark:border-sidebar-border">
-            <SidebarContent user={user} onLogout={handleLogout} />
-          </SheetContent>
-        </Sheet>
-      </div>
-    </>
+export function MobileSidebar() {
+  const [open, setOpen] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+  const pathname = usePathname()
+  const router = useRouter()
+  const supabase = useMemo(() => createClient(), [])
+
+  useEffect(() => {
+    setOpen(false)
+  }, [pathname])
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    getUser()
+  }, [supabase.auth])
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push("/login")
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger
+        render={<Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-foreground hover:bg-muted" aria-label="Abrir menu" />}
+      >
+        <Menu className="h-5 w-5" />
+      </SheetTrigger>
+      <SheetContent side="left" showCloseButton className="p-0 data-[side=left]:w-[85%] data-[side=left]:sm:max-w-md glass-sidebar dark:bg-sidebar dark:border-sidebar-border">
+        <SidebarContent user={user} onLogout={handleLogout} />
+      </SheetContent>
+    </Sheet>
   )
 }
