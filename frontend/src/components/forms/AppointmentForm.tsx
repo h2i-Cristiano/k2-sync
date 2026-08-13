@@ -67,7 +67,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
 
   async function onSubmit(data: AppointmentCreateFormValues) {
     setSaving(true)
-    const { commission_amount: _ignored, ...dataWithoutCommission } = data as any
+    const { commission_percent: _cp, commission_amount: _ca, ...dataWithoutCommission } = data as any
     const formattedData = {
       ...dataWithoutCommission,
       scheduled_at: new Date(data.scheduled_at).toISOString(),

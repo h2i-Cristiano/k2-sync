@@ -11,7 +11,7 @@ export async function createAppointment(data: AppointmentCreateFormValues & { de
   try {
     const { depositAmount, ...appointmentData } = data
     const validatedData = appointmentCreateSchema.parse(appointmentData)
-    const { commission_amount: _commissionAmount, ...insertData } = validatedData as any
+    const { commission_percent: _cp, commission_amount: _ca, ...insertData } = validatedData as any
     const { supabase, tenantId, user } = await getUserAndTenant()
 
     const { data: newAppointment, error } = await supabase
@@ -76,7 +76,7 @@ export async function updateAppointment(id: string, data: Partial<AppointmentUpd
   try {
     uuidSchema.parse(id)
     const validatedData = appointmentUpdateSchema.parse(data)
-    const { commission_amount: _commissionAmount, ...updateData } = validatedData as any
+    const { commission_percent: _cp2, commission_amount: _ca2, ...updateData } = validatedData as any
     const { supabase, tenantId } = await getUserAndTenant()
 
     const { data: currentApt } = await supabase
