@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -102,7 +103,7 @@ function NavLink({ item, active, collapsed }: { item: NavItem; active: boolean; 
           ? "opacity-40 cursor-not-allowed"
           : active
           ? "bg-accent/15 text-accent font-semibold shadow-xs dark:bg-accent/20 dark:text-accent"
-          : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/[0.04] dark:hover:bg-sidebar-accent/50"
+          : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-black/5 dark:hover:text-white dark:hover:bg-sidebar-accent/50"
       }`}
       onClick={(e) => item.disabled && e.preventDefault()}
     >
@@ -110,11 +111,11 @@ function NavLink({ item, active, collapsed }: { item: NavItem; active: boolean; 
         {active && (
           <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3.5px] rounded-r-full bg-gradient-to-b from-teal-500 to-cyan-500 shadow-[0_0_10px_rgba(0,180,180,0.5)]" />
         )}
-        <item.icon className={`h-[19px] w-[19px] transition-transform duration-200 group-hover:scale-110 ${active ? "text-accent dark:text-accent" : "text-sidebar-foreground/60 group-hover:text-sidebar-foreground"}`} />
+        <item.icon className={`h-[19px] w-[19px] transition-transform duration-200 group-hover:scale-110 ${active ? "text-accent dark:text-accent" : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground"}`} />
       </div>
       {!collapsed && <span>{item.label}</span>}
       {!collapsed && item.disabled && (
-        <span className="ml-auto text-[9px] font-semibold bg-white/[0.06] text-sidebar-foreground/40 px-1.5 py-0.5 rounded uppercase tracking-wider">Em breve</span>
+        <span className="ml-auto text-[9px] font-semibold bg-black/5 text-sidebar-foreground/50 dark:bg-white/[0.06] dark:text-sidebar-foreground/40 px-1.5 py-0.5 rounded uppercase tracking-wider">Em breve</span>
       )}
     </Link>
   )
@@ -123,7 +124,7 @@ function NavLink({ item, active, collapsed }: { item: NavItem; active: boolean; 
 function NavLabel({ children, collapsed }: { children: React.ReactNode; collapsed?: boolean }) {
   if (collapsed) return null
   return (
-    <p className="px-3 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/30">
+    <p className="px-3 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/45">
       {children}
     </p>
   )
@@ -144,7 +145,7 @@ function PatientsNavGroup({ activeHref, collapsed }: { activeHref: string; colla
         className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
           isPatientsActive
             ? "bg-accent/15 text-accent font-semibold dark:bg-accent/20 dark:text-accent"
-            : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/[0.04] dark:hover:bg-sidebar-accent/50"
+            : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-black/5 dark:hover:bg-sidebar-accent/50"
         }`}
       >
         <div className="relative flex items-center justify-center">
@@ -164,7 +165,7 @@ function PatientsNavGroup({ activeHref, collapsed }: { activeHref: string; colla
         className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
           isPatientsActive
             ? "bg-accent/15 text-accent font-semibold dark:bg-accent/20 dark:text-accent"
-            : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/[0.04] dark:hover:bg-sidebar-accent/50"
+            : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-black/5 dark:hover:bg-sidebar-accent/50"
         }`}
       >
         <div className="relative flex items-center justify-center">
@@ -174,7 +175,7 @@ function PatientsNavGroup({ activeHref, collapsed }: { activeHref: string; colla
           <Users className={`h-[19px] w-[19px] ${isPatientsActive ? "text-accent dark:text-accent" : ""}`} />
         </div>
         <span className="flex-1 text-left">Pacientes</span>
-        <ChevronDown className={`h-4 w-4 text-sidebar-foreground/40 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-4 w-4 text-sidebar-foreground/50 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <div className="ml-4 pl-3.5 border-l-2 border-accent/20 space-y-0.5 mt-1">
@@ -217,7 +218,7 @@ function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarContentP
     .toUpperCase() || "U"
 
   return (
-    <div className="flex h-full flex-col bg-card/95 backdrop-blur-md border-r border-border/60 dark:bg-sidebar dark:border-sidebar-border">
+    <div className="flex h-full flex-col bg-sidebar/95 backdrop-blur-md border-r border-sidebar-border/70 dark:bg-sidebar dark:border-sidebar-border">
       {/* Logo */}
       <div className="flex h-16 items-center justify-between px-4">
         <Link href="/dashboard" className="flex items-center gap-3 group">
@@ -235,7 +236,7 @@ function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarContentP
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-lg text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-white/[0.06] dark:hover:text-white dark:hover:bg-sidebar-accent"
+            className="h-8 w-8 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-black/5 dark:hover:text-white dark:hover:bg-sidebar-accent"
             onClick={onToggle}
           >
             <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
@@ -273,12 +274,12 @@ function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarContentP
       {/* User */}
       <div className="p-3">
         <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant="ghost" className="w-full justify-start gap-3 h-auto py-2.5 px-3 rounded-xl text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/[0.04] dark:text-sidebar-foreground/70 dark:hover:text-white dark:hover:bg-sidebar-accent/50" />}>
+          <DropdownMenuTrigger render={<Button variant="ghost" className="w-full justify-start gap-3 h-auto py-2.5 px-3 rounded-xl text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-black/5 dark:text-sidebar-foreground/80 dark:hover:text-white dark:hover:bg-sidebar-accent/50" />}>
             <div className="relative">
               <Avatar className="h-8.5 w-8.5 ring-2 ring-teal-500/30">
                 <AvatarFallback className="bg-gradient-to-br from-teal-500 to-cyan-700 text-white text-xs font-semibold">{initials}</AvatarFallback>
               </Avatar>
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-teal-500 ring-2 ring-white dark:ring-sidebar" />
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-teal-500 ring-2 ring-sidebar" />
             </div>
             {!collapsed && (
               <div className="flex flex-col items-start text-left min-w-0">
@@ -292,22 +293,24 @@ function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarContentP
             )}
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56 rounded-xl shadow-lg border-border/60" align="start" side="top">
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-semibold">{user?.user_metadata?.full_name}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem render={<Link href="/settings" />}>
-              <Settings className="mr-2 h-4 w-4 text-teal-600 dark:text-teal-400" />
-              Configuracoes
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onLogout} className="text-rose-600 dark:text-rose-400">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sair
-            </DropdownMenuItem>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-semibold">{user?.user_metadata?.full_name}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem render={<Link href="/settings" />}>
+                <Settings className="mr-2 h-4 w-4 text-teal-600 dark:text-teal-400" />
+                Configuracoes
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onLogout} className="text-rose-600 dark:text-rose-400">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sair
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

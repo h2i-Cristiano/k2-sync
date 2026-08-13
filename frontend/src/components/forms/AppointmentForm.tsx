@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useState, useEffect, useMemo, useCallback } from "react"
-import { useForm, useWatch } from "react-hook-form"
+import { useForm, useWatch, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { appointmentCreateSchema, AppointmentCreateFormValues } from "@/lib/validations/appointment"
 import { createAppointment, updateAppointment } from "@/lib/actions/appointment.actions"
@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { fetchServices, ServiceDef } from "@/lib/services"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { MoneyInput } from "@/components/forms/MoneyInput"
 
 function formatLocalDatetime(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0")
@@ -52,7 +53,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
   const [saving, setSaving] = useState(false)
   const [services, setServices] = useState<ServiceDef[]>([])
   const [chargeDeposit, setChargeDeposit] = useState(false)
-  const [depositAmount, setDepositAmount] = useState<number>(0)
+  const [depositAmount, setDepositAmount] = useState<string>("")
 
   useEffect(() => {
     fetchServices().then(setServices)
@@ -76,9 +77,9 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       status: (initialData?.status || "scheduled") as AppointmentCreateFormValues["status"],
       notes: initialData?.notes || "",
       is_home_visit: initialData?.is_home_visit || false,
-      travel_cost: initialData?.travel_cost || 0,
-      total_cost: initialData?.total_cost || 0,
-      commission_percent: initialData?.commission_percent || 0,
+      travel_cost: initialData?.travel_cost ?? "",
+      total_cost: initialData?.total_cost ?? "",
+      commission_percent: initialData?.commission_percent ?? "",
     },
   })
 
@@ -92,6 +93,43 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
 
   const scheduledDate = watchScheduledAt?.slice(0, 10) || ""
   const scheduledTime = watchScheduledAt?.slice(11, 16) || ""
+
+  const [timeText, setTimeText] = useState<string>(scheduledTime || "09:00")
+
+  useEffect(() => {
+    setTimeText(scheduledTime)
+  }, [scheduledTime])
+
+  const isTimeValid = useCallback((t: string) => {
+    const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(t)
+    if (!m) return false
+    const h = Number(m[1])
+    return h >= 7 && h <= 23
+  }, [])
+
+  const todayDateStr = useCallback(() => {
+    const pad = (n: number) => String(n).padStart(2, "0")
+    const d = new Date()
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  }, [])
+
+  const handleTimeText = useCallback((raw: string) => {
+    let v = raw.replace(/[^\d:]/g, "")
+    if (!v.includes(":") && v.length > 2) {
+      v = `${v.slice(0, 2)}:${v.slice(2)}`
+    }
+    v = v.slice(0, 5)
+    const [hhRaw, mmRaw] = v.split(":")
+    const hh = (hhRaw || "").slice(0, 2)
+    const mm = (mmRaw || "").slice(0, 2)
+    const next = v.includes(":") ? `${hh}:${mm}` : hh
+    setTimeText(next)
+    if (isTimeValid(next)) {
+      form.setValue("scheduled_at", `${scheduledDate || todayDateStr()}T${next}`)
+    }
+  }, [form, isTimeValid, scheduledDate, todayDateStr])
+
+  const timeInvalid = timeText.length === 5 && !isTimeValid(timeText)
 
   const initialSelected = scheduledDate ? new Date(scheduledDate) : new Date()
   const [calYear, setCalYear] = useState(initialSelected.getFullYear())
@@ -148,7 +186,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
     } else {
       result = await createAppointment({
         ...formattedData,
-        depositAmount: chargeDeposit && depositAmount > 0 ? depositAmount : undefined,
+        depositAmount: chargeDeposit && Number(depositAmount) > 0 ? Number(depositAmount) : undefined,
       })
     }
 
@@ -278,6 +316,19 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
 
           <div className="rounded-xl border border-border/60 bg-card p-3">
             <p className="text-xs font-medium text-muted-foreground mb-2">Escolha o horário</p>
+            <Input
+              id="scheduled_at_time"
+              value={timeText}
+              onChange={(e) => handleTimeText(e.target.value)}
+              placeholder="HH:MM"
+              inputMode="numeric"
+              maxLength={5}
+              className={`h-10 text-center font-mono text-base ${timeInvalid ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
+            />
+            <div className="flex items-center justify-between mt-2 mb-1.5">
+              <span className="text-[10px] font-medium text-muted-foreground">Horários rápidos</span>
+              <span className="text-[10px] text-muted-foreground">07:00 – 23:00</span>
+            </div>
             <div className="grid grid-cols-5 gap-1.5">
               {HOUR_SLOTS.map((hour) => {
                 const time = `${String(hour).padStart(2, "0")}:00`
@@ -354,11 +405,17 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="total_cost">Valor Total (R$)</Label>
-          <Input
-            id="total_cost"
-            type="number"
-            step="0.01"
-            {...form.register("total_cost")}
+          <Controller
+            control={form.control}
+            name="total_cost"
+            render={({ field }) => (
+              <MoneyInput
+                id="total_cost"
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="0,00"
+              />
+            )}
           />
         </div>
         <div className="space-y-2">
@@ -386,11 +443,17 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       {watchIsHomeVisit && (
         <div className="space-y-2">
           <Label htmlFor="travel_cost">Taxa de Deslocamento (R$)</Label>
-          <Input
-            id="travel_cost"
-            type="number"
-            step="0.01"
-            {...form.register("travel_cost")}
+          <Controller
+            control={form.control}
+            name="travel_cost"
+            render={({ field }) => (
+              <MoneyInput
+                id="travel_cost"
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="0,00"
+              />
+            )}
           />
         </div>
       )}
@@ -409,13 +472,10 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
           {chargeDeposit && (
             <div className="space-y-1">
               <Label htmlFor="deposit_amount" className="text-xs">Valor da entrada (R$) *</Label>
-              <Input
+              <MoneyInput
                 id="deposit_amount"
-                type="number"
-                step="0.01"
-                min="0.01"
-                value={depositAmount || ""}
-                onChange={(e) => setDepositAmount(Number(e.target.value))}
+                value={depositAmount}
+                onChange={setDepositAmount}
                 placeholder="Digite o valor"
                 className="h-10 rounded-lg"
               />

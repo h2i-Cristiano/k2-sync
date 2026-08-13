@@ -4,6 +4,8 @@ const TEST_EMAIL = process.env.TEST_USER_EMAIL || 'e2e@test.com';
 const TEST_PASSWORD = process.env.TEST_USER_PASSWORD || 'test123456';
 const TEST_NAME = 'Teste E2E K2';
 
+export { TEST_EMAIL, TEST_PASSWORD, TEST_NAME };
+
 async function isOnDashboard(page: Page): Promise<boolean> {
   try {
     await page.waitForURL(/.*\/dashboard.*/, { timeout: 3000 });

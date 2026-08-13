@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Pencil, Trash2, ArrowUpCircle, Save, X, CalendarClock, Calendar } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
+import { MoneyInput } from "@/components/forms/MoneyInput"
 
 interface FinancialEntry {
   id: string
@@ -36,7 +37,7 @@ export default function ReceivablePage() {
   const [loading, setLoading] = useState(true)
   const [showNew, setShowNew] = useState(false)
   const [editing, setEditing] = useState<string | null>(null)
-  const [form, setForm] = useState({ description: "", amount: 0, due_date: "", category: "Consulta", notes: "" })
+  const [form, setForm] = useState({ description: "", amount: "", due_date: "", category: "Consulta", notes: "" })
   const [newCategoryName, setNewCategoryName] = useState("")
   const [showNewCategory, setShowNewCategory] = useState(false)
   const [tenantId, setTenantId] = useState<string | null>(null)
@@ -84,21 +85,22 @@ export default function ReceivablePage() {
   const handleSave = async (id?: string) => {
     if (!form.description.trim()) { toast.error("Descrição é obrigatória"); return }
     if (!form.due_date) { toast.error("Data de vencimento é obrigatória"); return }
-    if (form.amount <= 0) { toast.error("Valor deve ser maior que zero"); return }
+    const amount = Number(form.amount)
+    if (!(amount > 0)) { toast.error("Valor deve ser maior que zero"); return }
 
     if (id) {
-      const { error } = await supabase.from("financial_entries").update({ description: form.description, amount: form.amount, due_date: form.due_date, category: form.category, notes: form.notes || null }).eq("id", id)
+      const { error } = await supabase.from("financial_entries").update({ description: form.description, amount, due_date: form.due_date, category: form.category, notes: form.notes || null }).eq("id", id)
       if (error) { toast.error("Erro ao atualizar"); return }
     } else {
       if (!tenantId) { toast.error("Tenant não identificado"); return }
-      const { error } = await supabase.from("financial_entries").insert({ ...form, notes: form.notes || null, type: "receivable", tenant_id: tenantId })
+      const { error } = await supabase.from("financial_entries").insert({ ...form, amount, notes: form.notes || null, type: "receivable", tenant_id: tenantId })
       if (error) { toast.error("Erro ao criar"); return }
     }
 
     toast.success(id ? "Conta atualizada!" : "Conta criada!")
     setEditing(null)
     setShowNew(false)
-    setForm({ description: "", amount: 0, due_date: "", category: "Consulta", notes: "" })
+    setForm({ description: "", amount: "", due_date: "", category: "Consulta", notes: "" })
     fetchData()
   }
 
@@ -153,7 +155,7 @@ export default function ReceivablePage() {
           <CardContent className="p-5">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-1"><Label className="text-xs">Descrição *</Label><Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Ex: Sessão de massoterapia..." className="h-10 rounded-lg" /></div>
-              <div className="space-y-1"><Label className="text-xs">Valor (R$) *</Label><Input type="number" step="0.01" min="0.01" value={form.amount || ""} onChange={e => setForm(f => ({ ...f, amount: Number(e.target.value) }))} className="h-10 rounded-lg" /></div>
+              <div className="space-y-1"><Label className="text-xs">Valor (R$) *</Label><MoneyInput value={form.amount} onChange={v => setForm(f => ({ ...f, amount: v }))} placeholder="0,00" className="h-10 rounded-lg" /></div>
               <div className="space-y-1"><Label className="text-xs">Vencimento *</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} className="h-10 rounded-lg" /></div>
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
@@ -177,7 +179,7 @@ export default function ReceivablePage() {
             <div className="mt-3"><Label className="text-xs">Observações</Label><Input value={form.notes || ""} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Opcional..." className="h-9 rounded-lg" /></div>
             <div className="flex gap-2 mt-4">
               <Button size="sm" onClick={() => handleSave()} className="rounded-lg"><Save className="h-3.5 w-3.5 mr-1" /> Salvar</Button>
-              <Button size="sm" variant="ghost" onClick={() => { setShowNew(false); setShowNewCategory(false); setForm({ description: "", amount: 0, due_date: "", category: "Consulta", notes: "" }) }} className="rounded-lg"><X className="h-3.5 w-3.5 mr-1" /> Cancelar</Button>
+              <Button size="sm" variant="ghost" onClick={() => { setShowNew(false); setShowNewCategory(false); setForm({ description: "", amount: "", due_date: "", category: "Consulta", notes: "" }) }} className="rounded-lg"><X className="h-3.5 w-3.5 mr-1" /> Cancelar</Button>
             </div>
           </CardContent>
         </Card>
@@ -201,7 +203,7 @@ export default function ReceivablePage() {
                   {editing === entry.id ? (
                     <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-3">
                       <Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="h-9 rounded-lg text-sm" />
-                      <Input type="number" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: Number(e.target.value) }))} className="h-9 rounded-lg text-sm" />
+                      <MoneyInput value={form.amount} onChange={v => setForm(f => ({ ...f, amount: v }))} className="h-9 rounded-lg text-sm" />
                       <Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} className="h-9 rounded-lg text-sm" />
                       <div className="flex gap-1">
                         <Button size="sm" onClick={() => handleSave(entry.id)} className="rounded-lg h-9"><Save className="h-3 w-3" /></Button>
@@ -228,7 +230,7 @@ export default function ReceivablePage() {
                       <div className="flex items-center gap-2">
                         <p className="font-semibold text-sm">R$ {Number(entry.amount).toFixed(2)}</p>
                         <Button size="sm" variant="outline" className="rounded-lg h-8 border-emerald-500/30 hover:bg-emerald-500/10" onClick={() => handleMarkPaid(entry.id)}>Receber</Button>
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg" onClick={() => { setEditing(entry.id); setForm({ description: entry.description, amount: entry.amount, due_date: entry.due_date, category: entry.category || "Consulta", notes: entry.notes || "" }) }}><Pencil className="h-3.5 w-3.5" /></Button>
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg" onClick={() => { setEditing(entry.id); setForm({ description: entry.description, amount: String(entry.amount), due_date: entry.due_date, category: entry.category || "Consulta", notes: entry.notes || "" }) }}><Pencil className="h-3.5 w-3.5" /></Button>
                         <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg text-destructive" onClick={() => handleDelete(entry.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                       </div>
                     </>

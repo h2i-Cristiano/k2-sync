@@ -105,7 +105,7 @@ function AppointmentsPageInner() {
 
     const aptList = data || []
     const aptIds = aptList.map(a => a.id)
-    let depositMap: Record<string, number> = {}
+    const depositMap: Record<string, number> = {}
     if (aptIds.length > 0) {
       const { data: entries } = await supabase
         .from("financial_entries")
