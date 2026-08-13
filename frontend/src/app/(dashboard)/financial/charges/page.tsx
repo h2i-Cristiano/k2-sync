@@ -5,14 +5,16 @@ import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { MessageCircle, ExternalLink, CheckCircle, Clock } from "lucide-react"
+import { MessageCircle, CheckCircle, Clock, Check } from "lucide-react"
 import { getWhatsAppUrl, buildPaymentMessage } from "@/lib/whatsapp"
+import { toast } from "sonner"
 
 interface PendingCharge {
   id: string
   amount: number
   status: string
-  payment_method: string
+  description: string
+  due_date: string
   created_at: string
   patients: { full_name: string; phone: string } | null
   appointments: { service_type: string; total_cost: number } | null
@@ -21,37 +23,34 @@ interface PendingCharge {
 export default function ChargesPage() {
   const [charges, setCharges] = useState<PendingCharge[]>([])
   const [loading, setLoading] = useState(true)
+  const [marking, setMarking] = useState<string | null>(null)
   const supabase = createClient()
 
-  useEffect(() => {
-    const fetchCharges = async () => {
-      try {
-        const { data } = await supabase
-          .from("payments")
-          .select("id, amount, status, payment_method, created_at, patients(full_name, phone), appointments(service_type, total_cost)")
-          .order("created_at", { ascending: false })
-
-        setCharges((data || []) as any[])
-      } catch (err) {
-        console.error("Erro ao carregar cobranças:", err)
-      } finally {
-        setLoading(false)
-      }
+  const fetchCharges = async () => {
+    try {
+      const { data } = await supabase
+        .from("financial_entries")
+        .select("id, amount, status, description, due_date, created_at, patients(full_name, phone), appointments(service_type, total_cost)")
+        .eq("type", "receivable")
+        .order("created_at", { ascending: false })
+      setCharges((data || []) as any[])
+    } catch (err) {
+      console.error("Erro ao carregar cobranças:", err)
+    } finally {
+      setLoading(false)
     }
+  }
 
-    fetchCharges()
-  }, [supabase])
+  useEffect(() => { fetchCharges() }, [supabase])
 
   const pendingCharges = charges.filter(c => c.status === "pending")
   const paidCharges = charges.filter(c => c.status === "paid")
 
   const handleSendWhatsApp = (charge: PendingCharge) => {
-    if (!charge.patients?.phone) {
-      return
-    }
+    if (!charge.patients?.phone) return
     const message = buildPaymentMessage({
       patientName: charge.patients.full_name,
-      serviceName: charge.appointments?.service_type || "Serviço",
+      serviceName: charge.description || "Serviço",
       amount: Number(charge.amount),
       status: "completed",
     })
@@ -59,11 +58,23 @@ export default function ChargesPage() {
     window.open(url, "_blank")
   }
 
+  const handleMarkPaid = async (id: string) => {
+    setMarking(id)
+    const { error } = await supabase
+      .from("financial_entries")
+      .update({ status: "paid", paid_at: new Date().toISOString() })
+      .eq("id", id)
+    setMarking(null)
+    if (error) { toast.error("Erro ao marcar como pago"); return }
+    toast.success("Pagamento registrado!")
+    fetchCharges()
+  }
+
   return (
     <div className="space-y-6 animate-slide-up-fade">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Cobranças</h1>
-        <p className="text-sm text-muted-foreground">Gerencie pagamentos pendentes e envie cobranças via WhatsApp.</p>
+        <p className="text-sm text-muted-foreground">Gerencie pagamentos pendentes, registre recebimentos e envie cobranças via WhatsApp.</p>
       </div>
 
       {/* Pending Charges */}
@@ -99,11 +110,22 @@ export default function ChargesPage() {
                     </div>
                     <div>
                       <p className="font-medium text-sm">{charge.patients?.full_name || "Paciente"}</p>
-                      <p className="text-xs text-muted-foreground">{charge.appointments?.service_type || "Serviço"}</p>
+                      <p className="text-xs text-muted-foreground">{charge.description || "Serviço"}</p>
+                      {charge.due_date && (
+                        <p className="text-[10px] text-muted-foreground/70">Vencimento: {new Date(charge.due_date).toLocaleDateString("pt-BR")}</p>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <p className="font-semibold text-sm">R$ {Number(charge.amount).toFixed(2)}</p>
+                    <Button
+                      size="sm"
+                      className="rounded-lg"
+                      onClick={() => handleMarkPaid(charge.id)}
+                      disabled={marking === charge.id}
+                    >
+                      <Check className="h-4 w-4 mr-1" /> {marking === charge.id ? "..." : "Marcar pago"}
+                    </Button>
                     {charge.patients?.phone && (
                       <Button
                         size="sm"
@@ -155,7 +177,7 @@ export default function ChargesPage() {
                     </div>
                     <div>
                       <p className="font-medium text-sm">{charge.patients?.full_name || "Paciente"}</p>
-                      <p className="text-xs text-muted-foreground">{charge.appointments?.service_type || "Serviço"}</p>
+                      <p className="text-xs text-muted-foreground">{charge.description || "Serviço"}</p>
                     </div>
                   </div>
                   <p className="font-semibold text-sm text-emerald-600">R$ {Number(charge.amount).toFixed(2)}</p>

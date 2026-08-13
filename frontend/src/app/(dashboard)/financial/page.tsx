@@ -29,11 +29,12 @@ export default function FinancialPage() {
     const fetchStats = async () => {
       try {
         const [paid, pending, recent] = await Promise.all([
-          supabase.from("payments").select("amount").eq("status", "paid"),
-          supabase.from("payments").select("amount, id").eq("status", "pending"),
+          supabase.from("financial_entries").select("amount").eq("type", "receivable").eq("status", "paid"),
+          supabase.from("financial_entries").select("amount, id").eq("type", "receivable").eq("status", "pending"),
           supabase
-            .from("payments")
-            .select("id, amount, status, payment_method, created_at, patients(full_name)")
+            .from("financial_entries")
+            .select("id, amount, status, description, created_at, patients(full_name)")
+            .eq("type", "receivable")
             .order("created_at", { ascending: false })
             .limit(10),
         ])
@@ -160,7 +161,7 @@ export default function FinancialPage() {
                     </div>
                     <div>
                       <p className="font-medium text-sm">{payment.patients?.full_name || "Paciente"}</p>
-                      <p className="text-xs text-muted-foreground">{new Date(payment.created_at).toLocaleDateString("pt-BR")}</p>
+                      <p className="text-xs text-muted-foreground">{payment.description || new Date(payment.created_at).toLocaleDateString("pt-BR")}</p>
                     </div>
                   </div>
                   <div className="text-right">

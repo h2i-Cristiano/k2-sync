@@ -2,7 +2,7 @@
 -- This replaces the hardcoded SERVICES array in services.ts
 
 CREATE TABLE IF NOT EXISTS services (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   color TEXT NOT NULL DEFAULT '#6B7280',
@@ -12,13 +12,19 @@ CREATE TABLE IF NOT EXISTS services (
   active BOOLEAN DEFAULT TRUE,
   sort_order INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- RLS policies
 ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "services_tenant_isolation" ON services;
+DROP POLICY IF EXISTS "services_insert_own_tenant" ON services;
+DROP POLICY IF EXISTS "services_update_own_tenant" ON services;
+DROP POLICY IF EXISTS "services_delete_own_tenant" ON services;
+
 CREATE POLICY "services_tenant_isolation" ON services
+  FOR SELECT
   USING (tenant_id = public.user_tenant_id());
 
 CREATE POLICY "services_insert_own_tenant" ON services
@@ -27,7 +33,8 @@ CREATE POLICY "services_insert_own_tenant" ON services
 
 CREATE POLICY "services_update_own_tenant" ON services
   FOR UPDATE
-  USING (tenant_id = public.user_tenant_id());
+  USING (tenant_id = public.user_tenant_id())
+  WITH CHECK (tenant_id = public.user_tenant_id());
 
 CREATE POLICY "services_delete_own_tenant" ON services
   FOR DELETE

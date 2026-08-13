@@ -3,9 +3,11 @@
 -- to READ their profile to GET the tenant_id. Self-read policy fixes this.
 
 -- Allow users to always read their own profile row
+DROP POLICY IF EXISTS profiles_self_read ON profiles;
 CREATE POLICY profiles_self_read ON profiles
   FOR SELECT USING (id = auth.uid());
 
 -- Allow users to update their own profile (for JWT refresh scenarios)
+DROP POLICY IF EXISTS profiles_self_update ON profiles;
 CREATE POLICY profiles_self_update ON profiles
   FOR UPDATE USING (id = auth.uid());

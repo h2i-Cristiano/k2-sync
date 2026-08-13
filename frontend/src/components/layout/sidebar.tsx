@@ -23,7 +23,6 @@ import {
   Calendar,
   Users,
   FileText,
-  Stethoscope,
   CreditCard,
   Receipt,
   ShoppingBag,
@@ -37,7 +36,6 @@ import {
   Leaf,
   ChevronLeft,
   ChevronDown,
-  ClipboardList,
   ArrowDownCircle,
   ArrowUpCircle,
   Hand,
@@ -68,7 +66,6 @@ const mainNavGroups: NavGroupDef[] = [
 
 const patientSubItems: NavItem[] = [
   { href: "/patients", label: "Lista de Pacientes", icon: Users },
-  { href: "/patients/anamnese", label: "Anamnese", icon: ClipboardList },
 ]
 
 const financeNav: NavItem[] = [
@@ -109,7 +106,7 @@ function NavLink({ item, active, collapsed }: { item: NavItem; active: boolean; 
     >
       <div className="relative flex items-center justify-center">
         {active && (
-          <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3.5px] rounded-r-full bg-gradient-to-b from-teal-500 to-cyan-500 shadow-[0_0_10px_rgba(0,180,180,0.5)]" />
+          <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3.5px] rounded-r-full bg-gradient-to-b from-slate-700 to-slate-900 dark:from-slate-400 dark:to-slate-500 shadow-[0_0_10px_rgba(51,65,85,0.35)]" />
         )}
         <item.icon className={`h-[19px] w-[19px] transition-transform duration-200 group-hover:scale-110 ${active ? "text-accent dark:text-accent" : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground"}`} />
       </div>
@@ -150,7 +147,7 @@ function PatientsNavGroup({ activeHref, collapsed }: { activeHref: string; colla
       >
         <div className="relative flex items-center justify-center">
           {isPatientsActive && (
-            <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3.5px] rounded-r-full bg-gradient-to-b from-teal-500 to-cyan-500 shadow-[0_0_10px_rgba(0,180,180,0.5)]" />
+            <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3.5px] rounded-r-full bg-gradient-to-b from-slate-700 to-slate-900 dark:from-slate-400 dark:to-slate-500 shadow-[0_0_10px_rgba(51,65,85,0.35)]" />
           )}
           <Users className={`h-[19px] w-[19px] ${isPatientsActive ? "text-accent dark:text-accent" : ""}`} />
         </div>
@@ -170,7 +167,7 @@ function PatientsNavGroup({ activeHref, collapsed }: { activeHref: string; colla
       >
         <div className="relative flex items-center justify-center">
           {isPatientsActive && (
-            <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3.5px] rounded-r-full bg-gradient-to-b from-teal-500 to-cyan-500 shadow-[0_0_10px_rgba(0,180,180,0.5)]" />
+            <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3.5px] rounded-r-full bg-gradient-to-b from-slate-700 to-slate-900 dark:from-slate-400 dark:to-slate-500 shadow-[0_0_10px_rgba(51,65,85,0.35)]" />
           )}
           <Users className={`h-[19px] w-[19px] ${isPatientsActive ? "text-accent dark:text-accent" : ""}`} />
         </div>
@@ -180,7 +177,7 @@ function PatientsNavGroup({ activeHref, collapsed }: { activeHref: string; colla
       {open && (
         <div className="ml-4 pl-3.5 border-l-2 border-accent/20 space-y-0.5 mt-1">
           {patientSubItems.map((item) => {
-            const active = activeHref === item.href || (item.href === "/patients" && activeHref.startsWith("/patients") && !activeHref.includes("anamnese"))
+            const active = item.href === "/patients" ? activeHref.startsWith("/patients") : activeHref === item.href
             return (
               <NavLink key={item.href} item={item} active={active} />
             )
@@ -222,13 +219,13 @@ function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarContentP
       {/* Logo */}
       <div className="flex h-16 items-center justify-between px-4">
         <Link href="/dashboard" className="flex items-center gap-3 group">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 shadow-lg shadow-teal-500/25 group-hover:scale-105 transition-transform duration-200">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 dark:from-slate-500 dark:to-slate-800 shadow-lg shadow-slate-900/25 group-hover:scale-105 transition-transform duration-200">
             <Leaf className="h-5 w-5 text-white" />
           </div>
           {!collapsed && (
             <div>
               <span className="text-base font-bold tracking-tight text-foreground dark:text-white group-hover:text-primary transition-colors">K2-Sync</span>
-              <span className="block text-[10px] font-medium text-teal-600 dark:text-teal-400 uppercase tracking-wider -mt-0.5">Wellness OS</span>
+              <span className="block text-[10px] font-medium text-sidebar-foreground/55 uppercase tracking-wider -mt-0.5">Wellness OS</span>
             </div>
           )}
         </Link>
@@ -276,10 +273,10 @@ function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarContentP
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" className="w-full justify-start gap-3 h-auto py-2.5 px-3 rounded-xl text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-black/5 dark:text-sidebar-foreground/80 dark:hover:text-white dark:hover:bg-sidebar-accent/50" />}>
             <div className="relative">
-              <Avatar className="h-8.5 w-8.5 ring-2 ring-teal-500/30">
-                <AvatarFallback className="bg-gradient-to-br from-teal-500 to-cyan-700 text-white text-xs font-semibold">{initials}</AvatarFallback>
+              <Avatar className="h-8.5 w-8.5 ring-2 ring-sidebar-border">
+                <AvatarFallback className="bg-gradient-to-br from-slate-700 to-slate-900 dark:from-slate-500 dark:to-slate-800 text-white text-xs font-semibold">{initials}</AvatarFallback>
               </Avatar>
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-teal-500 ring-2 ring-sidebar" />
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-sidebar" />
             </div>
             {!collapsed && (
               <div className="flex flex-col items-start text-left min-w-0">
@@ -302,7 +299,7 @@ function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarContentP
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem render={<Link href="/settings" />}>
-                <Settings className="mr-2 h-4 w-4 text-teal-600 dark:text-teal-400" />
+                <Settings className="mr-2 h-4 w-4 text-sidebar-foreground/70" />
                 Configuracoes
               </DropdownMenuItem>
               <DropdownMenuSeparator />

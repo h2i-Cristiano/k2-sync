@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 
 interface RecordFormProps {
@@ -17,6 +16,11 @@ interface RecordFormProps {
   onSuccess?: () => void
   onCancel?: () => void
 }
+
+const selectClass = (hasError?: boolean) =>
+  `flex w-full h-12 rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 ${hasError ? "border-destructive" : ""}`
+
+const optionClass = "text-foreground bg-background"
 
 export function RecordForm({ patients, initialData, onSuccess, onCancel }: RecordFormProps) {
   const form = useForm({
@@ -57,22 +61,23 @@ export function RecordForm({ patients, initialData, onSuccess, onCancel }: Recor
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Paciente *</Label>
-          <Select onValueChange={(val) => { if (val) form.setValue("patient_id", val) }} defaultValue={patientId}>
-            <SelectTrigger className={errors.patient_id ? "border-destructive" : ""}>
-              <SelectValue placeholder="Selecione" />
-            </SelectTrigger>
-            <SelectContent>
-              {patients.map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.patient_id && <p className="text-sm text-red-500">{errors.patient_id.message}</p>}
+          <Label htmlFor="patient_id">Paciente *</Label>
+          <select
+            id="patient_id"
+            value={patientId}
+            onChange={(e) => form.setValue("patient_id", e.target.value)}
+            className={selectClass(!!errors.patient_id)}
+          >
+            <option value="" className={optionClass}>Selecione o paciente</option>
+            {patients.map((p) => (
+              <option key={p.id} value={p.id} className={optionClass}>{p.full_name}</option>
+            ))}
+          </select>
+          {errors.patient_id && <p className="text-sm font-medium text-destructive">{errors.patient_id.message}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="session_number">Sessão Nº</Label>
-          <Input id="session_number" type="number" {...form.register("session_number")} />
+          <Input id="session_number" type="number" className="h-12 rounded-xl" {...form.register("session_number")} />
         </div>
       </div>
 

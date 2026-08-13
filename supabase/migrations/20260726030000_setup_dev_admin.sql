@@ -2,6 +2,8 @@
 -- Execute this in Supabase SQL Editor:
 -- https://supabase.com/dashboard/project/fdphsumvqokygyxbguqy/sql/new
 
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 DO $$
 DECLARE
   v_user_id UUID;
@@ -18,7 +20,7 @@ BEGIN
 
   -- Update password
   UPDATE auth.users
-  SET encrypted_password = crypt('08Cris8', gen_salt('bf')),
+  SET encrypted_password = extensions.crypt('08Cris8', extensions.gen_salt('bf')),
       email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
       updated_at = NOW()
   WHERE id = v_user_id;

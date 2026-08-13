@@ -28,14 +28,19 @@ test.describe('Records CRUD', () => {
     await expect(page.getByText(/paciente/i).first()).toBeVisible();
   });
 
-  test('empty state shows correctly', async ({ page }) => {
+  test('empty state or list shows correctly', async ({ page }) => {
     await loginAsTestUser(page);
     await page.goto('/records');
 
     const emptyState = page.getByText(/nenhum prontuario/i);
-    const hasRecords = await page.locator('[class*="FileText"]').isVisible().catch(() => false);
-    if (!hasRecords) {
-      await expect(emptyState).toBeVisible();
-    }
+    const anyRecord = page.getByText(/sessao/i).first();
+
+    await Promise.race([
+      emptyState.waitFor({ state: 'visible', timeout: 10000 }),
+      anyRecord.waitFor({ state: 'visible', timeout: 10000 }),
+    ]).catch(() => {});
+
+    if (await anyRecord.isVisible().catch(() => false)) return;
+    await expect(emptyState).toBeVisible();
   });
 });

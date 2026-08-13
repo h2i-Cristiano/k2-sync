@@ -161,7 +161,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                   >
                     <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${
                       result.type === "patient"
-                        ? "bg-teal-500/10 text-teal-600 dark:text-teal-400"
+                        ? "bg-accent/10 text-accent dark:text-accent"
                         : "bg-muted text-muted-foreground"
                     }`}>
                       <Icon className="h-4 w-4" />

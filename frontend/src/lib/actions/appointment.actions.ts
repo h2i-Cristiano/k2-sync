@@ -44,6 +44,7 @@ export async function createAppointment(data: AppointmentCreateFormValues & { de
         .from("financial_entries")
         .insert({
           tenant_id: tenantId,
+          patient_id: validatedData.patient_id,
           type: "receivable",
           description: `Entrada - ${serviceName} - ${patientName}`,
           amount: depositAmount,
@@ -106,17 +107,39 @@ export async function updateAppointment(id: string, data: Partial<AppointmentUpd
       const patientName = patientResult.data?.full_name || "Paciente"
       const serviceName = serviceResult.data?.name || "Serviço"
 
-      await supabase.from("financial_entries").insert({
-        tenant_id: tenantId,
-        type: "receivable",
-        description: `${serviceName} - ${patientName}`,
-        amount: currentApt.total_cost,
-        due_date: new Date().toISOString().split("T")[0],
-        status: "paid",
-        paid_at: new Date().toISOString(),
-        category: "Sessão",
-        appointment_id: id,
-      })
+      // Avoid double-charging: only create the remainder (total - already charged in advance/deposit)
+      const { data: existingEntries } = await supabase
+        .from("financial_entries")
+        .select("amount")
+        .eq("tenant_id", tenantId)
+        .eq("appointment_id", id)
+        .eq("type", "receivable")
+      const alreadyCharged = (existingEntries || []).reduce((s, e) => s + Number(e.amount), 0)
+      const remainder = Number(currentApt.total_cost) - alreadyCharged
+
+      if (remainder > 0.005) {
+        await supabase.from("financial_entries").insert({
+          tenant_id: tenantId,
+          patient_id: currentApt.patient_id,
+          type: "receivable",
+          description: `${serviceName} - ${patientName}`,
+          amount: Math.round(remainder * 100) / 100,
+          due_date: new Date().toISOString().split("T")[0],
+          status: "paid",
+          paid_at: new Date().toISOString(),
+          category: "Sessão",
+          appointment_id: id,
+        })
+      }
+    }
+
+    // Stock control: debit materials on completion, restore if reverted
+    if (currentApt) {
+      if (validatedData.status === "completed" && currentApt.status !== "completed") {
+        await supabase.rpc("consume_appointment_materials", { p_appointment_id: id })
+      } else if (validatedData.status !== "completed" && currentApt.status === "completed") {
+        await supabase.rpc("restore_appointment_materials", { p_appointment_id: id })
+      }
     }
 
     revalidatePath("/appointments")

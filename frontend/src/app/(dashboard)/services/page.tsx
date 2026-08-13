@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, Pencil, Trash2, Hand, Save, X } from "lucide-react"
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog"
+import { MoneyInput } from "@/components/forms/MoneyInput"
+import { Plus, Pencil, Trash2, Hand, Save, X, Package } from "lucide-react"
 import { toast } from "sonner"
 
 interface Service {
@@ -33,6 +37,11 @@ export default function ServicesPage() {
   const [showNew, setShowNew] = useState(false)
   const [form, setForm] = useState({ name: "", color: "#3B82F6", duration_minutes: 60, price: 0, commission_percent: 0 })
   const [tenantId, setTenantId] = useState<string | null>(null)
+  const [kitService, setKitService] = useState<Service | null>(null)
+  const [kitMaterials, setKitMaterials] = useState<any[]>([])
+  const [allProducts, setAllProducts] = useState<any[]>([])
+  const [kitProduct, setKitProduct] = useState("")
+  const [kitQty, setKitQty] = useState("1")
   const supabase = createClient()
 
   const fetchServices = async () => {
@@ -83,6 +92,48 @@ export default function ServicesPage() {
     fetchServices()
   }
 
+  const openKit = async (svc: Service) => {
+    setKitService(svc)
+    setKitMaterials([])
+    setKitProduct("")
+    setKitQty("1")
+    const [materialsResult, productsResult] = await Promise.all([
+      supabase.from("service_materials").select("product_id, quantity, products(name)").eq("service_id", svc.id),
+      supabase.from("products").select("id, name, unit, price, cost, active").eq("active", true).order("name"),
+    ])
+    setKitMaterials((materialsResult.data || []).map((m: any) => ({ ...m, quantity: Number(m.quantity) })))
+    setAllProducts(productsResult.data || [])
+  }
+
+  const addKitMaterial = () => {
+    const prod = allProducts.find((p) => p.id === kitProduct)
+    if (!prod) return
+    const qty = Number(kitQty) > 0 ? Number(kitQty) : 1
+    setKitMaterials((prev) =>
+      prev.some((m) => m.product_id === prod.id)
+        ? prev.map((m) => (m.product_id === prod.id ? { ...m, quantity: m.quantity + qty } : m))
+        : [...prev, { product_id: prod.id, quantity: qty, products: { name: prod.name } }]
+    )
+    setKitProduct("")
+    setKitQty("1")
+  }
+
+  const saveKit = async () => {
+    if (!kitService || !tenantId) return
+    await supabase.from("service_materials").delete().eq("service_id", kitService.id)
+    for (const m of kitMaterials) {
+      const { error } = await supabase.from("service_materials").insert({
+        tenant_id: tenantId,
+        service_id: kitService.id,
+        product_id: m.product_id,
+        quantity: m.quantity,
+      })
+      if (error) { toast.error("Erro ao salvar o kit"); return }
+    }
+    toast.success("Kit atualizado!")
+    setKitService(null)
+  }
+
   return (
     <div className="space-y-6 animate-slide-up-fade">
       <div className="flex items-center justify-between">
@@ -118,7 +169,7 @@ export default function ServicesPage() {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Preço (R$)</Label>
-                <Input type="number" step="0.01" value={form.price} onChange={e => setForm(f => ({ ...f, price: Number(e.target.value) }))} className="h-10 rounded-lg" />
+                <MoneyInput value={form.price} onChange={(v) => setForm(f => ({ ...f, price: Number(v) }))} placeholder="0,00" className="h-10 rounded-lg" />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Comissão (%)</Label>
@@ -158,7 +209,7 @@ export default function ServicesPage() {
                         ))}
                       </div>
                       <Input type="number" value={form.duration_minutes} onChange={e => setForm(f => ({ ...f, duration_minutes: Number(e.target.value) }))} className="h-9 rounded-lg text-sm" />
-                      <Input type="number" step="0.01" value={form.price} onChange={e => setForm(f => ({ ...f, price: Number(e.target.value) }))} className="h-9 rounded-lg text-sm" />
+                      <MoneyInput value={form.price} onChange={(v) => setForm(f => ({ ...f, price: Number(v) }))} className="h-9 rounded-lg text-sm" />
                       <div className="flex gap-1">
                         <Button size="sm" onClick={() => handleSave(svc.id)} className="rounded-lg h-9"><Save className="h-3 w-3" /></Button>
                         <Button size="sm" variant="ghost" onClick={() => setEditing(null)} className="rounded-lg h-9"><X className="h-3 w-3" /></Button>
@@ -176,6 +227,9 @@ export default function ServicesPage() {
                         <p className="text-xs text-muted-foreground">{svc.duration_minutes}min • R$ {svc.price.toFixed(0)}{svc.commission_percent > 0 ? ` • ${svc.commission_percent}% comissão` : ""}</p>
                       </div>
                       <div className="flex items-center gap-1">
+                        <Button size="sm" variant="ghost" onClick={() => openKit(svc)} className="h-8 w-8 p-0 rounded-lg" title="Kit de materiais">
+                          <Package className="h-3.5 w-3.5" />
+                        </Button>
                         <Button size="sm" variant="ghost" onClick={() => handleToggleActive(svc.id, svc.active)} className="h-8 w-8 p-0 rounded-lg text-xs">
                           {svc.active ? "✓" : "○"}
                         </Button>
@@ -194,6 +248,81 @@ export default function ServicesPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Kit de materiais */}
+      <Dialog open={!!kitService} onOpenChange={(open) => { if (!open) setKitService(null) }}>
+        <DialogContent className="sm:max-w-md rounded-2xl border-border/60">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold">Kit de materiais</DialogTitle>
+            <DialogDescription>
+              {kitService?.name} — materiais consumidos em cada atendimento deste serviço.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {kitMaterials.length > 0 && (
+              <div className="space-y-2">
+                {kitMaterials.map((m) => (
+                  <div key={m.product_id} className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{m.products?.name || "Produto"}</p>
+                    </div>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      value={m.quantity}
+                      onChange={(e) =>
+                        setKitMaterials((prev) =>
+                          prev.map((x) => (x.product_id === m.product_id ? { ...x, quantity: Number(e.target.value) } : x))
+                        )
+                      }
+                      className="h-9 w-20 text-center"
+                    />
+                    <Button type="button" variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-lg text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
+                      onClick={() => setKitMaterials((prev) => prev.filter((x) => x.product_id !== m.product_id))}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {allProducts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum produto cadastrado. Adicione produtos na página de Estoque.</p>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-2">
+                <select
+                  value={kitProduct}
+                  onChange={(e) => setKitProduct(e.target.value)}
+                  className="flex-1 h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <option value="" className="text-foreground bg-background">Selecione o produto</option>
+                  {allProducts.map((p) => (
+                    <option key={p.id} value={p.id} className="text-foreground bg-background">
+                      {p.name}{kitMaterials.some((m) => m.product_id === p.id) ? " (no kit)" : ""}
+                    </option>
+                  ))}
+                </select>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={kitQty}
+                  onChange={(e) => setKitQty(e.target.value)}
+                  className="h-10 w-24 text-center"
+                  aria-label="Quantidade"
+                />
+                <Button type="button" variant="secondary" className="h-10 rounded-lg" disabled={!kitProduct} onClick={addKitMaterial}>
+                  <Plus className="h-4 w-4 mr-1.5" /> Adicionar
+                </Button>
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" onClick={() => setKitService(null)}>Cancelar</Button>
+              <Button onClick={saveKit}><Save className="h-4 w-4 mr-1.5" /> Salvar kit</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -33,7 +33,7 @@ const AppointmentForm = dynamic(
 
 const statusColors: Record<string, string> = {
   scheduled: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30",
-  confirmed: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30 font-semibold",
+  confirmed: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 font-semibold",
   completed: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
   cancelled: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30",
   no_show: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30",
@@ -259,7 +259,7 @@ function AppointmentsPageInner() {
               <Plus className="mr-2 h-4 w-4" />
               Novo
             </DialogTrigger>
-            <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingAppointment?.id ? "Editar Agendamento" : "Novo Agendamento"}</DialogTitle>
               </DialogHeader>

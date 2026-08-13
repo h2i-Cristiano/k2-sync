@@ -12,8 +12,19 @@ import { toast } from "sonner"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { fetchServices, ServiceDef } from "@/lib/services"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+import { ChevronLeft, ChevronRight, Plus, Trash2, Package } from "lucide-react"
 import { MoneyInput } from "@/components/forms/MoneyInput"
+
+interface MaterialItem {
+  product_id: string
+  quantity: number
+  name: string
+  unit_price: number
+  unit_cost: number
+}
+
+const DURATION_PRESETS = [15, 30, 45, 60, 90, 120]
 
 function formatLocalDatetime(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0")
@@ -54,10 +65,49 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
   const [services, setServices] = useState<ServiceDef[]>([])
   const [chargeDeposit, setChargeDeposit] = useState(false)
   const [depositAmount, setDepositAmount] = useState<string>("")
+  const [products, setProducts] = useState<any[]>([])
+  const [materials, setMaterials] = useState<MaterialItem[]>([])
+  const [tenantId, setTenantId] = useState<string | null>(null)
+  const [pendingProductId, setPendingProductId] = useState("")
+  const [addQuantity, setAddQuantity] = useState("1")
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     fetchServices().then(setServices)
-  }, [])
+    const load = async () => {
+      const { data: productData } = await supabase
+        .from("products")
+        .select("id, name, unit, price, cost, stock_quantity, min_stock, active")
+        .eq("active", true)
+        .order("name")
+      setProducts((productData || []) as any[])
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase.from("profiles").select("tenant_id").eq("id", user.id).single()
+        if (profile) setTenantId(profile.tenant_id)
+      }
+
+      if (initialData?.id) {
+        const { data: existing } = await supabase
+          .from("appointment_materials")
+          .select("product_id, quantity, unit_price, unit_cost, products(name)")
+          .eq("appointment_id", initialData.id)
+        if (existing && existing.length) {
+          setMaterials(
+            existing.map((m: any) => ({
+              product_id: m.product_id,
+              quantity: Number(m.quantity),
+              name: m.products?.name || "Produto",
+              unit_price: Number(m.unit_price),
+              unit_cost: Number(m.unit_cost),
+            }))
+          )
+        }
+      }
+    }
+    load()
+  }, [supabase, initialData?.id])
 
   const defaultDate = initialData?.scheduled_at
     ? formatLocalDatetime(new Date(initialData.scheduled_at))
@@ -84,6 +134,7 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
   })
 
   const watchServiceType = useWatch({ control: form.control, name: "service_type" })
+  const watchDuration = useWatch({ control: form.control, name: "duration_minutes" })
   const watchIsHomeVisit = useWatch({ control: form.control, name: "is_home_visit" })
   const watchTotalCost = useWatch({ control: form.control, name: "total_cost" }) || 0
   const watchCommissionPercent = useWatch({ control: form.control, name: "commission_percent" }) || 0
@@ -180,7 +231,22 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       scheduled_at: new Date(data.scheduled_at).toISOString(),
     }
 
-    let result
+    const persistMaterials = async (appointmentId: string) => {
+      if (!tenantId || materials.length === 0) return
+      await supabase.from("appointment_materials").delete().eq("appointment_id", appointmentId)
+      for (const m of materials) {
+        await supabase.from("appointment_materials").insert({
+          tenant_id: tenantId,
+          appointment_id: appointmentId,
+          product_id: m.product_id,
+          quantity: m.quantity,
+          unit_price: m.unit_price,
+          unit_cost: m.unit_cost,
+        })
+      }
+    }
+
+    let result: any
     if (initialData?.id) {
       result = await updateAppointment(initialData.id, formattedData)
     } else {
@@ -190,15 +256,21 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       })
     }
 
-    setSaving(false)
     if (result.error) {
+      setSaving(false)
       toast.error(result.error)
       return
     }
 
+    const appointmentId = result.data?.id || initialData?.id
+    if (appointmentId) {
+      await persistMaterials(appointmentId)
+    }
+
+    setSaving(false)
     toast.success(initialData?.id ? "Agendamento atualizado!" : "Agendamento criado!")
     onSuccess?.()
-  }, [initialData, chargeDeposit, depositAmount, onSuccess])
+  }, [initialData, chargeDeposit, depositAmount, onSuccess, tenantId, materials, supabase])
 
   const handleServiceChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value
@@ -363,13 +435,29 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
 
       {/* Duration */}
       <div className="space-y-2">
-        <Label htmlFor="duration_minutes">Duração (min) *</Label>
-        <Input
-          id="duration_minutes"
-          type="number"
-          {...form.register("duration_minutes")}
-          className={form.formState.errors.duration_minutes ? "border-destructive" : ""}
-        />
+        <Label>Duração *</Label>
+        <div className="flex flex-wrap gap-2">
+          {DURATION_PRESETS.map((dur) => {
+            const active = Number(watchDuration) === dur
+            return (
+              <button
+                type="button"
+                key={dur}
+                onClick={() => form.setValue("duration_minutes", dur)}
+                className={`h-9 px-3.5 rounded-lg text-sm font-medium border transition-all ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "border-border/60 text-foreground hover:bg-muted/60"
+                }`}
+              >
+                {dur} min
+              </button>
+            )
+          })}
+        </div>
+        {!DURATION_PRESETS.includes(Number(watchDuration)) && (
+          <p className="text-xs text-muted-foreground">Duração atual: {watchDuration || 0} min</p>
+        )}
         {form.formState.errors.duration_minutes && (
           <p className="text-sm font-medium text-destructive">{form.formState.errors.duration_minutes.message}</p>
         )}
@@ -483,6 +571,114 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
           )}
         </div>
       )}
+
+      {/* Materials */}
+      <div className="space-y-3 rounded-xl border border-border/60 p-3">
+        <div className="flex items-center gap-2">
+          <Package className="h-4 w-4 text-muted-foreground" />
+          <Label className="text-sm font-medium">Materiais utilizados</Label>
+        </div>
+
+        {materials.length > 0 && (
+          <div className="space-y-2">
+            {materials.map((m) => (
+              <div key={m.product_id} className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{m.name}</p>
+                  <p className="text-xs text-muted-foreground">R$ {Number(m.unit_price).toFixed(2)}</p>
+                </div>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={m.quantity}
+                  onChange={(e) =>
+                    setMaterials((prev) =>
+                      prev.map((x) => (x.product_id === m.product_id ? { ...x, quantity: Number(e.target.value) } : x))
+                    )
+                  }
+                  className="h-9 w-20 text-center"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-9 p-0 rounded-lg text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
+                  onClick={() => setMaterials((prev) => prev.filter((x) => x.product_id !== m.product_id))}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {products.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            Nenhum produto cadastrado. Adicione produtos na página de Estoque para usar materiais.
+          </p>
+        ) : (
+          <div className="flex flex-col sm:flex-row gap-2">
+            <select
+              value={pendingProductId}
+              onChange={(e) => setPendingProductId(e.target.value)}
+              className="flex-1 h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <option value="" className="text-foreground bg-background">Selecione o produto</option>
+              {products.map((p) => {
+                const alreadyAdded = materials.some((m) => m.product_id === p.id)
+                return (
+                  <option key={p.id} value={p.id} className="text-foreground bg-background">
+                    {p.name} — R$ {Number(p.price).toFixed(2)}{alreadyAdded ? " (já adicionado)" : ""}
+                  </option>
+                )
+              })}
+            </select>
+            <Input
+              type="number"
+              min="0"
+              step="0.5"
+              value={addQuantity}
+              onChange={(e) => setAddQuantity(e.target.value)}
+              className="h-10 w-24 text-center"
+              aria-label="Quantidade"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              className="h-10 rounded-lg"
+              disabled={!pendingProductId}
+              onClick={() => {
+                const prod = products.find((p) => p.id === pendingProductId)
+                if (!prod) return
+                const qty = Number(addQuantity) > 0 ? Number(addQuantity) : 1
+                setMaterials((prev) =>
+                  prev.some((x) => x.product_id === prod.id)
+                    ? prev.map((x) => (x.product_id === prod.id ? { ...x, quantity: x.quantity + qty } : x))
+                    : [
+                        ...prev,
+                        {
+                          product_id: prod.id,
+                          quantity: qty,
+                          name: prod.name,
+                          unit_price: Number(prod.price),
+                          unit_cost: Number(prod.cost),
+                        },
+                      ]
+                )
+                setPendingProductId("")
+                setAddQuantity("1")
+              }}
+            >
+              <Plus className="h-4 w-4 mr-1.5" />
+              Adicionar
+            </Button>
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground">
+          O estoque será debitado automaticamente ao concluir o atendimento.
+        </p>
+      </div>
 
       {/* Notes */}
       <div className="space-y-2">
