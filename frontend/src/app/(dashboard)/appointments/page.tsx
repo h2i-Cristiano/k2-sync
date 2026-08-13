@@ -103,7 +103,21 @@ function AppointmentsPageInner() {
       .lte("scheduled_at", endOfDay.toISOString())
       .order("scheduled_at", { ascending: true })
 
-    setAppointments(data || [])
+    const aptList = data || []
+    const aptIds = aptList.map(a => a.id)
+    let depositMap: Record<string, number> = {}
+    if (aptIds.length > 0) {
+      const { data: entries } = await supabase
+        .from("financial_entries")
+        .select("appointment_id, amount")
+        .eq("type", "receivable")
+        .in("appointment_id", aptIds)
+      ;(entries || []).forEach(e => {
+        if (e.appointment_id) depositMap[e.appointment_id] = Number(e.amount) || 0
+      })
+    }
+
+    setAppointments(aptList.map(a => ({ ...a, deposit: depositMap[a.id] })))
     setLoading(false)
   }, [supabase, selectedDate])
 
@@ -216,7 +230,7 @@ function AppointmentsPageInner() {
     })
   }
 
-  const timeSlots = Array.from({ length: 13 }, (_, i) => i + 7)
+  const timeSlots = Array.from({ length: 17 }, (_, i) => i + 7)
 
   return (
     <div className="animate-in fade-in duration-500">
@@ -454,6 +468,15 @@ function AppointmentsPageInner() {
                                     {svc?.label || apt.service_type}
                                   </span>
                                   <span className="text-xs text-muted-foreground">{apt.duration_minutes}min</span>
+                                  {apt.deposit ? (
+                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                                      Entrada R$ {apt.deposit.toFixed(0)}
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                      Sem entrada
+                                    </span>
+                                  )}
                                 </div>
                                 <p className="font-medium text-foreground flex items-center gap-1.5">
                                   <User className="h-3.5 w-3.5 text-muted-foreground" />
@@ -546,6 +569,15 @@ function AppointmentsPageInner() {
                         <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: `${svc?.color}15`, color: svc?.color }}>
                           {svc?.label || apt.service_type}
                         </span>
+                        {apt.deposit ? (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                            Entrada R$ {apt.deposit.toFixed(0)}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                            Sem entrada
+                          </span>
+                        )}
                         {apt.is_home_visit && (
                           <span className="text-[10px] text-amber-600 font-medium flex items-center gap-0.5">
                             <MapPin className="h-3 w-3" /> Domiciliar

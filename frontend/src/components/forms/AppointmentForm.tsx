@@ -12,11 +12,29 @@ import { toast } from "sonner"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { fetchServices, ServiceDef } from "@/lib/services"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 function formatLocalDatetime(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0")
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
+
+const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
+const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+
+function getDaysInMonth(year: number, month: number) {
+  return new Date(year, month + 1, 0).getDate()
+}
+
+function getFirstDayOfMonth(year: number, month: number) {
+  return new Date(year, month, 1).getDay()
+}
+
+function isSameDay(d1: Date, d2: Date) {
+  return d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear()
+}
+
+const HOUR_SLOTS = Array.from({ length: 17 }, (_, i) => i + 7)
 
 interface AppointmentFormProps {
   patients: { id: string; full_name: string; phone?: string }[]
@@ -74,6 +92,40 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
 
   const scheduledDate = watchScheduledAt?.slice(0, 10) || ""
   const scheduledTime = watchScheduledAt?.slice(11, 16) || ""
+
+  const initialSelected = scheduledDate ? new Date(scheduledDate) : new Date()
+  const [calYear, setCalYear] = useState(initialSelected.getFullYear())
+  const [calMonth, setCalMonth] = useState(initialSelected.getMonth())
+
+  const selectedDateObj = scheduledDate ? new Date(scheduledDate) : null
+  const calDays = getDaysInMonth(calYear, calMonth)
+  const calFirstDay = getFirstDayOfMonth(calYear, calMonth)
+
+  const prevMonth = () => {
+    if (calMonth === 0) { setCalMonth(11); setCalYear(calYear - 1) }
+    else setCalMonth(calMonth - 1)
+  }
+
+  const nextMonth = () => {
+    if (calMonth === 11) { setCalMonth(0); setCalYear(calYear + 1) }
+    else setCalMonth(calMonth + 1)
+  }
+
+  const selectDay = (day: number) => {
+    const pad = (n: number) => String(n).padStart(2, "0")
+    const date = `${calYear}-${pad(calMonth + 1)}-${pad(day)}`
+    form.setValue("scheduled_at", `${date}T${scheduledTime || "09:00"}`)
+  }
+
+  const selectHour = (hour: number) => {
+    const pad = (n: number) => String(n).padStart(2, "0")
+    const time = `${pad(hour)}:00`
+    const date = scheduledDate || (() => {
+      const d = new Date()
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    })()
+    form.setValue("scheduled_at", `${date}T${time}`)
+  }
 
   const commissionAmount = useMemo(
     () => Number(watchTotalCost) * (Number(watchCommissionPercent) / 100),
@@ -175,41 +227,102 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
       </div>
 
       {/* Date + Time + Duration */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="scheduled_date">Data *</Label>
-          <Input
-            id="scheduled_date"
-            type="date"
-            value={scheduledDate}
-            onChange={(e) => form.setValue("scheduled_at", `${e.target.value}T${scheduledTime || "09:00"}`)}
-            className={form.formState.errors.scheduled_at ? "border-destructive" : ""}
-          />
+      <div className="space-y-2">
+        <Label>Data e Hora *</Label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-border/60 bg-card p-3">
+            <div className="flex items-center justify-between mb-3">
+              <button type="button" onClick={prevMonth} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <p className="text-sm font-semibold">{MONTHS[calMonth]} {calYear}</p>
+              <button type="button" onClick={nextMonth} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-7 gap-0 mb-1">
+              {WEEKDAYS.map((day) => (
+                <div key={day} className="text-center text-[10px] font-medium text-muted-foreground py-0.5">
+                  {day}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-0">
+              {Array.from({ length: calFirstDay }).map((_, i) => (
+                <div key={`empty-${i}`} />
+              ))}
+              {Array.from({ length: calDays }).map((_, i) => {
+                const day = i + 1
+                const date = new Date(calYear, calMonth, day)
+                const isSelected = selectedDateObj && isSameDay(date, selectedDateObj)
+                const isToday = isSameDay(date, new Date())
+                return (
+                  <button
+                    type="button"
+                    key={day}
+                    onClick={() => selectDay(day)}
+                    className={`h-9 w-full flex items-center justify-center text-sm rounded-lg transition-all duration-150 ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground font-semibold shadow-sm"
+                        : isToday
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-foreground hover:bg-muted/60"
+                    }`}
+                  >
+                    {day}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border/60 bg-card p-3">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Escolha o horário</p>
+            <div className="grid grid-cols-5 gap-1.5">
+              {HOUR_SLOTS.map((hour) => {
+                const time = `${String(hour).padStart(2, "0")}:00`
+                const active = scheduledTime === time
+                return (
+                  <button
+                    type="button"
+                    key={hour}
+                    onClick={() => selectHour(hour)}
+                    className={`h-9 rounded-lg text-xs font-medium border transition-all ${
+                      active
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                        : "border-border/60 text-foreground hover:bg-muted/60"
+                    }`}
+                  >
+                    {time}
+                  </button>
+                )
+              })}
+            </div>
+            {selectedDateObj && (
+              <p className="mt-3 text-xs font-semibold text-foreground">
+                {selectedDateObj.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })} às {scheduledTime || "—"}
+              </p>
+            )}
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="scheduled_time">Hora *</Label>
-          <Input
-            id="scheduled_time"
-            type="time"
-            step="60"
-            value={scheduledTime}
-            onChange={(e) => form.setValue("scheduled_at", `${scheduledDate}T${e.target.value}`)}
-            className={form.formState.errors.scheduled_at ? "border-destructive" : ""}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="duration_minutes">Duração (min) *</Label>
-          <Input
-            id="duration_minutes"
-            type="number"
-            {...form.register("duration_minutes")}
-            className={form.formState.errors.duration_minutes ? "border-destructive" : ""}
-          />
-        </div>
+        {form.formState.errors.scheduled_at && (
+          <p className="text-sm font-medium text-destructive">{form.formState.errors.scheduled_at.message}</p>
+        )}
       </div>
-      {form.formState.errors.scheduled_at && (
-        <p className="text-sm font-medium text-destructive">{form.formState.errors.scheduled_at.message}</p>
-      )}
+
+      {/* Duration */}
+      <div className="space-y-2">
+        <Label htmlFor="duration_minutes">Duração (min) *</Label>
+        <Input
+          id="duration_minutes"
+          type="number"
+          {...form.register("duration_minutes")}
+          className={form.formState.errors.duration_minutes ? "border-destructive" : ""}
+        />
+        {form.formState.errors.duration_minutes && (
+          <p className="text-sm font-medium text-destructive">{form.formState.errors.duration_minutes.message}</p>
+        )}
+      </div>
 
       {/* Status + Home Visit */}
       <div className="grid grid-cols-2 gap-4">

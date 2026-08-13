@@ -14,7 +14,7 @@ export function buildPaymentMessage(params: {
   const { patientName, serviceName, amount, pixKey, status } = params
 
   if (status === "scheduled") {
-    return `Olá ${patientName}! 👋\n\nSeu agendamento de *${serviceName}* foi confirmado.\n\n💰 Valor: R$ ${amount.toFixed(2)}${pixKey ? `\n\nPara pagamento antecipado, utilize a chave PIX:\n${pixKey}` : ""}\n\nAguardamos você! 🌿`
+    return `Olá ${patientName}! 👋\n\nSeu agendamento de *${serviceName}* foi registrado para o horário escolhido.\n\n⏰ Importante: o horário *só será confirmado após a confirmação do pagamento*.\n\n💰 Valor: R$ ${amount.toFixed(2)}${pixKey ? `\n\nPara pagamento antecipado, utilize a chave PIX:\n${pixKey}` : ""}\n\nAssim que o pagamento for confirmado, te confirmamos o horário! 🌿`
   }
 
   return `Olá ${patientName}! 👋\n\nSeu atendimento de *${serviceName}* foi concluído com sucesso!\n\n💰 Valor: R$ ${amount.toFixed(2)}${pixKey ? `\n\nPara pagamento, utilize a chave PIX:\n${pixKey}` : ""}\n\nObrigado pela confiança! 🌿`
@@ -36,5 +36,5 @@ export function buildDepositMessage(params: {
   amount: number
 }): string {
   const { patientName, serviceName, amount } = params
-  return `Olá ${patientName}! 👋\n\nSeu agendamento de *${serviceName}* foi confirmado.\n\n💰 Valor da entrada: R$ ${amount.toFixed(2)}\n\nPara garantir sua vaga, realize o pagamento antecipado.\n\nAguardamos você! 🌿`
+  return `Olá ${patientName}! 👋\n\nSeu agendamento de *${serviceName}* foi registrado.\n\n💰 Valor da entrada: R$ ${amount.toFixed(2)}\n\n⏰ Importante: o horário *só será confirmado após a confirmação do pagamento* da entrada.\n\nPara garantir sua vaga, realize o pagamento antecipado.\n\nAssim que o pagamento for confirmado, te confirmamos o horário! 🌿`
 }
