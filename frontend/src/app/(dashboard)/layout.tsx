@@ -1,13 +1,15 @@
 ﻿"use client"
 
-import { useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
 
 import { Sidebar, MobileSidebar } from "@/components/layout/sidebar"
+import { BottomNav } from "@/components/layout/bottom-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
-import { Bell, LogOut, Leaf } from "lucide-react"
+import { LogOut, Leaf } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { User } from "@supabase/supabase-js"
 
 export default function DashboardLayout({
   children,
@@ -16,6 +18,15 @@ export default function DashboardLayout({
 }) {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
+  const [user, setUser] = useState<User | null>(null)
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    getUser()
+  }, [supabase.auth])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -32,20 +43,16 @@ export default function DashboardLayout({
             <div className="flex items-center gap-2 lg:hidden">
               <MobileSidebar />
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 dark:from-slate-500 dark:to-slate-800">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-emerald-800 dark:from-primary dark:to-emerald-600 ring-1 ring-gold/30">
                   <Leaf className="h-4 w-4 text-white" />
                 </div>
-                <span className="text-sm font-bold tracking-tight text-foreground">K2-Sync</span>
+                <span className="text-sm font-bold tracking-tight text-foreground sm:hidden">K2-Sync</span>
               </div>
             </div>
 
             <div className="flex-1" />
 
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-xl hover:bg-muted transition-colors" title="Notificações">
-                <Bell className="h-[18px] w-[18px] text-muted-foreground" />
-                <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-primary ring-2 ring-background animate-pulse" />
-              </Button>
               <ThemeToggle />
               <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={handleLogout} title="Sair do Sistema">
                 <LogOut className="h-[18px] w-[18px]" />
@@ -54,10 +61,12 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        <main className="p-4 sm:p-6">
+        <main className="p-4 pb-24 sm:p-6 lg:pb-6">
           {children}
         </main>
       </div>
+
+      <BottomNav user={user} onLogout={handleLogout} />
     </div>
   )
 }

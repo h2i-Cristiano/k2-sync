@@ -61,7 +61,7 @@ export default function LoginPage() {
     <div className="w-full">
       {/* Logo (mobile) */}
       <div className="mb-8 flex flex-col items-center text-center lg:hidden">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 shadow-lg shadow-slate-900/25 dark:from-slate-500 dark:to-slate-800">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-emerald-800 shadow-lg shadow-primary/30 ring-1 ring-gold/30">
           <Leaf className="h-7 w-7 text-white" />
         </div>
         <h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground">K2-Sync</h1>
@@ -84,7 +84,7 @@ export default function LoginPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">E-mail</Label>
               <div className="relative">
                 <Mail className="pointer-events-none absolute top-1/2 left-3.5 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground/60" />
                 <Input
@@ -137,7 +137,7 @@ export default function LoginPage() {
               )}
             </Button>
             <p className="text-sm text-center text-muted-foreground">
-              Nao tem conta?{" "}
+              Não tem conta?{" "}
               <Link href="/signup" className="font-medium text-primary hover:underline">
                 Cadastre-se
               </Link>

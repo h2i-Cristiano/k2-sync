@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Users, Calendar, FileText, TrendingUp, Plus, UserPlus, CalendarPlus, ClipboardPlus, Clock } from "lucide-react"
+import { StatCard } from "@/components/ui/stat-card"
+import { Users, Calendar, FileText, Plus, UserPlus, CalendarPlus, ClipboardPlus, Clock } from "lucide-react"
 import Link from "next/link"
 
 interface Stats {
@@ -23,6 +24,30 @@ const MOTIVATIONAL_MESSAGES = [
   "Sua energia transborda. Cuide dela com a mesma intensidade.",
   "A saúde é o maior presente que podemos oferecer.",
   "Paz interior se reflete em cada ato de cuidado.",
+]
+
+const quickActions = [
+  {
+    href: "/patients",
+    label: "Novo Paciente",
+    icon: UserPlus,
+    iconBg: "bg-primary/10 text-primary",
+    hover: "hover:border-primary/40 hover:bg-primary/5 hover:text-primary",
+  },
+  {
+    href: "/appointments",
+    label: "Agendar Sessão",
+    icon: CalendarPlus,
+    iconBg: "bg-gold/15 text-gold",
+    hover: "hover:border-gold/40 hover:bg-gold/10 hover:text-gold",
+  },
+  {
+    href: "/records",
+    label: "Novo Prontuário",
+    icon: ClipboardPlus,
+    iconBg: "bg-success/15 text-success",
+    hover: "hover:border-success/40 hover:bg-success/10 hover:text-success",
+  },
 ]
 
 export default function DashboardPage() {
@@ -83,133 +108,75 @@ export default function DashboardPage() {
     fetchStats()
   }, [supabase])
 
-  const cards = [
-    {
-      title: "Pacientes",
-      value: stats.totalPatients,
-      icon: Users,
-      href: "/patients",
-      badge: "Cadastrados",
-      gradient: "from-primary/10 to-primary/5",
-      textGradient: "text-primary",
-      iconBg: "bg-primary/10 text-primary",
-      barGradient: "bg-primary",
-    },
-    {
-      title: "Agendamentos",
-      value: stats.upcomingAppointments,
-      icon: Calendar,
-      href: "/appointments",
-      badge: "Na Agenda",
-      gradient: "from-accent/10 to-accent/5",
-      textGradient: "text-accent",
-      iconBg: "bg-accent/10 text-accent",
-      barGradient: "bg-accent",
-    },
-    {
-      title: "Prontuários",
-      value: stats.totalRecords,
-      icon: FileText,
-      href: "/records",
-      badge: "Registrados",
-      gradient: "from-success/10 to-success/5",
-      textGradient: "text-success",
-      iconBg: "bg-success/10 text-success",
-      barGradient: "bg-success",
-    },
+  const statCards = [
+    { label: "Pacientes", value: stats.totalPatients, icon: Users, tone: "primary" as const, hint: "Cadastrados", href: "/patients" },
+    { label: "Agendamentos", value: stats.upcomingAppointments, icon: Calendar, tone: "gold" as const, hint: "Na agenda", href: "/appointments" },
+    { label: "Prontuários", value: stats.totalRecords, icon: FileText, tone: "success" as const, hint: "Registrados", href: "/records" },
   ]
 
   return (
-    <div className="space-y-8 animate-slide-up-fade">
-      {/* Motivational Banner */}
-      <Card className="glass-card border-border/60 overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-8 -mt-8" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-accent/5 rounded-full -ml-6 -mb-6" />
-        <CardContent className="p-6 relative">
-          <div className="flex items-start gap-4">
-            <div className="flex-1">
-              <h1 className="text-xl font-bold text-foreground mb-1">Bem-vindo ao Wellness OS</h1>
-              <p className="text-sm text-muted-foreground leading-relaxed">{motivationalMsg}</p>
-            </div>
-            <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold shrink-0">
-              <Clock className="h-3.5 w-3.5" /> {currentTime}
-            </div>
+    <div className="space-y-6 animate-slide-up-fade">
+      {/* Welcome */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-card to-gold/10 p-5 ring-1 ring-border/40 sm:p-6">
+        <div className="pointer-events-none absolute -top-10 -right-10 h-28 w-28 rounded-full bg-primary/10" />
+        <div className="pointer-events-none absolute -bottom-8 -left-8 h-20 w-20 rounded-full bg-gold/10" />
+        <div className="relative flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary">Wellness OS</p>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground">Bem-vindo(a)</h1>
+            <p className="mt-1 max-w-md text-sm leading-relaxed text-muted-foreground">{motivationalMsg}</p>
           </div>
-        </CardContent>
-      </Card>
+          <div className="hidden shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary md:flex">
+            <Clock className="h-3.5 w-3.5" /> {currentTime}
+          </div>
+        </div>
+      </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-5 md:grid-cols-3">
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
         {loading
           ? Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i} className="glass-card">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-28" />
-                      <Skeleton className="h-10 w-16" />
-                    </div>
-                    <Skeleton className="h-12 w-12 rounded-xl" />
-                  </div>
+              <Card key={i}>
+                <CardContent className="space-y-2 p-5">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-7 w-14" />
                 </CardContent>
               </Card>
             ))
-          : cards.map((card) => (
-              <Link key={card.title} href={card.href}>
-                <Card className="glass-card card-hover-effect cursor-pointer relative overflow-hidden group border-border/60">
-                  <div className={`absolute top-0 right-0 h-20 w-20 rounded-full bg-gradient-to-br ${card.gradient} opacity-30 -mr-5 -mt-5 group-hover:scale-125 transition-transform duration-300 pointer-events-none`} />
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{card.title}</p>
-                        <p className="text-4xl font-black mt-2 text-foreground tracking-tight">{card.value}</p>
-                        <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${card.textGradient} mt-2`}>
-                          <TrendingUp className="h-3 w-3" /> {card.badge}
-                        </span>
-                      </div>
-                      <div className={`h-12 w-12 rounded-2xl ${card.iconBg} flex items-center justify-center group-hover:scale-110 transition-transform duration-200`}>
-                        <card.icon className="h-6 w-6" />
-                      </div>
-                    </div>
-                  </CardContent>
-                  <div className={`h-1 w-full ${card.barGradient} opacity-40`} />
-                </Card>
-              </Link>
+          : statCards.map((card) => (
+              <StatCard
+                key={card.label}
+                label={card.label}
+                value={card.value}
+                icon={card.icon}
+                tone={card.tone}
+                hint={card.hint}
+                href={card.href}
+              />
             ))}
       </div>
 
       {/* Quick Actions */}
-      <Card className="glass-card border-border/60">
+      <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-bold flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base font-bold">
             <Plus className="h-4 w-4 text-primary" /> Ações Rápidas
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Link href="/patients" className="w-full">
-            <Button variant="outline" className="w-full justify-start h-12 rounded-xl border-border/60 hover:border-primary/50 hover:bg-primary/5 hover:text-primary font-medium transition-all group">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center mr-3 text-primary group-hover:scale-110 transition-transform">
-                <UserPlus className="h-4 w-4" />
-              </div>
-              Novo Paciente
-            </Button>
-          </Link>
-          <Link href="/appointments" className="w-full">
-            <Button variant="outline" className="w-full justify-start h-12 rounded-xl border-border/60 hover:border-accent/50 hover:bg-accent/5 hover:text-accent font-medium transition-all group">
-              <div className="h-8 w-8 rounded-lg bg-accent/10 flex items-center justify-center mr-3 text-accent group-hover:scale-110 transition-transform">
-                <CalendarPlus className="h-4 w-4" />
-              </div>
-              Agendar Sessão
-            </Button>
-          </Link>
-          <Link href="/records" className="w-full">
-            <Button variant="outline" className="w-full justify-start h-12 rounded-xl border-border/60 hover:border-success/50 hover:bg-success/5 hover:text-success font-medium transition-all group">
-              <div className="h-8 w-8 rounded-lg bg-success/10 flex items-center justify-center mr-3 text-success group-hover:scale-110 transition-transform">
-                <ClipboardPlus className="h-4 w-4" />
-              </div>
-              Novo Prontuário
-            </Button>
-          </Link>
+        <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {quickActions.map((action) => (
+            <Link key={action.href} href={action.href} className="w-full">
+              <Button
+                variant="outline"
+                className={`h-12 w-full justify-start rounded-xl border-border/60 transition-colors ${action.hover}`}
+              >
+                <div className={`mr-3 flex h-8 w-8 items-center justify-center rounded-lg ${action.iconBg}`}>
+                  <action.icon className="h-4 w-4" />
+                </div>
+                {action.label}
+              </Button>
+            </Link>
+          ))}
         </CardContent>
       </Card>
     </div>

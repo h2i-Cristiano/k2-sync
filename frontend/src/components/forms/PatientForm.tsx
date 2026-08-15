@@ -149,7 +149,7 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
+            <Label htmlFor="email">E-mail *</Label>
             <Input id="email" type="email" placeholder="email@teste.com" {...form.register("email")} />
             {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
           </div>
@@ -255,7 +255,7 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="emergency_contact.relationship">Parentesco</Label>
-            <Input id="emergency_contact.relationship" placeholder="Esposo, Mae..." {...form.register("emergency_contact.relationship")} />
+            <Input id="emergency_contact.relationship" placeholder="Esposo, Mãe..." {...form.register("emergency_contact.relationship")} />
           </div>
         </div>
       </div>

@@ -6,6 +6,10 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { PageHeader } from "@/components/ui/page-header"
+import { StatusBadge, type StatusTone } from "@/components/ui/status-badge"
+import { DateStrip } from "@/components/ui/date-strip"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Plus, ChevronLeft, ChevronRight, User, MapPin, Pencil, CalendarDays, ChevronDown, MessageCircle } from "lucide-react"
 import {
   Dialog,
@@ -31,12 +35,20 @@ const AppointmentForm = dynamic(
   { loading: () => <div className="p-6"><Skeleton className="h-[500px] w-full rounded-xl" /></div> }
 )
 
-const statusColors: Record<string, string> = {
-  scheduled: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30",
-  confirmed: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 font-semibold",
-  completed: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
-  cancelled: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30",
-  no_show: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30",
+const statusTones: Record<string, StatusTone> = {
+  scheduled: "default",
+  confirmed: "success",
+  completed: "success",
+  cancelled: "destructive",
+  no_show: "warning",
+}
+
+const statusDot: Record<string, string> = {
+  scheduled: "bg-primary",
+  confirmed: "bg-success",
+  completed: "bg-success",
+  cancelled: "bg-destructive",
+  no_show: "bg-warning",
 }
 
 const statusLabels: Record<string, string> = {
@@ -84,6 +96,7 @@ function AppointmentsPageInner() {
   const [view, setView] = useState<"day" | "list">("day")
   const [activeFilter, setActiveFilter] = useState("all")
   const [services, setServices] = useState<ServiceDef[]>([])
+  const [mobileCalendarOpen, setMobileCalendarOpen] = useState(false)
   const supabase = useMemo(() => createClient(), [])
 
   const year = selectedDate.getFullYear()
@@ -232,144 +245,216 @@ function AppointmentsPageInner() {
 
   const timeSlots = Array.from({ length: 17 }, (_, i) => i + 7)
 
-  return (
-    <div className="animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Agenda</h1>
-          <p className="text-muted-foreground mt-1">Gerencie seus compromissos e pacientes.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center bg-muted/50 rounded-xl p-1">
-            <button
-              onClick={() => setView("day")}
-              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${view === "day" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              Dia
-            </button>
-            <button
-              onClick={() => setView("list")}
-              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${view === "list" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              Lista
-            </button>
+  const renderCalendar = () => (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={prevMonth} className="rounded-lg p-1.5 hover:bg-muted transition-colors" aria-label="Mês anterior">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <div className="text-center">
+            <p className="text-sm font-semibold">{MONTHS[month]} {year}</p>
           </div>
-          <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) setEditingAppointment(null) }}>
-            <DialogTrigger render={<Button className="shadow-sm rounded-xl" />}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto grid-cols-[minmax(0,1fr)]">
-              <DialogHeader>
-                <DialogTitle>{editingAppointment?.id ? "Editar Agendamento" : "Novo Agendamento"}</DialogTitle>
-              </DialogHeader>
-              <Suspense fallback={<Skeleton className="h-[500px] w-full rounded-xl" />}>
-                <AppointmentForm
-                  patients={patients}
-                  initialData={editingAppointment}
-                  onSuccess={() => {
-                    setIsOpen(false)
-                    setEditingAppointment(null)
-                    fetchAppointmentsForDay()
-                    fetchMonthAppointments()
-                  }}
-                  onCancel={() => { setIsOpen(false); setEditingAppointment(null) }}
-                />
-              </Suspense>
-            </DialogContent>
-          </Dialog>
+          <button onClick={nextMonth} className="rounded-lg p-1.5 hover:bg-muted transition-colors" aria-label="Próximo mês">
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
+
+        <div className="grid grid-cols-7 gap-0 mb-1">
+          {WEEKDAYS.map((day) => (
+            <div key={day} className="text-center text-[10px] font-medium text-muted-foreground py-1">
+              {day}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-0">
+          {Array.from({ length: firstDay }).map((_, i) => (
+            <div key={`empty-${i}`} />
+          ))}
+          {Array.from({ length: daysInMonth }).map((_, i) => {
+            const day = i + 1
+            const date = new Date(year, month, day)
+            const isSelected = isSameDay(date, selectedDate)
+            const isToday = isSameDay(date, new Date())
+            const hasApts = hasAppointmentsOnDay(day)
+
+            return (
+              <button
+                key={day}
+                onClick={() => setSelectedDate(date)}
+                className={`relative h-9 w-full flex items-center justify-center text-sm rounded-lg transition-all duration-150 ${
+                  isSelected
+                    ? "bg-primary text-primary-foreground font-semibold shadow-sm"
+                    : isToday
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-foreground hover:bg-muted/60"
+                }`}
+              >
+                {day}
+                {hasApts && !isSelected && (
+                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
+                    <div className="h-1 w-1 rounded-full bg-primary/60" />
+                  </div>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        <button
+          onClick={goToToday}
+          className="w-full mt-3 py-2 text-xs font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors"
+        >
+          Ir para Hoje
+        </button>
+      </CardContent>
+    </Card>
+  )
+
+  const renderServicesSummary = () => {
+    const counts = Object.entries(
+      allMonthAppointments.reduce<Record<string, number>>((acc, apt) => {
+        acc[apt.service_type] = (acc[apt.service_type] || 0) + 1
+        return acc
+      }, {})
+    )
+    if (counts.length === 0) return null
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Serviços no mês</p>
+          <div className="space-y-1.5">
+            {counts.map(([type, count]) => {
+              const svc = getServiceById(services, type)
+              return (
+                <div key={type} className="flex items-center gap-2 text-xs">
+                  <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: svc?.color || "#6B7280" }} />
+                  <span className="flex-1 text-muted-foreground">{svc?.label || type}</span>
+                  <span className="tnum text-muted-foreground/60">{String(count)}</span>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const renderStatusTrigger = (apt: any) => (
+    <DropdownMenuTrigger
+      render={
+        <button
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap transition-opacity cursor-pointer hover:opacity-80 flex items-center gap-1 ${
+            statusTones[apt.status] === "destructive"
+              ? "bg-destructive/15 text-destructive"
+              : statusTones[apt.status] === "warning"
+              ? "bg-warning/15 text-warning"
+              : statusTones[apt.status] === "success"
+              ? "bg-success/15 text-success"
+              : "bg-primary/10 text-primary"
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        />
+      }
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${statusDot[apt.status] || "bg-primary"}`} />
+      {statusLabels[apt.status] || apt.status}
+      <ChevronDown className="h-3 w-3" />
+    </DropdownMenuTrigger>
+  )
+
+  const renderStatusMenu = (apt: any) => (
+    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+      {Object.entries(statusLabels).map(([key, label]) => (
+        <DropdownMenuItem
+          key={key}
+          onClick={(e) => {
+            e.stopPropagation()
+            handleStatusChange(apt.id, key as any)
+          }}
+          className={apt.status === key ? "bg-accent/50" : ""}
+        >
+          <span className={`h-2 w-2 rounded-full ${statusDot[key] || "bg-primary"}`} />
+          {label}
+        </DropdownMenuItem>
+      ))}
+    </DropdownMenuContent>
+  )
+
+  return (
+    <div className="space-y-5 animate-slide-up-fade">
+      <PageHeader
+        title="Agenda"
+        description="Gerencie seus compromissos e pacientes."
+        actions={
+          <>
+            <div className="flex items-center rounded-xl bg-muted/60 p-1">
+              <button
+                onClick={() => setView("day")}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${view === "day" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Dia
+              </button>
+              <button
+                onClick={() => setView("list")}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${view === "list" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Lista
+              </button>
+            </div>
+            <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) setEditingAppointment(null) }}>
+              <DialogTrigger render={<Button />}>
+                <Plus className="mr-2 h-4 w-4" />
+                Novo
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto grid-cols-[minmax(0,1fr)]">
+                <DialogHeader>
+                  <DialogTitle>{editingAppointment?.id ? "Editar Agendamento" : "Novo Agendamento"}</DialogTitle>
+                </DialogHeader>
+                <Suspense fallback={<Skeleton className="h-[500px] w-full rounded-xl" />}>
+                  <AppointmentForm
+                    patients={patients}
+                    initialData={editingAppointment}
+                    onSuccess={() => {
+                      setIsOpen(false)
+                      setEditingAppointment(null)
+                      fetchAppointmentsForDay()
+                      fetchMonthAppointments()
+                    }}
+                    onCancel={() => { setIsOpen(false); setEditingAppointment(null) }}
+                  />
+                </Suspense>
+              </DialogContent>
+            </Dialog>
+          </>
+        }
+      />
+
+      {/* Mobile: date strip + collapsible calendar */}
+      <div className="space-y-3 lg:hidden">
+        <DateStrip selected={selectedDate} onSelect={setSelectedDate} />
+        <button
+          onClick={() => setMobileCalendarOpen((v) => !v)}
+          className="flex w-full items-center justify-between rounded-xl border border-border/60 bg-card px-4 py-2.5 text-sm font-medium text-foreground"
+          aria-expanded={mobileCalendarOpen}
+        >
+          {MONTHS[month]} {year}
+          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${mobileCalendarOpen ? "rotate-180" : ""}`} />
+        </button>
+        {mobileCalendarOpen && (
+          <div className="animate-slide-up-fade">
+            {renderCalendar()}
+            {renderServicesSummary()}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-        <div className="space-y-4">
-          <Card variant="glass">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <button onClick={prevMonth} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <div className="text-center">
-                  <p className="text-sm font-semibold">{MONTHS[month]} {year}</p>
-                </div>
-                <button onClick={nextMonth} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-7 gap-0 mb-1">
-                {WEEKDAYS.map((day) => (
-                  <div key={day} className="text-center text-[10px] font-medium text-muted-foreground py-1">
-                    {day}
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-7 gap-0">
-                {Array.from({ length: firstDay }).map((_, i) => (
-                  <div key={`empty-${i}`} />
-                ))}
-                {Array.from({ length: daysInMonth }).map((_, i) => {
-                  const day = i + 1
-                  const date = new Date(year, month, day)
-                  const isSelected = isSameDay(date, selectedDate)
-                  const isToday = isSameDay(date, new Date())
-                  const hasApts = hasAppointmentsOnDay(day)
-
-                  return (
-                    <button
-                      key={day}
-                      onClick={() => setSelectedDate(date)}
-                      className={`relative h-9 w-full flex items-center justify-center text-sm rounded-lg transition-all duration-150 ${
-                        isSelected
-                          ? "bg-primary text-primary-foreground font-semibold shadow-sm"
-                          : isToday
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "text-foreground hover:bg-muted/60"
-                      }`}
-                    >
-                      {day}
-                      {hasApts && !isSelected && (
-                        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
-                          <div className="h-1 w-1 rounded-full bg-primary/60" />
-                        </div>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-
-              <button
-                onClick={goToToday}
-                className="w-full mt-3 py-2 text-xs font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors"
-              >
-                Ir para Hoje
-              </button>
-            </CardContent>
-          </Card>
-
-          <Card variant="glass">
-            <CardContent className="p-4">
-              <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Serviços</p>
-              <div className="space-y-1.5">
-                {Object.entries(
-                  allMonthAppointments.reduce<Record<string, number>>((acc, apt) => {
-                    acc[apt.service_type] = (acc[apt.service_type] || 0) + 1
-                    return acc
-                  }, {})
-                ).map(([type, count]) => {
-                  const svc = getServiceById(services, type)
-                  return (
-                    <div key={type} className="flex items-center gap-2 text-xs">
-                      <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: svc?.color || "#6B7280" }} />
-                      <span className="flex-1 text-muted-foreground">{svc?.label || type}</span>
-                      <span className="text-muted-foreground/60">{String(count)}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Desktop sidebar */}
+        <div className="hidden space-y-4 lg:block">
+          {renderCalendar()}
+          {renderServicesSummary()}
         </div>
 
         <div>
@@ -383,15 +468,15 @@ function AppointmentsPageInner() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex gap-2 mb-4 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {filterOptions.map((filter) => (
               <button
                 key={filter.key}
                 onClick={() => setActiveFilter(filter.key)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${
+                className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all whitespace-nowrap ${
                   activeFilter === filter.key
                     ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                    : "bg-background text-muted-foreground border-border/60 hover:border-primary/40 hover:text-foreground"
+                    : "bg-card text-muted-foreground border-border/60 hover:border-primary/40 hover:text-foreground"
                 }`}
               >
                 {filter.label}
@@ -402,7 +487,7 @@ function AppointmentsPageInner() {
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="glass-card rounded-xl p-4">
+                <div key={i} className="rounded-xl bg-card p-4 ring-1 ring-border/40">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2 flex-1">
                       <div className="flex items-center gap-2">
@@ -417,15 +502,17 @@ function AppointmentsPageInner() {
               ))}
             </div>
           ) : filteredAppointments.length === 0 ? (
-            <div className="text-center py-20 glass-card rounded-2xl flex flex-col items-center justify-center">
-              <div className="h-20 w-20 bg-muted/30 rounded-full flex items-center justify-center mb-4">
-                <CalendarDays className="h-10 w-10 text-muted-foreground/40" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Dia Livre</h3>
-              <p className="text-muted-foreground mb-6">Nenhum agendamento marcado para esta data.</p>
-              <Button variant="outline" onClick={() => setIsOpen(true)} className="rounded-xl">
-                Agendar Agora
-              </Button>
+            <div className="rounded-2xl bg-card ring-1 ring-border/40">
+              <EmptyState
+                icon={CalendarDays}
+                title="Dia Livre"
+                description="Nenhum agendamento marcado para esta data."
+                action={
+                  <Button variant="outline" onClick={() => setIsOpen(true)}>
+                    Agendar Agora
+                  </Button>
+                }
+              />
             </div>
           ) : view === "day" ? (
             <div className="space-y-2">
@@ -436,9 +523,9 @@ function AppointmentsPageInner() {
                 })
 
                 return (
-                  <div key={hour} className="flex gap-4 min-h-[60px]">
-                    <div className="w-16 shrink-0 text-right pt-1">
-                      <span className="text-xs font-medium text-muted-foreground">
+                  <div key={hour} className="flex gap-3 min-h-[60px]">
+                    <div className="w-14 shrink-0 text-right pt-1">
+                      <span className="text-xs font-medium text-muted-foreground tnum">
                         {String(hour).padStart(2, "0")}:00
                       </span>
                     </div>
@@ -456,20 +543,20 @@ function AppointmentsPageInner() {
                         return (
                           <div
                             key={apt.id}
-                            className="glass-card rounded-xl p-4 mb-2 hover:shadow-md transition-all duration-200 cursor-pointer group min-w-0"
+                            className="mb-2 min-w-0 cursor-pointer rounded-xl bg-card p-4 ring-1 ring-border/40 transition-[box-shadow,transform] hover:shadow-md group"
                             style={{ borderLeft: `3px solid ${svc?.color || "#6B7280"}` }}
                             onClick={() => { setEditingAppointment(apt); setIsOpen(true) }}
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="space-y-1 min-w-0 flex-1">
                                 <div className="flex flex-wrap items-center gap-1.5">
-                                  <span className="text-sm font-bold text-foreground">{timeStr}</span>
+                                  <span className="text-sm font-bold text-foreground tnum">{timeStr}</span>
                                   <span className="text-xs font-medium px-2 py-0.5 rounded-full max-w-full truncate" style={{ backgroundColor: `${svc?.color}15`, color: svc?.color }}>
                                     {svc?.label || apt.service_type}
                                   </span>
                                   <span className="text-xs text-muted-foreground">{apt.duration_minutes}min</span>
                                   {apt.deposit ? (
-                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gold/15 text-gold">
                                       Entrada R$ {apt.deposit.toFixed(0)}
                                     </span>
                                   ) : (
@@ -485,54 +572,22 @@ function AppointmentsPageInner() {
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
                                 <DropdownMenu>
-                                  <DropdownMenuTrigger
-                                    render={
-                                      <button
-                                        className={`text-xs px-2.5 py-1 rounded-full font-medium border cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1 ${statusColors[apt.status] || ""}`}
-                                        onClick={(e) => e.stopPropagation()}
-                                      />
-                                    }
-                                  >
-                                    {statusLabels[apt.status] || apt.status}
-                                    <ChevronDown className="h-3 w-3" />
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                                    {Object.entries(statusLabels).map(([key, label]) => (
-                                      <DropdownMenuItem
-                                        key={key}
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          handleStatusChange(apt.id, key as any)
-                                        }}
-                                        className={apt.status === key ? "bg-accent" : ""}
-                                      >
-                                        <span className={`w-2 h-2 rounded-full ${statusColors[key]?.split(" ")[0]}`} />
-                                        {label}
-                                      </DropdownMenuItem>
-                                    ))}
-                                  </DropdownMenuContent>
+                                  {renderStatusTrigger(apt)}
+                                  {renderStatusMenu(apt)}
                                 </DropdownMenu>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={(e) => { e.stopPropagation(); setEditingAppointment(apt); setIsOpen(true) }}
-                                >
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
+                                  className="h-9 w-9 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700"
                                   title="Cobrar via WhatsApp"
-                                  className="h-8 w-8 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700"
                                   onClick={(e) => { e.stopPropagation(); openWhatsApp(apt, svc) }}
                                 >
-                                  <MessageCircle className="h-3.5 w-3.5" />
+                                  <MessageCircle className="h-4 w-4" />
                                 </Button>
                               </div>
                             </div>
                             {apt.is_home_visit && (
-                              <div className="flex items-center gap-1.5 text-amber-600 mt-2">
+                              <div className="flex items-center gap-1.5 text-gold mt-2">
                                 <MapPin className="h-3.5 w-3.5" />
                                 <span className="text-xs font-medium">Atendimento Domiciliar</span>
                               </div>
@@ -555,12 +610,12 @@ function AppointmentsPageInner() {
                 return (
                   <div
                     key={apt.id}
-                    className="glass-card rounded-xl p-4 hover:shadow-md transition-all duration-200 cursor-pointer group flex items-center gap-4"
+                    className="cursor-pointer rounded-xl bg-card p-4 ring-1 ring-border/40 transition-[box-shadow,transform] hover:shadow-md group flex items-center gap-4"
                     style={{ borderLeft: `3px solid ${svc?.color || "#6B7280"}` }}
                     onClick={() => { setEditingAppointment(apt); setIsOpen(true) }}
                   >
                     <div className="w-16 shrink-0 text-center">
-                      <span className="text-sm font-bold text-foreground">{timeStr}</span>
+                      <span className="text-sm font-bold text-foreground tnum">{timeStr}</span>
                       <span className="block text-[10px] text-muted-foreground">{apt.duration_minutes}min</span>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -570,7 +625,7 @@ function AppointmentsPageInner() {
                           {svc?.label || apt.service_type}
                         </span>
                         {apt.deposit ? (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gold/15 text-gold">
                             Entrada R$ {apt.deposit.toFixed(0)}
                           </span>
                         ) : (
@@ -579,57 +634,25 @@ function AppointmentsPageInner() {
                           </span>
                         )}
                         {apt.is_home_visit && (
-                          <span className="text-[10px] text-amber-600 font-medium flex items-center gap-0.5">
+                          <span className="text-[10px] text-gold font-medium flex items-center gap-0.5">
                             <MapPin className="h-3 w-3" /> Domiciliar
                           </span>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
                       <DropdownMenu>
-                        <DropdownMenuTrigger
-                          render={
-                            <button
-                              className={`text-xs px-2.5 py-1 rounded-full font-medium border cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1 ${statusColors[apt.status] || ""}`}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          }
-                        >
-                          {statusLabels[apt.status] || apt.status}
-                          <ChevronDown className="h-3 w-3" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                          {Object.entries(statusLabels).map(([key, label]) => (
-                            <DropdownMenuItem
-                              key={key}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleStatusChange(apt.id, key as any)
-                              }}
-                              className={apt.status === key ? "bg-accent" : ""}
-                            >
-                              <span className={`w-2 h-2 rounded-full ${statusColors[key]?.split(" ")[0]}`} />
-                              {label}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
+                        {renderStatusTrigger(apt)}
+                        {renderStatusMenu(apt)}
                       </DropdownMenu>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => { e.stopPropagation(); setEditingAppointment(apt); setIsOpen(true) }}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
+                        className="h-9 w-9 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700"
                         title="Cobrar via WhatsApp"
-                        className="h-8 w-8 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700"
                         onClick={(e) => { e.stopPropagation(); openWhatsApp(apt, svc) }}
                       >
-                        <MessageCircle className="h-3.5 w-3.5" />
+                        <MessageCircle className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
@@ -639,8 +662,7 @@ function AppointmentsPageInner() {
           )}
         </div>
       </div>
-
-      </div>
+    </div>
   )
 }
 

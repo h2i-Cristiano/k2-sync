@@ -136,23 +136,21 @@ export default function PatientDetailPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4 min-w-0">
+          <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full shrink-0">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-4">
-            <div className="hidden sm:flex h-14 w-14 rounded-full bg-primary/10 items-center justify-center text-primary font-bold text-xl shadow-sm ring-1 ring-primary/20">
-              {patient.full_name?.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">{patient.full_name}</h1>
-              <p className="text-muted-foreground flex items-center gap-2 mt-1">
-                <span className="inline-flex items-center"><User className="h-3.5 w-3.5 mr-1"/> {patient.gender === 'M' ? 'Masc.' : patient.gender === 'F' ? 'Fem.' : patient.gender === 'O' ? 'Outro' : 'N/I'} • {formatAge(patient.birth_date)}</span>
-                <span>•</span>
-                <span className="inline-flex items-center"><Phone className="h-3.5 w-3.5 mr-1"/> {patient.phone || "Sem telefone"}</span>
-              </p>
-            </div>
+          <div className="flex h-14 w-14 shrink-0 rounded-full bg-primary/10 items-center justify-center text-primary font-bold text-xl ring-1 ring-primary/20">
+            {patient.full_name?.charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl font-bold tracking-tight sm:text-3xl">{patient.full_name}</h1>
+            <p className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-sm">
+              <span className="inline-flex items-center"><User className="h-3.5 w-3.5 mr-1"/> {patient.gender === 'M' ? 'Masc.' : patient.gender === 'F' ? 'Fem.' : patient.gender === 'O' ? 'Outro' : 'N/I'} • {formatAge(patient.birth_date)}</span>
+              <span>•</span>
+              <span className="inline-flex items-center"><Phone className="h-3.5 w-3.5 mr-1"/> {patient.phone || "Sem telefone"}</span>
+            </p>
           </div>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
@@ -176,15 +174,15 @@ export default function PatientDetailPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-muted/50 p-1">
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          <TabsTrigger value="clinical">Clínico</TabsTrigger>
-          <TabsTrigger value="history">Histórico</TabsTrigger>
+        <TabsList className="bg-muted/50 p-1 w-full justify-start overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <TabsTrigger value="overview" className="whitespace-nowrap">Visão Geral</TabsTrigger>
+          <TabsTrigger value="clinical" className="whitespace-nowrap">Clínico</TabsTrigger>
+          <TabsTrigger value="history" className="whitespace-nowrap">Histórico</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
-            <Card className="shadow-sm border-none bg-card">
+            <Card className="ring-1 ring-border/40">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <User className="h-5 w-5 text-primary" /> Dados Pessoais
@@ -221,7 +219,7 @@ export default function PatientDetailPage() {
             </Card>
 
             <div className="space-y-6">
-              <Card className="shadow-sm border-none bg-card">
+              <Card className="ring-1 ring-border/40">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-primary" /> Endereço & Contato
@@ -255,7 +253,7 @@ export default function PatientDetailPage() {
                 </CardContent>
               </Card>
               
-              <Card className="shadow-sm border-none bg-card">
+              <Card className="ring-1 ring-border/40">
                 <CardContent className="p-6">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <Button render={<Link href={`/patients/${patientId}/anamnese`} />} className="shadow-sm">
@@ -279,7 +277,7 @@ export default function PatientDetailPage() {
 
         <TabsContent value="clinical" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
-            <Card className="shadow-sm border-none bg-card">
+            <Card className="ring-1 ring-border/40">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Activity className="h-5 w-5 text-rose-500" /> Condições e Alergias
@@ -309,7 +307,7 @@ export default function PatientDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="shadow-sm border-none bg-card">
+            <Card className="ring-1 ring-border/40">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Pill className="h-5 w-5 text-blue-500" /> Medicamentos em Uso
@@ -351,7 +349,7 @@ export default function PatientDetailPage() {
         <TabsContent value="history" className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {summaryCards.map((c) => (
-              <Card key={c.label} className="shadow-sm border-none bg-card">
+              <Card key={c.label} className="ring-1 ring-border/40">
                 <CardContent className="p-5 flex items-center gap-4">
                   <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${c.color}`}>{c.icon}</div>
                   <div className="min-w-0">
@@ -364,7 +362,7 @@ export default function PatientDetailPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-xl">
+            <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-xl w-full sm:w-auto overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {(["all", "record", "anamnesis", "appointment"] as const).map((k) => (
                 <button
                   key={k}
@@ -384,7 +382,7 @@ export default function PatientDetailPage() {
             </Button>
           </div>
 
-          <Card className="shadow-sm border-none bg-card">
+          <Card className="ring-1 ring-border/40">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Clock className="h-5 w-5 text-primary" /> Linha do Tempo

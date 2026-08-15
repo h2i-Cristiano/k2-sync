@@ -6,7 +6,7 @@ test.describe('Services CRUD', () => {
     await loginAsTestUser(page);
     await page.goto('/services');
 
-    await expect(page.getByText(/servicos/i).first()).toBeVisible();
+    await expect(page.getByText(/serviços/i).first()).toBeVisible();
     await expect(page.getByRole('button', { name: /novo servi/i })).toBeVisible();
   });
 

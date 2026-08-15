@@ -14,10 +14,10 @@ function Card({
       data-size={size}
       data-variant={variant}
       className={cn(
-        "group/card flex flex-col gap-4 overflow-hidden rounded-2xl p-6 text-sm text-card-foreground transition-all duration-300",
+        "group/card flex flex-col gap-4 overflow-hidden rounded-2xl p-6 text-sm text-card-foreground transition-[box-shadow,transform] duration-200 ease-smooth",
         variant === "glass"
-          ? "glass-card hover:shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
-          : "bg-card shadow-[0_1px_3px_rgba(0,0,0,0.04)] ring-1 ring-border/50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]",
+          ? "glass-card ring-1 ring-border/40 hover:ring-border/70"
+          : "bg-card shadow-[0_1px_2px_rgba(0,0,0,0.03)] ring-1 ring-border/50",
         className
       )}
       {...props}

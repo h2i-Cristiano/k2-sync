@@ -76,7 +76,7 @@ test.describe('Responsividade mobile (390px)', () => {
     const sheet = await openMobileDrawer(page);
     await checkDrawerWidth(page, sheet);
 
-    for (const label of ['Agenda', 'Pacientes', 'Financeiro', 'Estoque', 'Configuracoes']) {
+    for (const label of ['Agenda', 'Pacientes', 'Financeiro', 'Estoque', 'Configurações']) {
       const link = sheet.getByRole('link', { name: label, exact: false }).first();
       await expect(link).toBeVisible();
     }

@@ -5,7 +5,7 @@ test.describe('Signup flow', () => {
     await page.goto('/signup');
     await expect(page).toHaveTitle(/K2-Sync/);
     await expect(page.getByLabel('Nome Completo', { exact: true })).toBeVisible();
-    await expect(page.getByLabel('Email', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('E-mail', { exact: true })).toBeVisible();
     await expect(page.getByLabel('Senha', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: /criar conta/i })).toBeVisible();
   });
@@ -13,7 +13,7 @@ test.describe('Signup flow', () => {
   test('signup shows error for duplicate email', async ({ page }) => {
     await page.goto('/signup');
     await page.getByLabel('Nome Completo', { exact: true }).fill('Teste Dup');
-    await page.getByLabel('Email', { exact: true }).fill('test@example.com');
+    await page.getByLabel('E-mail', { exact: true }).fill('test@example.com');
     await page.getByLabel('Senha', { exact: true }).fill('testpassword123');
     await page.getByRole('button', { name: /criar conta/i }).click();
     await page.waitForTimeout(3000);
@@ -33,7 +33,7 @@ test.describe('Signup flow', () => {
 
   test('login link is present on signup page', async ({ page }) => {
     await page.goto('/signup');
-    await expect(page.getByRole('link', { name: /faca login/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /faça login/i })).toBeVisible();
   });
 
   test('signup link is present on login page', async ({ page }) => {

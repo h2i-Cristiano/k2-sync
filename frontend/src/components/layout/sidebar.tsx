@@ -67,13 +67,13 @@ const mainNavGroups: NavGroupDef[] = [
 
 const financeNav: NavItem[] = [
   { href: "/financial", label: "Financeiro", icon: CreditCard },
-  { href: "/financial/charges", label: "Cobrancas", icon: Receipt },
+  { href: "/financial/charges", label: "Cobranças", icon: Receipt },
   { href: "/financial/payable", label: "Contas a Pagar", icon: ArrowDownCircle },
   { href: "/financial/receivable", label: "Contas a Receber", icon: ArrowUpCircle },
 ]
 
 const operationalNav: NavItem[] = [
-  { href: "/services", label: "Servicos", icon: Hand },
+  { href: "/services", label: "Serviços", icon: Hand },
   { href: "/products", label: "Produtos", icon: ShoppingBag },
   { href: "/stock", label: "Estoque", icon: Warehouse },
 ]
@@ -84,28 +84,28 @@ const crmNav: NavItem[] = [
 ]
 
 const adminNav: NavItem[] = [
-  { href: "/reports", label: "Relatorios", icon: BarChart3, disabled: true },
-  { href: "/settings", label: "Configuracoes", icon: Settings },
+  { href: "/reports", label: "Relatórios", icon: BarChart3, disabled: true },
+  { href: "/settings", label: "Configurações", icon: Settings },
 ]
 
 function NavLink({ item, active, collapsed }: { item: NavItem; active: boolean; collapsed?: boolean }) {
   return (
     <Link
       href={item.disabled ? "#" : item.href}
-      className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+      className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-150 ${
         item.disabled
           ? "opacity-40 cursor-not-allowed"
           : active
-          ? "bg-accent/15 text-accent font-semibold shadow-xs dark:bg-accent/20 dark:text-accent"
+          ? "bg-primary/10 text-primary font-semibold dark:bg-primary/15 dark:text-primary"
           : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-black/5 dark:hover:text-white dark:hover:bg-sidebar-accent/50"
       }`}
       onClick={(e) => item.disabled && e.preventDefault()}
     >
       <div className="relative flex items-center justify-center">
         {active && (
-          <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3.5px] rounded-r-full bg-gradient-to-b from-slate-700 to-slate-900 dark:from-slate-400 dark:to-slate-500 shadow-[0_0_10px_rgba(51,65,85,0.35)]" />
+          <div className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-[3.5px] rounded-r-full bg-gradient-to-b from-primary to-emerald-800 dark:from-primary dark:to-emerald-500 shadow-[0_0_10px_rgba(83,148,110,0.35)]" />
         )}
-        <item.icon className={`h-[19px] w-[19px] transition-transform duration-200 group-hover:scale-110 ${active ? "text-accent dark:text-accent" : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground"}`} />
+        <item.icon className={`h-[19px] w-[19px] transition-transform duration-150 group-hover:scale-110 ${active ? "text-primary dark:text-primary" : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground"}`} />
       </div>
       {!collapsed && <span>{item.label}</span>}
       {!collapsed && item.disabled && (
@@ -158,11 +158,11 @@ export function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarC
     .toUpperCase() || "U"
 
   return (
-    <div className="flex h-full flex-col bg-sidebar/95 backdrop-blur-md border-r border-sidebar-border/70 dark:bg-sidebar dark:border-sidebar-border">
+    <div className="flex h-full flex-col bg-sidebar border-r border-sidebar-border">
       {/* Logo */}
       <div className="flex h-16 items-center justify-between px-4">
         <Link href="/dashboard" className="flex items-center gap-3 group">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 dark:from-slate-500 dark:to-slate-800 shadow-lg shadow-slate-900/25 group-hover:scale-105 transition-transform duration-200">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-emerald-800 dark:from-primary dark:to-emerald-600 shadow-sm ring-1 ring-gold/30 group-hover:scale-105 transition-transform duration-200">
             <Leaf className="h-5 w-5 text-white" />
           </div>
           {!collapsed && (
@@ -191,7 +191,7 @@ export function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarC
         {/* Principal group */}
         <NavLabel collapsed={collapsed}>Principal</NavLabel>
         <NavGroup items={mainNavGroups[0].items} activeHref={pathname} collapsed={collapsed} />
-        <NavGroup items={[{ href: "/records", label: "Prontuarios", icon: FileText }]} activeHref={pathname} collapsed={collapsed} />
+        <NavGroup items={[{ href: "/records", label: "Prontuários", icon: FileText }]} activeHref={pathname} collapsed={collapsed} />
 
         <NavLabel collapsed={collapsed}>Financeiro</NavLabel>
         <NavGroup items={financeNav} activeHref={pathname} collapsed={collapsed} />
@@ -214,14 +214,14 @@ export function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarC
           <DropdownMenuTrigger render={<Button variant="ghost" className="w-full justify-start gap-3 h-auto py-2.5 px-3 rounded-xl text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-black/5 dark:text-sidebar-foreground/80 dark:hover:text-white dark:hover:bg-sidebar-accent/50" />}>
             <div className="relative">
               <Avatar className="h-8.5 w-8.5 ring-2 ring-sidebar-border">
-                <AvatarFallback className="bg-gradient-to-br from-slate-700 to-slate-900 dark:from-slate-500 dark:to-slate-800 text-white text-xs font-semibold">{initials}</AvatarFallback>
+                <AvatarFallback className="bg-gradient-to-br from-primary to-emerald-800 dark:from-primary dark:to-emerald-600 text-white text-xs font-semibold">{initials}</AvatarFallback>
               </Avatar>
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-sidebar" />
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-success ring-2 ring-sidebar" />
             </div>
             {!collapsed && (
               <div className="flex flex-col items-start text-left min-w-0">
                 <span className="text-sm font-semibold truncate max-w-[140px] text-foreground dark:text-white">
-                  {user?.user_metadata?.full_name || "Usuario"}
+                  {user?.user_metadata?.full_name || "Usuário"}
                 </span>
                 <span className="text-[11px] text-sidebar-foreground/45 truncate max-w-[140px]">
                   {user?.email}
@@ -240,7 +240,7 @@ export function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarC
               <DropdownMenuSeparator />
               <DropdownMenuItem render={<Link href="/settings" />}>
                 <Settings className="mr-2 h-4 w-4 text-sidebar-foreground/70" />
-                Configuracoes
+                Configurações
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onLogout} className="text-rose-600 dark:text-rose-400">

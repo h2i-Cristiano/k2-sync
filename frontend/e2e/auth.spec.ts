@@ -11,7 +11,7 @@ test('login page has title and login form', async ({ page }) => {
   await expect(page.locator('form')).toBeVisible();
 
   // Expect email and password inputs
-  await expect(page.getByLabel('Email', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('E-mail', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Senha', { exact: true })).toBeVisible();
 
   // Expect the submit button
@@ -27,7 +27,7 @@ test('login with valid credentials redirects to dashboard', async ({ page }) => 
 test('login with wrong password shows error message', async ({ page }) => {
   await page.goto('/login');
 
-  await page.getByLabel('Email', { exact: true }).fill(TEST_EMAIL);
+  await page.getByLabel('E-mail', { exact: true }).fill(TEST_EMAIL);
   await page.getByLabel('Senha', { exact: true }).fill('senha-incorreta-123');
   await page.getByRole('button', { name: /entrar/i }).click();
 

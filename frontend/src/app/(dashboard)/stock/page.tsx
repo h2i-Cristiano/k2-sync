@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
+import { PageHeader } from "@/components/ui/page-header"
+import { StatCard } from "@/components/ui/stat-card"
+import { EmptyState } from "@/components/ui/empty-state"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog"
@@ -134,36 +137,21 @@ export default function StockPage() {
 
   return (
     <div className="space-y-6 animate-slide-up-fade">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Estoque</h1>
-          <p className="text-sm text-muted-foreground">Controle de estoque, reposições e histórico de movimentações.</p>
-        </div>
-        {Object.values(adjustments).some(v => v !== 0) && (
-          <Button onClick={handleBulkSave} className="rounded-xl"><Save className="h-4 w-4 mr-2" /> Salvar Ajustes</Button>
-        )}
-      </div>
+      <PageHeader
+        title="Estoque"
+        description="Controle de estoque, reposições e histórico de movimentações."
+        actions={
+          Object.values(adjustments).some(v => v !== 0) && (
+            <Button onClick={handleBulkSave}><Save className="h-4 w-4 mr-2" /> Salvar Ajustes</Button>
+          )
+        }
+      />
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="glass-card">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold">{totalItems}</p>
-            <p className="text-xs text-muted-foreground">Itens em estoque</p>
-          </CardContent>
-        </Card>
-        <Card className="glass-card">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold">R$ {totalValue.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground">Valor em estoque</p>
-          </CardContent>
-        </Card>
-        <Card className="glass-card">
-          <CardContent className="p-4 text-center">
-            <p className={`text-2xl font-bold ${lowStockProducts.length > 0 ? "text-warning" : ""}`}>{lowStockProducts.length}</p>
-            <p className="text-xs text-muted-foreground">Produtos com estoque baixo</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 gap-3 sm:gap-5 sm:grid-cols-3">
+        <StatCard label="Itens em estoque" value={totalItems} icon={Package} tone="primary" />
+        <StatCard label="Valor em estoque" value={`R$ ${totalValue.toFixed(2)}`} icon={Package} tone="gold" />
+        <StatCard label="Estoque baixo" value={lowStockProducts.length} icon={Package} tone={lowStockProducts.length > 0 ? "warning" : "muted"} />
       </div>
 
       {lowStockProducts.length > 0 && (
@@ -175,15 +163,16 @@ export default function StockPage() {
       )}
 
       {/* Products List */}
-      <Card className="glass-card">
+      <Card className="ring-1 ring-border/40">
         <CardContent className="p-0">
           {loading ? (
             <div className="p-5 space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}</div>
           ) : products.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
-              <p className="text-sm">Nenhum produto ativo.</p>
-            </div>
+            <EmptyState
+              icon={Package}
+              title="Nenhum produto ativo"
+              description="Ative produtos na página de Produtos para gerenciar o estoque."
+            />
           ) : (
             <div className="divide-y divide-border/40">
               {products.map((prod) => {
@@ -191,44 +180,46 @@ export default function StockPage() {
                 const projected = prod.stock_quantity + adj
                 const lowStock = prod.min_stock > 0 && prod.stock_quantity < prod.min_stock
                 return (
-                  <div key={prod.id} className="flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors">
-                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                      <Package className="h-5 w-5" />
+                  <div key={prod.id} className="flex flex-col gap-3 p-4 hover:bg-muted/50 transition-colors sm:flex-row sm:items-center sm:gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="h-10 w-10 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                        <Package className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{prod.name}</p>
+                        <p className="text-xs text-muted-foreground tnum">
+                          Atual: <span className="font-semibold">{prod.stock_quantity} {prod.unit}</span>
+                          {prod.min_stock > 0 && <> • Mín: {prod.min_stock}</>}
+                          {adj !== 0 && <span className={adj > 0 ? "text-emerald-600" : "text-destructive"}> → {projected}</span>}
+                        </p>
+                        {lowStock && (
+                          <span className="text-[10px] font-semibold uppercase tracking-wide bg-warning/15 text-warning px-2 py-0.5 rounded-full mt-1 inline-block">
+                            Estoque baixo
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{prod.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Atual: <span className="font-semibold">{prod.stock_quantity} {prod.unit}</span>
-                        {prod.min_stock > 0 && <> • Mín: {prod.min_stock}</>}
-                        {adj !== 0 && <span className={adj > 0 ? "text-emerald-600" : "text-destructive"}> → {projected}</span>}
-                      </p>
-                      {lowStock && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wide bg-warning/15 text-warning px-2 py-0.5 rounded-full mt-1 inline-block">
-                          Estoque baixo
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Button size="sm" variant="outline" className="h-8 px-2 rounded-lg text-xs" onClick={() => setRestockProduct(prod)}>
+                    <div className="flex flex-wrap items-center gap-1.5 sm:shrink-0">
+                      <Button size="sm" variant="outline" className="h-9 px-2.5 rounded-lg text-xs" onClick={() => setRestockProduct(prod)}>
                         <ArrowUp className="h-3.5 w-3.5 mr-1" /> Repor
                       </Button>
                       <div className="flex items-center gap-1">
-                        <Button size="sm" variant="outline" className="h-8 w-8 p-0 rounded-lg" onClick={() => handleAdjust(prod.id, -1)}>
-                          <ArrowDown className="h-3.5 w-3.5" />
+                        <Button size="sm" variant="outline" className="h-9 w-9 p-0 rounded-lg" onClick={() => handleAdjust(prod.id, -1)} aria-label="Diminuir estoque">
+                          <ArrowDown className="h-4 w-4" />
                         </Button>
                         <Input
                           type="number"
-                          className="h-8 w-14 text-center text-xs rounded-lg"
+                          className="h-9 w-14 text-center text-xs rounded-lg"
                           value={adj}
                           onChange={e => setAdjustments(prev => ({ ...prev, [prod.id]: Number(e.target.value) }))}
                           aria-label="Ajuste"
                         />
-                        <Button size="sm" variant="outline" className="h-8 w-8 p-0 rounded-lg" onClick={() => handleAdjust(prod.id, 1)}>
-                          <ArrowUp className="h-3.5 w-3.5" />
+                        <Button size="sm" variant="outline" className="h-9 w-9 p-0 rounded-lg" onClick={() => handleAdjust(prod.id, 1)} aria-label="Aumentar estoque">
+                          <ArrowUp className="h-4 w-4" />
                         </Button>
                       </div>
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg" onClick={() => openHistory(prod)} title="Histórico">
-                        <History className="h-3.5 w-3.5" />
+                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-lg" onClick={() => openHistory(prod)} title="Histórico">
+                        <History className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>

@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useEffect, useState } from "react"
 import { useTheme } from "next-themes"
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Moon, Sun, Monitor, Bell, Shield, Key, User, Smartphone, Save } from "lucide-react"
 import { toast } from "sonner"
 import { getProfile, updateProfile, updatePassword } from "@/lib/actions/profile.actions"
+import { PageHeader } from "@/components/ui/page-header"
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
@@ -78,31 +79,31 @@ export default function SettingsPage() {
     .slice(0, 2) || "U"
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-10">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
-        <p className="text-muted-foreground mt-1">Gerencie suas preferências, aparência e segurança do sistema.</p>
-      </div>
+    <div className="max-w-4xl mx-auto space-y-5 animate-slide-up-fade pb-10">
+      <PageHeader
+        title="Configurações"
+        description="Gerencie suas preferências, aparência e segurança do sistema."
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-muted/50 p-1 w-full justify-start flex-wrap group-data-horizontal/tabs:h-auto">
-          <TabsTrigger value="appearance" className="flex items-center gap-2">
+        <TabsList className="bg-muted/50 p-1 w-full justify-start overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <TabsTrigger value="appearance" className="flex items-center gap-2 whitespace-nowrap">
             <Monitor className="h-4 w-4" /> Aparência
           </TabsTrigger>
-          <TabsTrigger value="profile" className="flex items-center gap-2">
+          <TabsTrigger value="profile" className="flex items-center gap-2 whitespace-nowrap">
             <User className="h-4 w-4" /> Perfil
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
+          <TabsTrigger value="notifications" className="flex items-center gap-2 whitespace-nowrap">
             <Bell className="h-4 w-4" /> Notificações
           </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
+          <TabsTrigger value="security" className="flex items-center gap-2 whitespace-nowrap">
             <Shield className="h-4 w-4" /> Segurança
           </TabsTrigger>
         </TabsList>
 
         {/* Aparência */}
         <TabsContent value="appearance" className="space-y-6">
-          <Card className="shadow-sm">
+          <Card className="ring-1 ring-border/40">
             <CardHeader>
               <CardTitle>Tema do Sistema</CardTitle>
               <CardDescription>Personalize a aparência do K2-Sync.</CardDescription>
@@ -141,7 +142,7 @@ export default function SettingsPage() {
 
         {/* Perfil */}
         <TabsContent value="profile" className="space-y-6">
-          <Card className="shadow-sm">
+          <Card className="ring-1 ring-border/40">
             <CardHeader>
               <CardTitle>Informações Pessoais</CardTitle>
               <CardDescription>Atualize seus dados que aparecerão para os pacientes.</CardDescription>
@@ -153,7 +154,7 @@ export default function SettingsPage() {
                 </div>
                 <Button variant="outline" disabled>Alterar Foto (em breve)</Button>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Nome Completo</Label>
                   <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
@@ -163,9 +164,9 @@ export default function SettingsPage() {
                   <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(11) 99999-9999" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input value={profile?.id ? "" : ""} disabled className="bg-muted" />
-                  <p className="text-xs text-muted-foreground">Email não pode ser alterado aqui.</p>
+                  <Label>E-mail</Label>
+                  <Input disabled className="bg-muted" />
+                  <p className="text-xs text-muted-foreground">E-mail não pode ser alterado aqui.</p>
                 </div>
               </div>
             </CardContent>
@@ -179,7 +180,7 @@ export default function SettingsPage() {
 
         {/* Notificações */}
         <TabsContent value="notifications" className="space-y-6">
-          <Card className="shadow-sm">
+          <Card className="ring-1 ring-border/40">
             <CardHeader>
               <CardTitle>Preferências de Notificação</CardTitle>
               <CardDescription>Escolha como deseja ser avisado sobre eventos importantes.</CardDescription>
@@ -211,13 +212,13 @@ export default function SettingsPage() {
 
         {/* Segurança */}
         <TabsContent value="security" className="space-y-6">
-          <Card className="shadow-sm">
+          <Card className="ring-1 ring-border/40">
             <CardHeader>
               <CardTitle>Alterar Senha</CardTitle>
               <CardDescription>Atualize sua senha de acesso.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Nova Senha</Label>
                   <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mínimo 8 caracteres" />

@@ -107,7 +107,7 @@ test.describe('Appointments CRUD', () => {
     await page.waitForTimeout(500);
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.getByLabel(/nome completo/i).fill(patientName);
-    await page.getByLabel(/email/i).fill(`paciente.e2e.agendamento${suffix}@test.com`);
+    await page.getByLabel(/e-mail/i).fill(`paciente.e2e.agendamento${suffix}@test.com`);
     await page.locator('#phone').fill('(11) 99999-8888');
     await page.locator('#cpf').fill('52998224725');
     await page.locator('#birth_date').fill('1990-05-20');

@@ -21,7 +21,7 @@ export async function login(page: Page, email = TEST_EMAIL, password = TEST_PASS
   const alreadyAuth = await isOnDashboard(page);
   if (alreadyAuth) return;
 
-  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel('E-mail', { exact: true }).fill(email);
   await page.getByLabel('Senha', { exact: true }).fill(password);
   await page.getByRole('button', { name: /entrar/i }).click();
   await page.waitForURL(/.*\/dashboard.*/, { timeout: 15000 });
@@ -39,7 +39,7 @@ export async function ensureTestUserExists(page: Page) {
   const alreadyAuth = await isOnDashboard(page);
   if (alreadyAuth) return;
 
-  await page.getByLabel('Email', { exact: true }).fill(TEST_EMAIL);
+  await page.getByLabel('E-mail', { exact: true }).fill(TEST_EMAIL);
   await page.getByLabel('Senha', { exact: true }).fill(TEST_PASSWORD);
   await page.getByRole('button', { name: /entrar/i }).click();
 
@@ -60,7 +60,7 @@ export async function ensureTestUserExists(page: Page) {
   if (!isSignupPage) return;
 
   await page.getByLabel('Nome Completo', { exact: true }).fill(TEST_NAME);
-  await page.getByLabel('Email', { exact: true }).fill(TEST_EMAIL);
+  await page.getByLabel('E-mail', { exact: true }).fill(TEST_EMAIL);
   await page.getByLabel('Senha', { exact: true }).fill(TEST_PASSWORD);
   await page.getByRole('button', { name: /criar conta/i }).click();
 

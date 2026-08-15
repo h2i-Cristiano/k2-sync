@@ -43,7 +43,7 @@ export default function SignupPage() {
       }
 
       if (!authData?.user) {
-        setError("Usuario nao foi criado. Tente outro email.")
+        setError("Usuário não foi criado. Tente outro e-mail.")
         setLoading(false)
         return
       }
@@ -61,7 +61,7 @@ export default function SignupPage() {
       )
 
       if (tenantError) {
-        setError("Erro ao criar clinica: " + tenantError.message)
+        setError("Erro ao criar clínica: " + tenantError.message)
         setLoading(false)
         return
       }
@@ -112,7 +112,7 @@ export default function SignupPage() {
     <div className="w-full">
       {/* Logo (mobile) */}
       <div className="mb-8 flex flex-col items-center text-center lg:hidden">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 shadow-lg shadow-slate-900/25 dark:from-slate-500 dark:to-slate-800">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-emerald-800 shadow-lg shadow-primary/30 ring-1 ring-gold/30">
           <Leaf className="h-7 w-7 text-white" />
         </div>
         <h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground">K2-Sync</h1>
@@ -141,7 +141,7 @@ export default function SignupPage() {
                 <Input
                   id="fullName"
                   type="text"
-                  placeholder="Dr. Joao Silva"
+                  placeholder="Dr. João Silva"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
@@ -150,7 +150,7 @@ export default function SignupPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">E-mail</Label>
               <div className="relative">
                 <Mail className="pointer-events-none absolute top-1/2 left-3.5 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground/60" />
                 <Input
@@ -171,7 +171,7 @@ export default function SignupPage() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Minimo 6 caracteres"
+                  placeholder="Mínimo 6 caracteres"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -198,15 +198,15 @@ export default function SignupPage() {
                 </>
               ) : (
                 <>
-                  Criar Conta Gratis
+                  Criar Conta Grátis
                   <ArrowRight data-icon="inline-end" />
                 </>
               )}
             </Button>
             <p className="text-sm text-center text-muted-foreground">
-              Ja tem conta?{" "}
+              Já tem conta?{" "}
               <Link href="/login" className="font-medium text-primary hover:underline">
-                Faca login
+                Faça login
               </Link>
             </p>
           </CardFooter>

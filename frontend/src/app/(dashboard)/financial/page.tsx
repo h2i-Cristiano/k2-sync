@@ -3,8 +3,12 @@
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { DollarSign, TrendingUp, Clock, XCircle, ArrowRight } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
+import { StatCard } from "@/components/ui/stat-card"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { ArrowRight, DollarSign, Clock, TrendingUp, Receipt } from "lucide-react"
 import Link from "next/link"
 
 interface FinancialStats {
@@ -59,79 +63,48 @@ export default function FinancialPage() {
     fetchStats()
   }, [supabase])
 
-  const cards = [
-    {
-      title: "Faturamento Total",
-      value: `R$ ${stats.totalRevenue.toFixed(2)}`,
-      icon: DollarSign,
-      color: "text-emerald-600 dark:text-emerald-400",
-      bg: "bg-emerald-500/10",
-    },
-    {
-      title: "Pendente",
-      value: `R$ ${stats.pendingAmount.toFixed(2)}`,
-      icon: Clock,
-      color: "text-amber-600 dark:text-amber-400",
-      bg: "bg-amber-500/10",
-    },
-    {
-      title: "Pagos",
-      value: stats.paidCount.toString(),
-      icon: TrendingUp,
-      color: "text-primary",
-      bg: "bg-primary/10",
-    },
-    {
-      title: "A Receber",
-      value: stats.pendingCount.toString(),
-      icon: XCircle,
-      color: "text-destructive",
-      bg: "bg-destructive/10",
-    },
+  const statCards = [
+    { label: "Faturamento Total", value: `R$ ${stats.totalRevenue.toFixed(2)}`, icon: DollarSign, tone: "success" as const, href: "/financial/charges" },
+    { label: "Pendente", value: `R$ ${stats.pendingAmount.toFixed(2)}`, icon: Clock, tone: "warning" as const, href: "/financial/charges" },
+    { label: "Pagos", value: stats.paidCount.toString(), icon: TrendingUp, tone: "primary" as const, href: "/financial/charges" },
+    { label: "A Receber", value: stats.pendingCount.toString(), icon: Receipt, tone: "destructive" as const, href: "/financial/charges" },
   ]
 
   return (
-    <div className="space-y-6 animate-slide-up-fade">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Financeiro</h1>
-          <p className="text-sm text-muted-foreground">Acompanhe seus recebimentos e pendências.</p>
-        </div>
-        <Link href="/financial/charges" className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
-          Ver cobranças <ArrowRight className="h-4 w-4" />
-        </Link>
-      </div>
+    <div className="space-y-5 animate-slide-up-fade">
+      <PageHeader
+        title="Financeiro"
+        description="Acompanhe seus recebimentos e pendências."
+        actions={
+          <Button render={<Link href="/financial/charges" />} variant="outline">
+            Ver cobranças <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        }
+      />
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i} className="glass-card">
-                <CardContent className="p-5">
-                  <Skeleton className="h-4 w-24 mb-2" />
-                  <Skeleton className="h-8 w-20" />
+              <Card key={i}>
+                <CardContent className="space-y-2 p-5">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-7 w-24" />
                 </CardContent>
               </Card>
             ))
-          : cards.map((card) => (
-              <Card key={card.title} className="glass-card">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{card.title}</p>
-                      <p className="text-2xl font-bold mt-1 text-foreground">{card.value}</p>
-                    </div>
-                    <div className={`h-10 w-10 rounded-xl ${card.bg} flex items-center justify-center`}>
-                      <card.icon className={`h-5 w-5 ${card.color}`} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+          : statCards.map((card) => (
+              <StatCard
+                key={card.label}
+                label={card.label}
+                value={card.value}
+                icon={card.icon}
+                tone={card.tone}
+                href={card.href}
+              />
             ))}
       </div>
 
-      {/* Recent Payments */}
-      <Card className="glass-card">
+      <Card className="ring-1 ring-border/40">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-bold">Pagamentos Recentes</CardTitle>
         </CardHeader>
@@ -154,25 +127,19 @@ export default function FinancialPage() {
           ) : (
             <div className="divide-y divide-border/40">
               {recentPayments.map((payment) => (
-                <div key={payment.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                <div key={payment.id} className="flex items-center justify-between gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
                       {payment.patients?.full_name?.charAt(0)?.toUpperCase() || "P"}
                     </div>
-                    <div>
-                      <p className="font-medium text-sm">{payment.patients?.full_name || "Paciente"}</p>
-                      <p className="text-xs text-muted-foreground">{payment.description || new Date(payment.created_at).toLocaleDateString("pt-BR")}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">{payment.patients?.full_name || "Paciente"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{payment.description || new Date(payment.created_at).toLocaleDateString("pt-BR")}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-sm">R$ {Number(payment.amount).toFixed(2)}</p>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                      payment.status === "paid"
-                        ? "bg-emerald-500/10 text-emerald-600"
-                        : "bg-amber-500/10 text-amber-600"
-                    }`}>
-                      {payment.status === "paid" ? "Pago" : "Pendente"}
-                    </span>
+                  <div className="text-right shrink-0">
+                    <p className="font-semibold text-sm tnum">R$ {Number(payment.amount).toFixed(2)}</p>
+                    <StatusBadge label={payment.status === "paid" ? "Pago" : "Pendente"} tone={payment.status === "paid" ? "success" : "warning"} />
                   </div>
                 </div>
               ))}

@@ -10,7 +10,7 @@ test.describe('Settings', () => {
     await loginAsTestUser(page);
     await page.goto('/settings');
 
-    await expect(page.getByText(/configuracoes/i).first()).toBeVisible();
+    await expect(page.getByText(/configurações/i).first()).toBeVisible();
     await expect(tab(page, 'Apar')).toBeVisible();
     await expect(tab(page, 'Perfil')).toBeVisible();
     await expect(tab(page, 'Notific')).toBeVisible();

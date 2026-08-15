@@ -12,13 +12,13 @@ test.describe('Dashboard', () => {
     await expect(page.getByText(/agendamento/i).first()).toBeVisible();
 
     await expect(page.getByRole('link', { name: 'Agenda', exact: true })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Prontuarios', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Prontuários', exact: true })).toBeVisible();
   });
 
   test('dashboard has user avatar menu', async ({ page }) => {
     await loginAsTestUser(page);
 
-    const avatar = page.locator('header').locator('[class*="rounded-full"]').last();
+    const avatar = page.locator('aside').locator('[class*="rounded-full"]').last();
     await expect(avatar).toBeVisible();
   });
 
@@ -37,9 +37,9 @@ test.describe('Dashboard', () => {
     await page.waitForURL(/.*\/appointments.*/);
     await expect(page.getByText(/agenda/i).first()).toBeVisible();
 
-    await page.getByRole('link', { name: 'Prontuarios', exact: true }).first().click();
+    await page.getByRole('link', { name: 'Prontuários', exact: true }).first().click();
     await page.waitForURL(/.*\/records.*/);
-    await expect(page.getByText(/prontuarios/i).first()).toBeVisible();
+    await expect(page.getByText(/prontuários/i).first()).toBeVisible();
 
     // Pacientes is a direct link (single click), not a collapsible group
     await page.getByRole('link', { name: 'Pacientes', exact: true }).first().click();
@@ -55,16 +55,8 @@ test.describe('Dashboard', () => {
     await expect(page.locator('header')).toBeVisible();
     await page.waitForTimeout(1000);
 
-    const avatar = page.locator('header').locator('[class*="rounded-full"]').last();
-    await avatar.click();
-    await page.waitForTimeout(1000);
-    
-    const sairLink = page.getByText(/sair/i);
-    const isVisible = await sairLink.isVisible().catch(() => false);
-    if (isVisible) {
-      await sairLink.click();
-      await page.waitForURL(/.*\/login.*/, { timeout: 10000 });
-      await expect(page.getByRole('button', { name: /entrar/i })).toBeVisible();
-    }
+    await page.getByTitle('Sair do Sistema').click();
+    await page.waitForURL(/.*\/login.*/, { timeout: 10000 });
+    await expect(page.getByRole('button', { name: /entrar/i })).toBeVisible();
   });
 });

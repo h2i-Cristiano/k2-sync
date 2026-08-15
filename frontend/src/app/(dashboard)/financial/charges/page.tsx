@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { PageHeader } from "@/components/ui/page-header"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { MessageCircle, CheckCircle, Clock, Check } from "lucide-react"
 import { getWhatsAppUrl, buildPaymentMessage } from "@/lib/whatsapp"
 import { toast } from "sonner"
@@ -70,34 +72,38 @@ export default function ChargesPage() {
     fetchCharges()
   }
 
+  const renderSkeleton = (count: number) => (
+    <div className="space-y-3">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3 p-3">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <div className="space-y-1.5 flex-1">
+            <Skeleton className="h-4 w-36" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+          <Skeleton className="h-9 w-24 rounded-lg" />
+        </div>
+      ))}
+    </div>
+  )
+
   return (
-    <div className="space-y-6 animate-slide-up-fade">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Cobranças</h1>
-        <p className="text-sm text-muted-foreground">Gerencie pagamentos pendentes, registre recebimentos e envie cobranças via WhatsApp.</p>
-      </div>
+    <div className="space-y-5 animate-slide-up-fade">
+      <PageHeader
+        title="Cobranças"
+        description="Gerencie pagamentos pendentes, registre recebimentos e envie cobranças via WhatsApp."
+      />
 
       {/* Pending Charges */}
-      <Card className="glass-card">
+      <Card className="ring-1 ring-border/40">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-bold flex items-center gap-2">
-            <Clock className="h-4 w-4 text-amber-500" /> Pendentes ({pendingCharges.length})
+            <Clock className="h-4 w-4 text-warning" /> Pendentes ({pendingCharges.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 p-3">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <div className="space-y-1.5 flex-1">
-                    <Skeleton className="h-4 w-36" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                  <Skeleton className="h-9 w-24 rounded-lg" />
-                </div>
-              ))}
-            </div>
+            renderSkeleton(3)
           ) : pendingCharges.length === 0 ? (
             <p className="text-center py-8 text-muted-foreground text-sm">Nenhuma cobrança pendente.</p>
           ) : (
@@ -105,22 +111,22 @@ export default function ChargesPage() {
               {pendingCharges.map((charge) => (
                 <div key={charge.id} className="flex flex-col gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600 font-bold text-sm shrink-0">
+                    <div className="h-10 w-10 shrink-0 rounded-full bg-warning/15 flex items-center justify-center text-warning font-bold text-sm">
                       {charge.patients?.full_name?.charAt(0)?.toUpperCase() || "P"}
                     </div>
                     <div className="min-w-0">
                       <p className="font-medium text-sm truncate">{charge.patients?.full_name || "Paciente"}</p>
                       <p className="text-xs text-muted-foreground truncate">{charge.description || "Serviço"}</p>
                       {charge.due_date && (
-                        <p className="text-[10px] text-muted-foreground/70">Vencimento: {new Date(charge.due_date).toLocaleDateString("pt-BR")}</p>
+                        <p className="text-[10px] text-muted-foreground/70 tnum">Vencimento: {new Date(charge.due_date).toLocaleDateString("pt-BR")}</p>
                       )}
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-                    <p className="font-semibold text-sm">R$ {Number(charge.amount).toFixed(2)}</p>
+                    <p className="font-semibold text-sm tnum">R$ {Number(charge.amount).toFixed(2)}</p>
                     <Button
                       size="sm"
-                      className="rounded-lg"
+                      className="h-10 flex-1 rounded-lg sm:flex-none"
                       onClick={() => handleMarkPaid(charge.id)}
                       disabled={marking === charge.id}
                     >
@@ -130,7 +136,7 @@ export default function ChargesPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="rounded-lg border-emerald-500/30 hover:bg-emerald-500/10 hover:text-emerald-600"
+                        className="h-10 flex-1 rounded-lg sm:flex-none text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 hover:text-emerald-700"
                         onClick={() => handleSendWhatsApp(charge)}
                       >
                         <MessageCircle className="h-4 w-4 mr-1" /> Cobrar
@@ -145,42 +151,34 @@ export default function ChargesPage() {
       </Card>
 
       {/* Paid */}
-      <Card className="glass-card">
+      <Card className="ring-1 ring-border/40">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-bold flex items-center gap-2">
-            <CheckCircle className="h-4 w-4 text-emerald-500" /> Pagos ({paidCharges.length})
+            <CheckCircle className="h-4 w-4 text-success" /> Pagos ({paidCharges.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 2 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 p-3">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <div className="space-y-1.5 flex-1">
-                    <Skeleton className="h-4 w-36" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                  <Skeleton className="h-6 w-20" />
-                </div>
-              ))}
-            </div>
+            renderSkeleton(2)
           ) : paidCharges.length === 0 ? (
             <p className="text-center py-8 text-muted-foreground text-sm">Nenhum pagamento registrado.</p>
           ) : (
             <div className="divide-y divide-border/40">
               {paidCharges.map((charge) => (
-                <div key={charge.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 font-bold text-sm">
+                <div key={charge.id} className="flex items-center justify-between gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-10 w-10 shrink-0 rounded-full bg-success/15 flex items-center justify-center text-success font-bold text-sm">
                       {charge.patients?.full_name?.charAt(0)?.toUpperCase() || "P"}
                     </div>
-                    <div>
-                      <p className="font-medium text-sm">{charge.patients?.full_name || "Paciente"}</p>
-                      <p className="text-xs text-muted-foreground">{charge.description || "Serviço"}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">{charge.patients?.full_name || "Paciente"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{charge.description || "Serviço"}</p>
                     </div>
                   </div>
-                  <p className="font-semibold text-sm text-emerald-600">R$ {Number(charge.amount).toFixed(2)}</p>
+                  <div className="text-right shrink-0">
+                    <p className="font-semibold text-sm text-success tnum">R$ {Number(charge.amount).toFixed(2)}</p>
+                    <StatusBadge label="Pago" tone="success" />
+                  </div>
                 </div>
               ))}
             </div>

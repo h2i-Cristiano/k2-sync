@@ -13,7 +13,7 @@ test.describe('Patient history', () => {
     await page.waitForTimeout(500);
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.getByLabel(/nome completo/i).fill(patientName);
-    await page.getByLabel(/email/i).fill(`historico.e2e${suffix}@test.com`);
+    await page.getByLabel(/e-mail/i).fill(`historico.e2e${suffix}@test.com`);
     await page.locator('#phone').fill('(11) 97777-6666');
     await page.locator('#cpf').fill('52998224725');
     await page.locator('#birth_date').fill('1988-07-10');
