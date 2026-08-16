@@ -25,19 +25,21 @@ const tones: Record<string, string> = {
 function StatCard({ label, value, icon: Icon, tone = "primary", hint, href, className }: StatCardProps) {
   const inner = (
     <Card className={cn("h-full", className)}>
-      <CardContent className="flex flex-col gap-1 p-5">
-        <div className="flex items-start justify-between gap-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {label}
-          </p>
-          {Icon && (
-            <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", tones[tone])}>
-              <Icon className="h-[18px] w-[18px]" />
-            </div>
-          )}
+          <CardContent className="flex h-full flex-col gap-3 p-5">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">
+              {label}
+            </p>
+            {Icon && (
+              <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", tones[tone])}>
+                <Icon className="h-5 w-5" />
+              </div>
+            )}
+          </div>
+        <div className="mt-auto">
+          <p className="tnum font-heading text-[28px] font-bold leading-none tracking-tight text-foreground">{value}</p>
+          {hint && <p className="mt-1.5 text-xs text-muted-foreground">{hint}</p>}
         </div>
-        <p className="tnum text-2xl font-bold tracking-tight text-foreground">{value}</p>
-        {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
       </CardContent>
     </Card>
   )

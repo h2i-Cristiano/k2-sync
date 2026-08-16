@@ -40,6 +40,27 @@ test.describe('Appointments CRUD', () => {
     await page.waitForTimeout(500);
   });
 
+  test('view selector and date input work', async ({ page }) => {
+    await loginAsTestUser(page);
+    await page.goto('/appointments');
+
+    const viewSelect = page.getByLabel('Visão da agenda');
+    await expect(viewSelect).toHaveValue('day');
+
+    await viewSelect.selectOption('week');
+    await expect(viewSelect).toHaveValue('week');
+    await expect(page.locator('p', { hasText: /agendamento\(s\)/ }).first()).toBeVisible();
+
+    await viewSelect.selectOption('month');
+    await expect(viewSelect).toHaveValue('month');
+    await expect(page.locator('p', { hasText: /agendamento\(s\)/ }).first()).toBeVisible();
+
+    const dateInput = page.getByLabel('Selecionar data');
+    await expect(dateInput).toBeVisible();
+    await dateInput.fill('2026-08-20');
+    await expect(dateInput).toHaveValue('2026-08-20');
+  });
+
   test('empty state shows correctly', async ({ page }) => {
     await loginAsTestUser(page);
     await page.goto('/appointments');

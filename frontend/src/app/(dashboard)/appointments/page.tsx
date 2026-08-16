@@ -7,9 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PageHeader } from "@/components/ui/page-header"
-import { DateStrip } from "@/components/ui/date-strip"
 import { EmptyState } from "@/components/ui/empty-state"
-import { Plus, ChevronLeft, ChevronRight, User, MapPin, CalendarDays, ChevronDown, MessageCircle } from "lucide-react"
+import { Plus, ChevronLeft, ChevronRight, MapPin, CalendarDays, ChevronDown, MessageCircle } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -66,19 +65,17 @@ const filterOptions = [
   { key: "cancelled", label: "Cancelados" },
 ]
 
-const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
 const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
-
-function getDaysInMonth(year: number, month: number) {
-  return new Date(year, month + 1, 0).getDate()
-}
-
-function getFirstDayOfMonth(year: number, month: number) {
-  return new Date(year, month, 1).getDay()
-}
 
 function isSameDay(d1: Date, d2: Date) {
   return d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear()
+}
+
+function toDateInputValue(d: Date) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
 }
 
 function AppointmentsPageInner() {
@@ -94,7 +91,7 @@ function AppointmentsPageInner() {
   const [view, setView] = useState<"day" | "week" | "month">("day")
   const [activeFilter, setActiveFilter] = useState("all")
   const [services, setServices] = useState<ServiceDef[]>([])
-  const [mobileCalendarOpen, setMobileCalendarOpen] = useState(false)
+  const [mobileServicesOpen, setMobileServicesOpen] = useState(false)
   const supabase = useMemo(() => createClient(), [])
 
   const year = selectedDate.getFullYear()
@@ -226,27 +223,6 @@ function AppointmentsPageInner() {
     return apt.status === activeFilter
   })
 
-  const hasAppointmentsOnDay = (day: number) => {
-    const d = new Date(year, month, day)
-    return allMonthAppointments.some(apt => {
-      const aptDate = new Date(apt.scheduled_at)
-      return isSameDay(aptDate, d)
-    })
-  }
-
-  const daysInMonth = getDaysInMonth(year, month)
-  const firstDay = getFirstDayOfMonth(year, month)
-
-  const prevMonth = () => {
-    if (month === 0) setSelectedDate(new Date(year - 1, 11, 1))
-    else setSelectedDate(new Date(year, month - 1, 1))
-  }
-
-  const nextMonth = () => {
-    if (month === 11) setSelectedDate(new Date(year + 1, 0, 1))
-    else setSelectedDate(new Date(year, month + 1, 1))
-  }
-
   const goToToday = () => {
     setSelectedDate(new Date())
   }
@@ -261,13 +237,12 @@ function AppointmentsPageInner() {
     })
   }
 
-  const formatSelectedDate = () => {
-    return selectedDate.toLocaleDateString("pt-BR", {
-      weekday: "long",
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    })
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    if (val) {
+      const d = new Date(`${val}T00:00:00`)
+      setSelectedDate(d)
+    }
   }
 
   const windowLabel = (() => {
@@ -279,7 +254,12 @@ function AppointmentsPageInner() {
       const fmt = (d: Date) => d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })
       return `${fmt(start)} — ${fmt(end)}`
     }
-    return formatSelectedDate()
+    return selectedDate.toLocaleDateString("pt-BR", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    })
   })()
 
   const groupByDay = (list: any[]) => {
@@ -305,73 +285,6 @@ function AppointmentsPageInner() {
       return d
     })
   })()
-
-  const renderCalendar = () => (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={prevMonth} className="rounded-lg p-1.5 hover:bg-muted transition-colors" aria-label="Mês anterior">
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <div className="text-center">
-            <p className="text-sm font-semibold">{MONTHS[month]} {year}</p>
-          </div>
-          <button onClick={nextMonth} className="rounded-lg p-1.5 hover:bg-muted transition-colors" aria-label="Próximo mês">
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-7 gap-0 mb-1">
-          {WEEKDAYS.map((day) => (
-            <div key={day} className="text-center text-[10px] font-medium text-muted-foreground py-1">
-              {day}
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-7 gap-0">
-          {Array.from({ length: firstDay }).map((_, i) => (
-            <div key={`empty-${i}`} />
-          ))}
-          {Array.from({ length: daysInMonth }).map((_, i) => {
-            const day = i + 1
-            const date = new Date(year, month, day)
-            const isSelected = isSameDay(date, selectedDate)
-            const isToday = isSameDay(date, new Date())
-            const hasApts = hasAppointmentsOnDay(day)
-
-            return (
-              <button
-                key={day}
-                onClick={() => setSelectedDate(date)}
-                className={`relative h-9 w-full flex items-center justify-center text-sm rounded-lg transition-all duration-150 ${
-                  isSelected
-                    ? "bg-primary text-primary-foreground font-semibold shadow-sm"
-                    : isToday
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-foreground hover:bg-muted/60"
-                }`}
-              >
-                {day}
-                {hasApts && !isSelected && (
-                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
-                    <div className="h-1 w-1 rounded-full bg-primary/60" />
-                  </div>
-                )}
-              </button>
-            )
-          })}
-        </div>
-
-        <button
-          onClick={goToToday}
-          className="w-full mt-3 py-2 text-xs font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors"
-        >
-          Ir para Hoje
-        </button>
-      </CardContent>
-    </Card>
-  )
 
   const renderServicesSummary = () => {
     const counts = Object.entries(
@@ -446,6 +359,7 @@ function AppointmentsPageInner() {
   const renderAppointmentCard = (apt: any) => {
     const aptTime = new Date(apt.scheduled_at)
     const timeStr = aptTime.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    const shortDate = aptTime.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
     const svc = getServiceById(services, apt.service_type)
 
     return (
@@ -455,51 +369,56 @@ function AppointmentsPageInner() {
         style={{ borderLeft: `3px solid ${svc?.color || "#6B7280"}` }}
         onClick={() => { setEditingAppointment(apt); setIsOpen(true) }}
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1 min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-sm font-bold text-foreground tnum">{timeStr}</span>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full max-w-full truncate" style={{ backgroundColor: `${svc?.color}15`, color: svc?.color }}>
+        <div className="grid grid-cols-[auto_1fr] items-start gap-x-3 gap-y-2">
+          <div className="w-14 shrink-0 sm:w-16">
+            <span className="tnum font-heading text-base font-bold leading-none text-foreground">{timeStr}</span>
+            <span className="mt-1 block text-[11px] font-medium text-muted-foreground/70 tnum">{shortDate}</span>
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-foreground">{apt.patients?.full_name || "Paciente Removido"}</p>
+            <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: svc?.color || "#6B7280" }} />
+              <span className="truncate font-medium" style={{ color: svc?.color }}>
                 {svc?.label || apt.service_type}
               </span>
-              <span className="text-xs text-muted-foreground">{apt.duration_minutes}min</span>
+            </p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              {apt.duration_minutes ? (
+                <span className="text-[11px] text-muted-foreground/70 tnum">{apt.duration_minutes}min</span>
+              ) : null}
               {apt.deposit ? (
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gold/15 text-gold">
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gold/15 text-gold">
                   Entrada R$ {apt.deposit.toFixed(0)}
                 </span>
               ) : (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                   Sem entrada
                 </span>
               )}
+              {apt.is_home_visit && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-gold">
+                  <MapPin className="h-3 w-3" />
+                  Domiciliar
+                </span>
+              )}
             </div>
-            <p className="font-medium text-foreground flex items-center gap-1.5">
-              <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              {apt.patients?.full_name || "Paciente Removido"}
-            </p>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <DropdownMenu>
-              {renderStatusTrigger(apt)}
-              {renderStatusMenu(apt)}
-            </DropdownMenu>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700"
-              title="Cobrar via WhatsApp"
-              onClick={(e) => { e.stopPropagation(); openWhatsApp(apt, svc) }}
-            >
-              <MessageCircle className="h-4 w-4" />
-            </Button>
           </div>
         </div>
-        {apt.is_home_visit && (
-          <div className="flex items-center gap-1.5 text-gold mt-2">
-            <MapPin className="h-3.5 w-3.5" />
-            <span className="text-xs font-medium">Atendimento Domiciliar</span>
-          </div>
-        )}
+        <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/40 pt-2.5">
+          <DropdownMenu>
+            {renderStatusTrigger(apt)}
+            {renderStatusMenu(apt)}
+          </DropdownMenu>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700"
+            title="Cobrar via WhatsApp"
+            onClick={(e) => { e.stopPropagation(); openWhatsApp(apt, svc) }}
+          >
+            <MessageCircle className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     )
   }
@@ -509,7 +428,7 @@ function AppointmentsPageInner() {
     return (
       <div className="flex items-center gap-2 pt-1 pb-2">
         <span className="h-4 w-1 rounded-full bg-primary/60" />
-        <p className="text-sm font-semibold text-foreground capitalize">
+        <p className="font-heading text-sm font-semibold text-foreground capitalize">
           {date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
         </p>
         {isToday && <span className="text-[10px] font-semibold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded-full">Hoje</span>}
@@ -625,110 +544,118 @@ function AppointmentsPageInner() {
         title="Agenda"
         description="Gerencie seus compromissos e pacientes."
         actions={
-          <>
-            <div className="flex items-center rounded-xl bg-muted/60 p-1">
-              {(["day", "week", "month"] as const).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setView(v)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
-                    view === v ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {v === "day" ? "Dia" : v === "week" ? "Semana" : "Mês"}
-                </button>
-              ))}
-            </div>
-            <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) setEditingAppointment(null) }}>
-              <DialogTrigger render={<Button />}>
-                <Plus className="mr-2 h-4 w-4" />
-                Novo
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto grid-cols-[minmax(0,1fr)]">
-                <DialogHeader>
-                  <DialogTitle>{editingAppointment?.id ? "Editar Agendamento" : "Novo Agendamento"}</DialogTitle>
-                </DialogHeader>
-                <Suspense fallback={<Skeleton className="h-[500px] w-full rounded-xl" />}>
-                  <AppointmentForm
-                    patients={patients}
-                    initialData={editingAppointment}
-                    onSuccess={() => {
-                      setIsOpen(false)
-                      setEditingAppointment(null)
-                      fetchAppointments()
-                      fetchMonthAppointments()
-                    }}
-                    onCancel={() => { setIsOpen(false); setEditingAppointment(null) }}
-                  />
-                </Suspense>
-              </DialogContent>
-            </Dialog>
-          </>
+          <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) setEditingAppointment(null) }}>
+            <DialogTrigger render={<Button />}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto grid-cols-[minmax(0,1fr)]">
+              <DialogHeader>
+                <DialogTitle>{editingAppointment?.id ? "Editar Agendamento" : "Novo Agendamento"}</DialogTitle>
+              </DialogHeader>
+              <Suspense fallback={<Skeleton className="h-[500px] w-full rounded-xl" />}>
+                <AppointmentForm
+                  patients={patients}
+                  initialData={editingAppointment}
+                  onSuccess={() => {
+                    setIsOpen(false)
+                    setEditingAppointment(null)
+                    fetchAppointments()
+                    fetchMonthAppointments()
+                  }}
+                  onCancel={() => { setIsOpen(false); setEditingAppointment(null) }}
+                />
+              </Suspense>
+            </DialogContent>
+          </Dialog>
         }
       />
 
-      {/* Mobile: date strip + collapsible calendar */}
-      <div className="space-y-3 lg:hidden">
-        <DateStrip selected={selectedDate} onSelect={setSelectedDate} />
-        <button
-          onClick={() => setMobileCalendarOpen((v) => !v)}
-          className="flex w-full items-center justify-between rounded-xl border border-border/60 bg-card px-4 py-2.5 text-sm font-medium text-foreground"
-          aria-expanded={mobileCalendarOpen}
-        >
-          {MONTHS[month]} {year}
-          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${mobileCalendarOpen ? "rotate-180" : ""}`} />
-        </button>
-        {mobileCalendarOpen && (
-          <div className="animate-slide-up-fade">
-            {renderCalendar()}
-            {renderServicesSummary()}
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-        {/* Desktop sidebar */}
-        <div className="hidden space-y-4 lg:block">
-          {renderCalendar()}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
+        {/* Desktop sidebar — apenas o resumo do mês */}
+        <div className="hidden space-y-4 self-start lg:block">
           {renderServicesSummary()}
         </div>
 
         <div>
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div className="min-w-0">
-              <h2 className="text-lg font-semibold truncate">{windowLabel}</h2>
-              <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-                {filteredAppointments.length} agendamento(s)
-              </p>
-            </div>
+          {/* Mobile: resumo do mês colapsável */}
+          <div className="mb-4 lg:hidden">
+            <button
+              onClick={() => setMobileServicesOpen((v) => !v)}
+              className="flex w-full items-center justify-between rounded-xl border border-border/60 bg-card px-4 py-2.5 text-sm font-medium text-foreground"
+              aria-expanded={mobileServicesOpen}
+            >
+              <span className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 text-primary" />
+                Serviços no mês
+              </span>
+              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${mobileServicesOpen ? "rotate-180" : ""}`} />
+            </button>
+            {mobileServicesOpen && (
+              <div className="mt-2 animate-slide-up-fade">
+                {renderServicesSummary()}
+              </div>
+            )}
+          </div>
+
+          {/* Navegação da janela */}
+          <div className="mb-4 flex items-center gap-2">
             <div className="flex items-center gap-1 shrink-0">
               <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => shiftWindow(-1)} aria-label="Período anterior">
                 <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={goToToday} title="Ir para hoje" aria-label="Ir para hoje">
-                <CalendarDays className="h-4 w-4" />
               </Button>
               <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => shiftWindow(1)} aria-label="Próximo período">
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="truncate font-heading text-base font-semibold leading-tight text-foreground">{windowLabel}</h2>
+              <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                {filteredAppointments.length} agendamento(s)
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button variant="ghost" size="sm" className="h-9 px-2.5 text-xs font-medium" onClick={goToToday}>
+                Ir para hoje
+              </Button>
+              <input
+                type="date"
+                value={toDateInputValue(selectedDate)}
+                onChange={handleDateChange}
+                aria-label="Selecionar data"
+                className="h-9 rounded-lg border border-border/60 bg-card px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
+              />
+            </div>
           </div>
 
-          <div className="flex gap-2 mb-4 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {filterOptions.map((filter) => (
-              <button
-                key={filter.key}
-                onClick={() => setActiveFilter(filter.key)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all whitespace-nowrap ${
-                  activeFilter === filter.key
-                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                    : "bg-card text-muted-foreground border-border/60 hover:border-primary/40 hover:text-foreground"
-                }`}
-              >
-                {filter.label}
-              </button>
-            ))}
+          {/* Barra de visão + filtros */}
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <select
+              value={view}
+              onChange={(e) => setView(e.target.value as "day" | "week" | "month")}
+              aria-label="Visão da agenda"
+              className="h-9 rounded-lg border border-border/60 bg-card px-2.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
+            >
+              <option value="day">Dia</option>
+              <option value="week">Semana</option>
+              <option value="month">Mês</option>
+            </select>
+            <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {filterOptions.map((filter) => (
+                <button
+                  key={filter.key}
+                  onClick={() => setActiveFilter(filter.key)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all whitespace-nowrap ${
+                    activeFilter === filter.key
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-card text-muted-foreground border-border/60 hover:border-primary/40 hover:text-foreground"
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {renderListContent()}
@@ -749,13 +676,10 @@ export default function AppointmentsPage() {
           </div>
           <Skeleton className="h-10 w-24 rounded-xl" />
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-          <Skeleton className="h-[400px] rounded-xl" />
-          <div className="space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-[80px] rounded-xl" />
-            ))}
-          </div>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-[80px] rounded-xl" />
+          ))}
         </div>
       </div>
     }>

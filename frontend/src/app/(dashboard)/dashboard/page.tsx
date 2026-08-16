@@ -111,11 +111,11 @@ export default function DashboardPage() {
     <div className="space-y-6 animate-slide-up-fade">
       {/* Welcome */}
       <div className="rounded-2xl bg-gradient-to-br from-primary/10 via-card to-gold/10 p-5 ring-1 ring-border/40 sm:p-6">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-widest text-primary">Wellness OS</p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground">Bem-vindo(a)</h1>
-            <p className="mt-1 max-w-md text-sm leading-relaxed text-muted-foreground">{motivationalMsg}</p>
+            <h1 className="mt-1.5 font-heading text-xl font-bold tracking-tight text-foreground sm:text-2xl">Bem-vindo(a)</h1>
+            <p className="mt-1.5 max-w-md text-sm leading-relaxed text-muted-foreground text-pretty">{motivationalMsg}</p>
           </div>
           <div className="hidden shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary md:flex">
             <Clock className="h-3.5 w-3.5" /> {currentTime}
@@ -184,20 +184,23 @@ export default function DashboardPage() {
                   <Link
                     key={apt.id}
                     href="/appointments"
-                    className="flex items-center gap-4 rounded-xl bg-card p-3.5 ring-1 ring-border/40 transition-[box-shadow,transform] hover:shadow-md"
+                    className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1.5 rounded-xl bg-card p-3.5 ring-1 ring-border/40 transition-[box-shadow,transform] hover:shadow-md sm:flex sm:gap-4"
                     style={{ borderLeft: `3px solid ${svc?.color || "#6B7280"}` }}
                   >
-                    <div className="w-14 shrink-0">
-                      <span className="tnum text-sm font-bold text-foreground">{timeStr}</span>
-                      {apt.duration_minutes ? (
-                        <span className="block text-[10px] text-muted-foreground">{apt.duration_minutes}min</span>
-                      ) : null}
+                    <div className="w-12 shrink-0">
+                      <span className="tnum font-heading text-sm font-bold leading-none text-foreground">{timeStr}</span>
                     </div>
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-foreground">{apt.patients?.full_name || "Paciente Removido"}</p>
-                      <p className="truncate text-xs text-muted-foreground">{svc?.label || apt.service_type}</p>
+                      <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: svc?.color || "#6B7280" }} />
+                        <span className="truncate">{svc?.label || apt.service_type}</span>
+                        {apt.duration_minutes ? (
+                          <span className="shrink-0 text-muted-foreground/60">{apt.duration_minutes}min</span>
+                        ) : null}
+                      </p>
                     </div>
-                    <StatusBadge label={meta.label} tone={meta.tone} />
+                    <StatusBadge label={meta.label} tone={meta.tone} className="col-start-2 mt-0.5 justify-self-start sm:mt-0 sm:ml-auto" />
                   </Link>
                 )
               })}
@@ -218,9 +221,9 @@ export default function DashboardPage() {
             <Link key={action.href} href={action.href} className="w-full">
               <Button
                 variant="outline"
-                className={`h-12 w-full justify-start rounded-xl border-border/60 transition-colors ${action.hover}`}
+                className={`h-12 w-full justify-start gap-3 rounded-xl border-border/60 px-4 text-sm font-medium transition-colors ${action.hover}`}
               >
-                <div className={`mr-3 flex h-8 w-8 items-center justify-center rounded-lg ${action.iconBg}`}>
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${action.iconBg}`}>
                   <action.icon className="h-4 w-4" />
                 </div>
                 {action.label}

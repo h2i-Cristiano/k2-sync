@@ -1,11 +1,16 @@
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Sora, Manrope } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
 
-const inter = Inter({
+const manrope = Manrope({
   subsets: ["latin"],
   variable: "--font-sans",
+})
+
+const sora = Sora({
+  subsets: ["latin"],
+  variable: "--font-heading",
 })
 
 export const metadata: Metadata = {
@@ -20,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${inter.variable} antialiased min-h-screen bg-background font-sans`}>
+      <body className={`${manrope.variable} ${sora.variable} antialiased min-h-screen bg-background font-sans`}>
         <Providers>
           {children}
         </Providers>

@@ -51,7 +51,7 @@ function PageHeader({
             </Button>
           ))}
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-bold tracking-tight text-foreground sm:text-[1.375rem]">
+          <h1 className="truncate font-heading text-2xl font-bold tracking-tight text-foreground sm:text-[1.375rem]">
             {title}
           </h1>
           {description && (
