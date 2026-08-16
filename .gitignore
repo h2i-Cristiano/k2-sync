@@ -40,3 +40,10 @@ next-env.d.ts
 supabase/.temp/
 
 frontend/test-results/
+
+# runtime logs
+frontend/dev-server.log
+frontend/dev-server.err.log
+
+# testsprite artifacts
+frontend/e2e-testsprite/
