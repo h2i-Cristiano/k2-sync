@@ -79,6 +79,17 @@ z.enum(['a', 'b'], { message: "Obrigatorio" })
 .bg-premium    /* gradiente premium */
 ```
 
+### Design System (rodada interface-design)
+
+- **Fontes**: `Sora` para títulos (`--font-heading`, ex.: h1 do page-header) e `Manrope` para corpo (`--font-sans`), via `next/font/google` no root `layout.tsx`. Números usam `tabular-nums`.
+- **Tokens**: `--font-heading` definido no `globals.css` apontando para a variável gerada pelo font loader; classes `font-heading` / `font-sans`.
+- **Identidade**: paleta sálvia + dourado; a **cor do serviço** é a assinatura visual (dot colorido + borda esquerda do card de sessão).
+- **Componentes-chave**:
+  - `stat-card.tsx` — número herói 28px `font-heading` + ícone `h-10 w-10 rounded-xl`.
+  - `page-header.tsx` — h1 com `font-heading`.
+  - Agenda em modo lista (sem calendário) — ver `desenvolvimento.md` / `decisoes.md`.
+- Todo trabalho de UI segue a skill `.agents/skills/interface-design/SKILL.md`.
+
 ## Fluxos Principais
 
 ### Fluxo de Autenticacao

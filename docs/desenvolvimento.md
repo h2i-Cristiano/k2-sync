@@ -46,17 +46,21 @@ Acesse http://localhost:3001
 frontend/
 ├── src/
 │   ├── app/                    # Rotas (App Router)
-│   │   ├── (auth)/             # Rotas de autenticacao
+│   │   ├── (auth)/             # Rotas de autenticacao (rota de login e /login)
 │   │   │   ├── login/page.tsx
 │   │   │   └── signup/page.tsx
 │   │   ├── (dashboard)/        # Rotas autenticadas
 │   │   │   ├── layout.tsx      # Header + Sidebar
-│   │   │   ├── dashboard/
-│   │   │   ├── patients/
-│   │   │   ├── appointments/
-│   │   │   ├── records/
+│   │   │   ├── dashboard/      # Stats, agenda de hoje, acoes rapidas, banner
+│   │   │   ├── patients/       # + [id] (perfil/Evolucoes) + [id]/anamnese
+│   │   │   ├── appointments/   # Agenda (modo lista, sem calendario)
+│   │   │   ├── records/        # Evolucoes (antigo "Prontuarios")
+│   │   │   ├── services/       # Servicos + kit editor
+│   │   │   ├── products/       # Produtos + alerta de estoque baixo
+│   │   │   ├── stock/          # Estoque: reposicao e historico
+│   │   │   ├── financial/      # charges, receivable, payable
 │   │   │   └── settings/
-│   │   ├── layout.tsx          # Root layout
+│   │   ├── layout.tsx          # Root layout (fontes Sora + Manrope)
 │   │   └── page.tsx            # Redirect
 │   ├── components/
 │   │   ├── forms/              # Forms de dominio
@@ -65,7 +69,7 @@ frontend/
 │   │   │   ├── RecordForm.tsx
 │   │   │   └── AnamneseForm.tsx
 │   │   ├── layout/
-│   │   │   └── sidebar.tsx
+│   │   │   └── sidebar.tsx     # Sidebar + bottom-nav mobile + drawer
 │   │   ├── ui/                 # shadcn/ui components
 │   │   ├── providers.tsx
 │   │   └── theme-toggle.tsx
@@ -184,15 +188,31 @@ $env:TEST_USER_PASSWORD="test123456"
 
 ```
 e2e/
-├── auth.spec.ts           # Login
-├── signup.spec.ts         # Cadastro
-├── dashboard.spec.ts      # Dashboard + logout
-├── patients.spec.ts       # Auth redirect
-├── patients-crud.spec.ts  # CRUD completo
-├── appointments.spec.ts   # Agenda
-├── records.spec.ts        # Prontuarios
-└── settings.spec.ts       # Configuracoes
+├── helpers.ts              # loginAsTestUser() + seeds
+├── auth.spec.ts            # Login/logout
+├── signup.spec.ts          # Cadastro
+├── dashboard.spec.ts       # Dashboard + logout
+├── patients.spec.ts        # Auth redirect
+├── patients-crud.spec.ts   # CRUD completo
+├── patient-history.spec.ts # Perfil + Evolucoes
+├── appointments.spec.ts    # Agenda (CRUD, navegacao, visao)
+├── records.spec.ts         # Evolucoes (list + busca)
+├── records-crud.spec.ts    # Evolucoes (CRUD)
+├── services.spec.ts        # Servicos + kit
+├── products.spec.ts        # Produtos + estoque baixo
+├── charges.spec.ts         # Financeiro
+├── stock.spec.ts           # Estoque
+├── settings.spec.ts        # Configuracoes
+└── responsive.spec.ts      # Mobile 390px + tablet 768px
 ```
+
+### Cobertura de viewports
+
+| Largura | Descricao |
+|---------|-----------|
+| 1280px | Desktop — viewport default do config (todos os specs rodam nela) |
+| 390px | Mobile — `responsive.spec.ts` testa overflow horizontal + drawer |
+| 768px | Tablet — `responsive.spec.ts` testa overflow + header compacto |
 
 ### Rodar
 
@@ -218,7 +238,7 @@ import { test, expect } from "@playwright/test"
 test.describe("Meu Modulo", () => {
   test.beforeEach(async ({ page }) => {
     // Login
-    await page.goto("http://localhost:3001/auth/login")
+    await page.goto("http://localhost:3001/login")
     await page.fill('input[name="email"]', process.env.TEST_USER_EMAIL!)
     await page.fill('input[name="password"]', process.env.TEST_USER_PASSWORD!)
     await page.click('button[type="submit"]')
