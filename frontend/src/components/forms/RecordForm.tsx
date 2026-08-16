@@ -50,7 +50,7 @@ export function RecordForm({ patients, initialData, onSuccess, onCancel }: Recor
       toast.error(result.error)
       return
     }
-    toast.success(initialData?.id ? "Prontuário atualizado!" : "Prontuário criado com sucesso!")
+    toast.success(initialData?.id ? "Evolução atualizada!" : "Evolução criada com sucesso!")
     form.reset()
     onSuccess?.()
   }
@@ -101,13 +101,16 @@ export function RecordForm({ patients, initialData, onSuccess, onCancel }: Recor
         <Textarea id="notes" placeholder="Notas adicionais..." {...form.register("notes")} className="resize-none" />
       </div>
 
-      <div className="flex justify-end gap-3 pt-4 border-t">
-        {onCancel && (
-          <Button type="button" variant="ghost" onClick={onCancel}>Cancelar</Button>
-        )}
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Salvando..." : (initialData?.id ? "Atualizar" : "Salvar Prontuário")}
-        </Button>
+      <div className="flex items-center justify-between gap-3 pt-4 border-t">
+        <p className="text-xs text-muted-foreground">Data e hora registradas automaticamente.</p>
+        <div className="flex gap-3 shrink-0">
+          {onCancel && (
+            <Button type="button" variant="ghost" onClick={onCancel}>Cancelar</Button>
+          )}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Salvando..." : (initialData?.id ? "Atualizar" : "Salvar Evolução")}
+          </Button>
+        </div>
       </div>
     </form>
   )

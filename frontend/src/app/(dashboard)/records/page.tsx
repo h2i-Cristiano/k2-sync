@@ -62,13 +62,13 @@ export default function RecordsPage() {
   }, [fetchPatients, fetchRecords])
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este prontuário?")) return
+    if (!confirm("Tem certeza que deseja excluir esta evolução?")) return
     try {
       await deleteRecord(id)
-      toast.success("Prontuário excluído!")
+      toast.success("Evolução excluída!")
       fetchRecords()
     } catch {
-      toast.error("Erro ao excluir prontuário.")
+      toast.error("Erro ao excluir evolução.")
     }
   }
 
@@ -80,17 +80,17 @@ export default function RecordsPage() {
   return (
     <div className="space-y-5 animate-slide-up-fade">
       <PageHeader
-        title="Prontuários"
-        description="Prontuários eletrônicos dos seus pacientes."
+        title="Evoluções"
+        description="Evoluções dos atendimentos dos seus pacientes."
         actions={
           <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) setEditingRecord(null) }}>
             <DialogTrigger render={<Button />}>
               <Plus className="mr-2 h-4 w-4" />
-              Novo Prontuário
+              Nova Evolução
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{editingRecord ? "Editar Prontuário" : "Novo Prontuário"}</DialogTitle>
+                <DialogTitle>{editingRecord ? "Editar Evolução" : "Nova Evolução"}</DialogTitle>
               </DialogHeader>
               <RecordForm
                 patients={patients}
@@ -134,17 +134,17 @@ export default function RecordsPage() {
         <div className="rounded-2xl bg-card ring-1 ring-border/40">
           <EmptyState
             icon={FileText}
-            title={searchTerm ? "Nenhum resultado" : "Nenhum prontuário"}
+            title={searchTerm ? "Nenhum resultado" : "Nenhuma evolução"}
             description={
               searchTerm
                 ? "Nenhum resultado corresponde à sua pesquisa."
-                : "Crie o primeiro prontuário eletrônico."
+                : "Crie a primeira evolução do atendimento de um paciente."
             }
             action={
               searchTerm ? undefined : (
                 <Button onClick={() => setIsOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Novo Prontuário
+                  Nova Evolução
                 </Button>
               )
             }
@@ -183,7 +183,13 @@ export default function RecordsPage() {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2 tnum">
-                  {new Date(record.created_at).toLocaleDateString("pt-BR")}
+                  {new Date(record.created_at).toLocaleString("pt-BR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </p>
               </CardContent>
             </Card>

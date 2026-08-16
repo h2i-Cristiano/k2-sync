@@ -1,19 +1,15 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { StatCard } from "@/components/ui/stat-card"
-import { Users, Calendar, FileText, Plus, UserPlus, CalendarPlus, ClipboardPlus, Clock } from "lucide-react"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { Calendar, Clock, UserPlus, CalendarPlus, Sparkles, ArrowRight, CheckCircle2, CalendarDays } from "lucide-react"
 import Link from "next/link"
-
-interface Stats {
-  totalPatients: number
-  upcomingAppointments: number
-  totalRecords: number
-}
+import { fetchServices, getServiceById, ServiceDef } from "@/lib/services"
 
 const MOTIVATIONAL_MESSAGES = [
   "Cuide de quem cuida. Cada sessão é uma jornada de bem-estar.",
@@ -25,6 +21,11 @@ const MOTIVATIONAL_MESSAGES = [
   "A saúde é o maior presente que podemos oferecer.",
   "Paz interior se reflete em cada ato de cuidado.",
 ]
+
+const statusLabels: Record<string, { label: string; tone: "default" | "success" }> = {
+  scheduled: { label: "Agendado", tone: "default" },
+  confirmed: { label: "Confirmado", tone: "success" },
+}
 
 const quickActions = [
   {
@@ -41,21 +42,11 @@ const quickActions = [
     iconBg: "bg-gold/15 text-gold",
     hover: "hover:border-gold/40 hover:bg-gold/10 hover:text-gold",
   },
-  {
-    href: "/records",
-    label: "Novo Prontuário",
-    icon: ClipboardPlus,
-    iconBg: "bg-success/15 text-success",
-    hover: "hover:border-success/40 hover:bg-success/10 hover:text-success",
-  },
 ]
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<Stats>({
-    totalPatients: 0,
-    upcomingAppointments: 0,
-    totalRecords: 0,
-  })
+  const [todayAppointments, setTodayAppointments] = useState<any[]>([])
+  const [services, setServices] = useState<ServiceDef[]>([])
   const [loading, setLoading] = useState(true)
   const [motivationalMsg, setMotivationalMsg] = useState("")
   const [currentTime, setCurrentTime] = useState("")
@@ -84,43 +75,43 @@ export default function DashboardPage() {
     return () => clearInterval(interval)
   }, [])
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const [patients, appointments, records] = await Promise.all([
-          supabase.from("patients").select("id", { count: "exact", head: true }),
-          supabase.from("appointments").select("id", { count: "exact", head: true }).gte("scheduled_at", new Date().toISOString()),
-          supabase.from("medical_records").select("id", { count: "exact", head: true }),
-        ])
+  const fetchToday = useCallback(async () => {
+    setLoading(true)
+    try {
+      const startOfDay = new Date()
+      startOfDay.setHours(0, 0, 0, 0)
+      const endOfDay = new Date()
+      endOfDay.setHours(23, 59, 59, 999)
 
-        setStats({
-          totalPatients: patients.count || 0,
-          upcomingAppointments: appointments.count || 0,
-          totalRecords: records.count || 0,
-        })
-      } catch (err) {
-        console.error("Erro ao carregar estatísticas:", err)
-      } finally {
-        setLoading(false)
-      }
+      const { data } = await supabase
+        .from("appointments")
+        .select("id, scheduled_at, service_type, status, duration_minutes, patients(full_name, phone)")
+        .gte("scheduled_at", startOfDay.toISOString())
+        .lte("scheduled_at", endOfDay.toISOString())
+        .in("status", ["scheduled", "confirmed"])
+        .order("scheduled_at", { ascending: true })
+
+      setTodayAppointments(data || [])
+    } catch (err) {
+      console.error("Erro ao carregar agendamentos de hoje:", err)
+    } finally {
+      setLoading(false)
     }
-
-    fetchStats()
   }, [supabase])
 
-  const statCards = [
-    { label: "Pacientes", value: stats.totalPatients, icon: Users, tone: "primary" as const, hint: "Cadastrados", href: "/patients" },
-    { label: "Agendamentos", value: stats.upcomingAppointments, icon: Calendar, tone: "gold" as const, hint: "Na agenda", href: "/appointments" },
-    { label: "Prontuários", value: stats.totalRecords, icon: FileText, tone: "success" as const, hint: "Registrados", href: "/records" },
-  ]
+  useEffect(() => {
+    fetchToday()
+    fetchServices().then(setServices)
+  }, [fetchToday])
+
+  const scheduled = todayAppointments.filter((a) => a.status === "scheduled").length
+  const confirmed = todayAppointments.filter((a) => a.status === "confirmed").length
 
   return (
     <div className="space-y-6 animate-slide-up-fade">
       {/* Welcome */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-card to-gold/10 p-5 ring-1 ring-border/40 sm:p-6">
-        <div className="pointer-events-none absolute -top-10 -right-10 h-28 w-28 rounded-full bg-primary/10" />
-        <div className="pointer-events-none absolute -bottom-8 -left-8 h-20 w-20 rounded-full bg-gold/10" />
-        <div className="relative flex items-start justify-between gap-4">
+      <div className="rounded-2xl bg-gradient-to-br from-primary/10 via-card to-gold/10 p-5 ring-1 ring-border/40 sm:p-6">
+        <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-widest text-primary">Wellness OS</p>
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground">Bem-vindo(a)</h1>
@@ -132,38 +123,97 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
-        {loading
-          ? Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i}>
-                <CardContent className="space-y-2 p-5">
-                  <Skeleton className="h-3 w-20" />
-                  <Skeleton className="h-7 w-14" />
-                </CardContent>
-              </Card>
-            ))
-          : statCards.map((card) => (
-              <StatCard
-                key={card.label}
-                label={card.label}
-                value={card.value}
-                icon={card.icon}
-                tone={card.tone}
-                hint={card.hint}
-                href={card.href}
-              />
-            ))}
+      {/* Hoje */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-5">
+        {loading ? (
+          <>
+            <Card><CardContent className="space-y-2 p-5"><Skeleton className="h-3 w-20" /><Skeleton className="h-7 w-12" /></CardContent></Card>
+            <Card><CardContent className="space-y-2 p-5"><Skeleton className="h-3 w-20" /><Skeleton className="h-7 w-12" /></CardContent></Card>
+          </>
+        ) : (
+          <>
+            <StatCard
+              label="Agendados"
+              value={scheduled}
+              icon={Calendar}
+              tone="primary"
+              hint="Hoje"
+              href="/appointments"
+            />
+            <StatCard
+              label="Confirmados"
+              value={confirmed}
+              icon={CheckCircle2}
+              tone="success"
+              hint="Hoje"
+              href="/appointments"
+            />
+          </>
+        )}
       </div>
 
-      {/* Quick Actions */}
+      {/* Pré-lista de hoje */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="flex items-center gap-2 text-base font-bold">
+            <CalendarDays className="h-4 w-4 text-primary" /> Agenda de Hoje
+          </CardTitle>
+          <Button render={<Link href="/appointments" />} variant="ghost" size="sm" className="h-8 gap-1 text-primary">
+            Ver completa <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-[64px] w-full rounded-xl" />
+            ))
+          ) : todayAppointments.length === 0 ? (
+            <div className="py-8 text-center">
+              <p className="text-sm text-muted-foreground">Nenhum agendamento para hoje.</p>
+              <Button render={<Link href="/appointments" />} variant="outline" size="sm" className="mt-3">
+                <CalendarPlus className="mr-2 h-4 w-4" /> Agendar Sessão
+              </Button>
+            </div>
+          ) : (
+            <>
+              {todayAppointments.slice(0, 6).map((apt) => {
+                const timeStr = new Date(apt.scheduled_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+                const svc = getServiceById(services, apt.service_type)
+                const meta = statusLabels[apt.status] || { label: apt.status, tone: "secondary" as const }
+                return (
+                  <Link
+                    key={apt.id}
+                    href="/appointments"
+                    className="flex items-center gap-4 rounded-xl bg-card p-3.5 ring-1 ring-border/40 transition-[box-shadow,transform] hover:shadow-md"
+                    style={{ borderLeft: `3px solid ${svc?.color || "#6B7280"}` }}
+                  >
+                    <div className="w-14 shrink-0">
+                      <span className="tnum text-sm font-bold text-foreground">{timeStr}</span>
+                      {apt.duration_minutes ? (
+                        <span className="block text-[10px] text-muted-foreground">{apt.duration_minutes}min</span>
+                      ) : null}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-foreground">{apt.patients?.full_name || "Paciente Removido"}</p>
+                      <p className="truncate text-xs text-muted-foreground">{svc?.label || apt.service_type}</p>
+                    </div>
+                    <StatusBadge label={meta.label} tone={meta.tone} />
+                  </Link>
+                )
+              })}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Ações Rápidas */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base font-bold">
-            <Plus className="h-4 w-4 text-primary" /> Ações Rápidas
+            <Sparkles className="h-4 w-4 text-primary" /> Ações Rápidas
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {quickActions.map((action) => (
             <Link key={action.href} href={action.href} className="w-full">
               <Button

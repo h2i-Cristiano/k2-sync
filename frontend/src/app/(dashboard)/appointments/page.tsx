@@ -7,10 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PageHeader } from "@/components/ui/page-header"
-import { StatusBadge, type StatusTone } from "@/components/ui/status-badge"
 import { DateStrip } from "@/components/ui/date-strip"
 import { EmptyState } from "@/components/ui/empty-state"
-import { Plus, ChevronLeft, ChevronRight, User, MapPin, Pencil, CalendarDays, ChevronDown, MessageCircle } from "lucide-react"
+import { Plus, ChevronLeft, ChevronRight, User, MapPin, CalendarDays, ChevronDown, MessageCircle } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -35,7 +34,7 @@ const AppointmentForm = dynamic(
   { loading: () => <div className="p-6"><Skeleton className="h-[500px] w-full rounded-xl" /></div> }
 )
 
-const statusTones: Record<string, StatusTone> = {
+const statusTones: Record<string, "default" | "success" | "destructive" | "warning"> = {
   scheduled: "default",
   confirmed: "success",
   completed: "success",
@@ -61,7 +60,6 @@ const statusLabels: Record<string, string> = {
 
 const filterOptions = [
   { key: "all", label: "Todos" },
-  { key: "today", label: "Hoje" },
   { key: "scheduled", label: "Agendados" },
   { key: "confirmed", label: "Confirmados" },
   { key: "completed", label: "Concluídos" },
@@ -93,7 +91,7 @@ function AppointmentsPageInner() {
   const [isOpen, setIsOpen] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<any>(null)
   const [selectedDate, setSelectedDate] = useState(new Date())
-  const [view, setView] = useState<"day" | "list">("day")
+  const [view, setView] = useState<"day" | "week" | "month">("day")
   const [activeFilter, setActiveFilter] = useState("all")
   const [services, setServices] = useState<ServiceDef[]>([])
   const [mobileCalendarOpen, setMobileCalendarOpen] = useState(false)
@@ -102,18 +100,38 @@ function AppointmentsPageInner() {
   const year = selectedDate.getFullYear()
   const month = selectedDate.getMonth()
 
-  const fetchAppointmentsForDay = useCallback(async () => {
+  const getWindowRange = useCallback((base: Date, currentView: "day" | "week" | "month") => {
+    if (currentView === "day") {
+      const start = new Date(base)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(base)
+      end.setHours(23, 59, 59, 999)
+      return { start, end }
+    }
+    if (currentView === "week") {
+      const offset = base.getDay()
+      const start = new Date(base)
+      start.setDate(base.getDate() - offset)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(start)
+      end.setDate(start.getDate() + 6)
+      end.setHours(23, 59, 59, 999)
+      return { start, end }
+    }
+    const start = new Date(base.getFullYear(), base.getMonth(), 1)
+    const end = new Date(base.getFullYear(), base.getMonth() + 1, 0, 23, 59, 59, 999)
+    return { start, end }
+  }, [])
+
+  const fetchAppointments = useCallback(async () => {
     setLoading(true)
-    const startOfDay = new Date(selectedDate)
-    startOfDay.setHours(0, 0, 0, 0)
-    const endOfDay = new Date(selectedDate)
-    endOfDay.setHours(23, 59, 59, 999)
+    const { start, end } = getWindowRange(selectedDate, view)
 
     const { data } = await supabase
       .from("appointments")
       .select("*, patients(full_name, phone)")
-      .gte("scheduled_at", startOfDay.toISOString())
-      .lte("scheduled_at", endOfDay.toISOString())
+      .gte("scheduled_at", start.toISOString())
+      .lte("scheduled_at", end.toISOString())
       .order("scheduled_at", { ascending: true })
 
     const aptList = data || []
@@ -132,7 +150,7 @@ function AppointmentsPageInner() {
 
     setAppointments(aptList.map(a => ({ ...a, deposit: depositMap[a.id] })))
     setLoading(false)
-  }, [supabase, selectedDate])
+  }, [supabase, selectedDate, view, getWindowRange])
 
   const fetchMonthAppointments = useCallback(async () => {
     const startOfMonth = new Date(year, month, 1)
@@ -193,7 +211,7 @@ function AppointmentsPageInner() {
     fetchPatients()
     fetchServices().then(setServices)
   }, [fetchPatients])
-  useEffect(() => { fetchAppointmentsForDay() }, [fetchAppointmentsForDay])
+  useEffect(() => { fetchAppointments() }, [fetchAppointments])
   useEffect(() => { fetchMonthAppointments() }, [fetchMonthAppointments])
 
   useEffect(() => {
@@ -205,7 +223,6 @@ function AppointmentsPageInner() {
 
   const filteredAppointments = appointments.filter((apt) => {
     if (activeFilter === "all") return true
-    if (activeFilter === "today") return true
     return apt.status === activeFilter
   })
 
@@ -234,6 +251,16 @@ function AppointmentsPageInner() {
     setSelectedDate(new Date())
   }
 
+  const shiftWindow = (dir: -1 | 1) => {
+    setSelectedDate((prev) => {
+      const d = new Date(prev)
+      if (view === "week") d.setDate(d.getDate() + 7 * dir)
+      else if (view === "month") d.setMonth(d.getMonth() + dir)
+      else d.setDate(d.getDate() + dir)
+      return d
+    })
+  }
+
   const formatSelectedDate = () => {
     return selectedDate.toLocaleDateString("pt-BR", {
       weekday: "long",
@@ -243,7 +270,41 @@ function AppointmentsPageInner() {
     })
   }
 
-  const timeSlots = Array.from({ length: 17 }, (_, i) => i + 7)
+  const windowLabel = (() => {
+    if (view === "month") return `${MONTHS[month]} ${year}`
+    if (view === "week") {
+      const { start } = getWindowRange(selectedDate, "week")
+      const end = new Date(start)
+      end.setDate(start.getDate() + 6)
+      const fmt = (d: Date) => d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })
+      return `${fmt(start)} — ${fmt(end)}`
+    }
+    return formatSelectedDate()
+  })()
+
+  const groupByDay = (list: any[]) => {
+    const map = new Map<string, any[]>()
+    list.forEach((apt) => {
+      const key = new Date(apt.scheduled_at).toDateString()
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(apt)
+    })
+    return Array.from(map.entries())
+      .map(([key, items]) => ({
+        date: new Date(key),
+        items: items.sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()),
+      }))
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+  }
+
+  const weekDays = (() => {
+    const { start } = getWindowRange(selectedDate, "week")
+    return Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date(start)
+      d.setDate(start.getDate() + i)
+      return d
+    })
+  })()
 
   const renderCalendar = () => (
     <Card>
@@ -345,7 +406,7 @@ function AppointmentsPageInner() {
     <DropdownMenuTrigger
       render={
         <button
-          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap transition-opacity cursor-pointer hover:opacity-80 flex items-center gap-1 ${
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap transition-opacity cursor-pointer hover:opacity-80 ${
             statusTones[apt.status] === "destructive"
               ? "bg-destructive/15 text-destructive"
               : statusTones[apt.status] === "warning"
@@ -382,6 +443,182 @@ function AppointmentsPageInner() {
     </DropdownMenuContent>
   )
 
+  const renderAppointmentCard = (apt: any) => {
+    const aptTime = new Date(apt.scheduled_at)
+    const timeStr = aptTime.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    const svc = getServiceById(services, apt.service_type)
+
+    return (
+      <div
+        key={apt.id}
+        className="cursor-pointer rounded-xl bg-card p-4 ring-1 ring-border/40 transition-[box-shadow,transform] hover:shadow-md group"
+        style={{ borderLeft: `3px solid ${svc?.color || "#6B7280"}` }}
+        onClick={() => { setEditingAppointment(apt); setIsOpen(true) }}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1 min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-sm font-bold text-foreground tnum">{timeStr}</span>
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full max-w-full truncate" style={{ backgroundColor: `${svc?.color}15`, color: svc?.color }}>
+                {svc?.label || apt.service_type}
+              </span>
+              <span className="text-xs text-muted-foreground">{apt.duration_minutes}min</span>
+              {apt.deposit ? (
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gold/15 text-gold">
+                  Entrada R$ {apt.deposit.toFixed(0)}
+                </span>
+              ) : (
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                  Sem entrada
+                </span>
+              )}
+            </div>
+            <p className="font-medium text-foreground flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              {apt.patients?.full_name || "Paciente Removido"}
+            </p>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <DropdownMenu>
+              {renderStatusTrigger(apt)}
+              {renderStatusMenu(apt)}
+            </DropdownMenu>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700"
+              title="Cobrar via WhatsApp"
+              onClick={(e) => { e.stopPropagation(); openWhatsApp(apt, svc) }}
+            >
+              <MessageCircle className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        {apt.is_home_visit && (
+          <div className="flex items-center gap-1.5 text-gold mt-2">
+            <MapPin className="h-3.5 w-3.5" />
+            <span className="text-xs font-medium">Atendimento Domiciliar</span>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const renderDayHeader = (date: Date) => {
+    const isToday = isSameDay(date, new Date())
+    return (
+      <div className="flex items-center gap-2 pt-1 pb-2">
+        <span className="h-4 w-1 rounded-full bg-primary/60" />
+        <p className="text-sm font-semibold text-foreground capitalize">
+          {date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
+        </p>
+        {isToday && <span className="text-[10px] font-semibold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded-full">Hoje</span>}
+      </div>
+    )
+  }
+
+  const emptyStateContent = (() => {
+    if (view === "day") {
+      return (
+        <EmptyState
+          icon={CalendarDays}
+          title="Dia Livre"
+          description="Nenhum agendamento para esta data."
+          action={
+            <Button variant="outline" onClick={() => setIsOpen(true)}>
+              Agendar Agora
+            </Button>
+          }
+        />
+      )
+    }
+    if (view === "week") {
+      return (
+        <EmptyState
+          icon={CalendarDays}
+          title="Semana sem agendamentos"
+          description="Nenhum agendamento nesta semana."
+        />
+      )
+    }
+    return (
+      <EmptyState
+        icon={CalendarDays}
+        title="Mês sem agendamentos"
+        description="Nenhum agendamento neste mês."
+      />
+    )
+  })()
+
+  const renderListContent = () => {
+    if (loading) {
+      return (
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-xl bg-card p-4 ring-1 ring-border/40">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-4 w-48" />
+                </div>
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )
+    }
+
+    if (filteredAppointments.length === 0) {
+      return <div className="rounded-2xl bg-card ring-1 ring-border/40">{emptyStateContent}</div>
+    }
+
+    if (view === "day") {
+      return (
+        <div className="space-y-2">
+          {filteredAppointments.map((apt) => renderAppointmentCard(apt))}
+        </div>
+      )
+    }
+
+    if (view === "week") {
+      const grouped = groupByDay(filteredAppointments)
+      return (
+        <div className="space-y-5">
+          {weekDays.map((day) => {
+            const dayItems = grouped.find((g) => isSameDay(g.date, day))?.items || []
+            return (
+              <div key={day.toDateString()}>
+                {renderDayHeader(day)}
+                {dayItems.length === 0 ? (
+                  <p className="text-xs text-muted-foreground/70 pl-3">Sem agendamentos</p>
+                ) : (
+                  <div className="space-y-2">
+                    {dayItems.map((apt) => renderAppointmentCard(apt))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )
+    }
+
+    const grouped = groupByDay(filteredAppointments)
+    return (
+      <div className="space-y-5">
+        {grouped.map((group) => (
+          <div key={group.date.toDateString()}>
+            {renderDayHeader(group.date)}
+            <div className="space-y-2">
+              {group.items.map((apt) => renderAppointmentCard(apt))}
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-5 animate-slide-up-fade">
       <PageHeader
@@ -390,18 +627,17 @@ function AppointmentsPageInner() {
         actions={
           <>
             <div className="flex items-center rounded-xl bg-muted/60 p-1">
-              <button
-                onClick={() => setView("day")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${view === "day" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                Dia
-              </button>
-              <button
-                onClick={() => setView("list")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${view === "list" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                Lista
-              </button>
+              {(["day", "week", "month"] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
+                    view === v ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {v === "day" ? "Dia" : v === "week" ? "Semana" : "Mês"}
+                </button>
+              ))}
             </div>
             <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) setEditingAppointment(null) }}>
               <DialogTrigger render={<Button />}>
@@ -419,7 +655,7 @@ function AppointmentsPageInner() {
                     onSuccess={() => {
                       setIsOpen(false)
                       setEditingAppointment(null)
-                      fetchAppointmentsForDay()
+                      fetchAppointments()
                       fetchMonthAppointments()
                     }}
                     onCancel={() => { setIsOpen(false); setEditingAppointment(null) }}
@@ -458,13 +694,24 @@ function AppointmentsPageInner() {
         </div>
 
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold capitalize">{formatSelectedDate()}</h2>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold truncate">{windowLabel}</h2>
               <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                <CalendarDays className="h-3.5 w-3.5" />
+                <CalendarDays className="h-3.5 w-3.5 shrink-0" />
                 {filteredAppointments.length} agendamento(s)
               </p>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => shiftWindow(-1)} aria-label="Período anterior">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={goToToday} title="Ir para hoje" aria-label="Ir para hoje">
+                <CalendarDays className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => shiftWindow(1)} aria-label="Próximo período">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 
@@ -484,182 +731,7 @@ function AppointmentsPageInner() {
             ))}
           </div>
 
-          {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="rounded-xl bg-card p-4 ring-1 ring-border/40">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-2">
-                        <Skeleton className="h-5 w-16" />
-                        <Skeleton className="h-5 w-24 rounded-full" />
-                      </div>
-                      <Skeleton className="h-4 w-48" />
-                    </div>
-                    <Skeleton className="h-6 w-20 rounded-full" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : filteredAppointments.length === 0 ? (
-            <div className="rounded-2xl bg-card ring-1 ring-border/40">
-              <EmptyState
-                icon={CalendarDays}
-                title="Dia Livre"
-                description="Nenhum agendamento marcado para esta data."
-                action={
-                  <Button variant="outline" onClick={() => setIsOpen(true)}>
-                    Agendar Agora
-                  </Button>
-                }
-              />
-            </div>
-          ) : view === "day" ? (
-            <div className="space-y-2">
-              {timeSlots.map((hour) => {
-                const hourAppointments = filteredAppointments.filter(apt => {
-                  const d = new Date(apt.scheduled_at)
-                  return d.getHours() === hour
-                })
-
-                return (
-                  <div key={hour} className="flex gap-3 min-h-[60px]">
-                    <div className="w-14 shrink-0 text-right pt-1">
-                      <span className="text-xs font-medium text-muted-foreground tnum">
-                        {String(hour).padStart(2, "0")}:00
-                      </span>
-                    </div>
-
-                    <div className="relative w-px bg-border/50 shrink-0">
-                      <div className="absolute top-2 -left-1 h-2.5 w-2.5 rounded-full bg-border" />
-                    </div>
-
-                    <div className="flex-1 pb-2 min-w-0">
-                      {hourAppointments.map((apt) => {
-                        const aptTime = new Date(apt.scheduled_at)
-                        const timeStr = aptTime.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-                        const svc = getServiceById(services, apt.service_type)
-
-                        return (
-                          <div
-                            key={apt.id}
-                            className="mb-2 min-w-0 cursor-pointer rounded-xl bg-card p-4 ring-1 ring-border/40 transition-[box-shadow,transform] hover:shadow-md group"
-                            style={{ borderLeft: `3px solid ${svc?.color || "#6B7280"}` }}
-                            onClick={() => { setEditingAppointment(apt); setIsOpen(true) }}
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="space-y-1 min-w-0 flex-1">
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  <span className="text-sm font-bold text-foreground tnum">{timeStr}</span>
-                                  <span className="text-xs font-medium px-2 py-0.5 rounded-full max-w-full truncate" style={{ backgroundColor: `${svc?.color}15`, color: svc?.color }}>
-                                    {svc?.label || apt.service_type}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">{apt.duration_minutes}min</span>
-                                  {apt.deposit ? (
-                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gold/15 text-gold">
-                                      Entrada R$ {apt.deposit.toFixed(0)}
-                                    </span>
-                                  ) : (
-                                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                                      Sem entrada
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="font-medium text-foreground flex items-center gap-1.5">
-                                  <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                  {apt.patients?.full_name || "Paciente Removido"}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-1 shrink-0">
-                                <DropdownMenu>
-                                  {renderStatusTrigger(apt)}
-                                  {renderStatusMenu(apt)}
-                                </DropdownMenu>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-9 w-9 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700"
-                                  title="Cobrar via WhatsApp"
-                                  onClick={(e) => { e.stopPropagation(); openWhatsApp(apt, svc) }}
-                                >
-                                  <MessageCircle className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                            {apt.is_home_visit && (
-                              <div className="flex items-center gap-1.5 text-gold mt-2">
-                                <MapPin className="h-3.5 w-3.5" />
-                                <span className="text-xs font-medium">Atendimento Domiciliar</span>
-                              </div>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filteredAppointments.map((apt) => {
-                const aptTime = new Date(apt.scheduled_at)
-                const timeStr = aptTime.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-                const svc = getServiceById(services, apt.service_type)
-
-                return (
-                  <div
-                    key={apt.id}
-                    className="cursor-pointer rounded-xl bg-card p-4 ring-1 ring-border/40 transition-[box-shadow,transform] hover:shadow-md group flex items-center gap-4"
-                    style={{ borderLeft: `3px solid ${svc?.color || "#6B7280"}` }}
-                    onClick={() => { setEditingAppointment(apt); setIsOpen(true) }}
-                  >
-                    <div className="w-16 shrink-0 text-center">
-                      <span className="text-sm font-bold text-foreground tnum">{timeStr}</span>
-                      <span className="block text-[10px] text-muted-foreground">{apt.duration_minutes}min</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground truncate">{apt.patients?.full_name || "Paciente Removido"}</p>
-                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                        <span className="text-xs px-2 py-0.5 rounded-full font-medium max-w-full truncate" style={{ backgroundColor: `${svc?.color}15`, color: svc?.color }}>
-                          {svc?.label || apt.service_type}
-                        </span>
-                        {apt.deposit ? (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gold/15 text-gold">
-                            Entrada R$ {apt.deposit.toFixed(0)}
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                            Sem entrada
-                          </span>
-                        )}
-                        {apt.is_home_visit && (
-                          <span className="text-[10px] text-gold font-medium flex items-center gap-0.5">
-                            <MapPin className="h-3 w-3" /> Domiciliar
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <DropdownMenu>
-                        {renderStatusTrigger(apt)}
-                        {renderStatusMenu(apt)}
-                      </DropdownMenu>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700"
-                        title="Cobrar via WhatsApp"
-                        onClick={(e) => { e.stopPropagation(); openWhatsApp(apt, svc) }}
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+          {renderListContent()}
         </div>
       </div>
     </div>

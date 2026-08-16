@@ -116,7 +116,7 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Dados Pessoais</h3>
 
@@ -126,7 +126,7 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
           {errors.full_name && <p className="text-sm text-red-500">{errors.full_name.message}</p>}
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="cpf">CPF *</Label>
             <Input
@@ -160,14 +160,14 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="birth_date">Data de Nascimento *</Label>
             <Input id="birth_date" type="date" {...form.register("birth_date")} />
             {errors.birth_date && <p className="text-sm text-red-500">{errors.birth_date.message}</p>}
           </div>
           <div className="space-y-2">
-            <Label>Genero *</Label>
+            <Label>Gênero *</Label>
             <Select onValueChange={(val) => { if (val) form.setValue("gender", val as "M" | "F" | "O") }} defaultValue={watchGender ?? undefined}>
               <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
               <SelectContent>
@@ -184,16 +184,16 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
           </div>
         </div>
 
-        <div className="space-y-2 max-w-[200px]">
-          <Label htmlFor="occupation">Profissao</Label>
+        <div className="space-y-2">
+          <Label htmlFor="occupation">Profissão</Label>
           <Input id="occupation" placeholder="Ex: Engenheiro" {...form.register("occupation")} />
         </div>
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Endereco</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Endereço</h3>
 
-        <div className="space-y-2 max-w-[200px]">
+        <div className="space-y-2">
           <Label htmlFor="address.zip_code">CEP</Label>
           <div className="flex gap-2">
             <Input
@@ -210,13 +210,13 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-[2fr_1fr_1fr] gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr] gap-4">
           <div className="space-y-2">
             <Label htmlFor="address.street">Rua</Label>
             <Input id="address.street" placeholder="Rua das Flores" {...form.register("address.street")} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="address.number">Numero</Label>
+            <Label htmlFor="address.number">Número</Label>
             <Input id="address.number" placeholder="123" {...form.register("address.number")} />
           </div>
           <div className="space-y-2">
@@ -225,14 +225,14 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-[2fr_1fr_1fr] gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr] gap-4">
           <div className="space-y-2">
             <Label htmlFor="address.neighborhood">Bairro</Label>
             <Input id="address.neighborhood" placeholder="Centro" {...form.register("address.neighborhood")} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="address.city">Cidade</Label>
-            <Input id="address.city" placeholder="Sao Paulo" {...form.register("address.city")} />
+            <Input id="address.city" placeholder="São Paulo" {...form.register("address.city")} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="address.state">Estado</Label>
@@ -242,9 +242,9 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Contato de Emergencia</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Contato de Emergência</h3>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="emergency_contact.name">Nome</Label>
             <Input id="emergency_contact.name" placeholder="Nome do contato" {...form.register("emergency_contact.name")} />
@@ -261,7 +261,7 @@ export function PatientForm({ initialData, onSuccess }: PatientFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="notes">Observacoes</Label>
+        <Label htmlFor="notes">Observações</Label>
         <textarea
           id="notes"
           placeholder="Notas sobre o paciente..."

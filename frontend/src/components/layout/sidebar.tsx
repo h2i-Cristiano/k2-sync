@@ -22,7 +22,6 @@ import {
   LayoutDashboard,
   Calendar,
   Users,
-  FileText,
   CreditCard,
   Receipt,
   ShoppingBag,
@@ -191,7 +190,6 @@ export function SidebarContent({ user, onLogout, collapsed, onToggle }: SidebarC
         {/* Principal group */}
         <NavLabel collapsed={collapsed}>Principal</NavLabel>
         <NavGroup items={mainNavGroups[0].items} activeHref={pathname} collapsed={collapsed} />
-        <NavGroup items={[{ href: "/records", label: "Prontuários", icon: FileText }]} activeHref={pathname} collapsed={collapsed} />
 
         <NavLabel collapsed={collapsed}>Financeiro</NavLabel>
         <NavGroup items={financeNav} activeHref={pathname} collapsed={collapsed} />

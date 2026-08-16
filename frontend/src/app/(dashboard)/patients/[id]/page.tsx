@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useState, useCallback, type ReactNode } from "react"
+import { useEffect, useState, useCallback, Suspense, type ReactNode } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, FileText, Calendar, Edit, Activity, User, Phone, MapPin, Pill, AlertCircle, Clock, ClipboardList, Plus, NotebookPen, Wallet } from "lucide-react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { PatientForm } from "@/components/forms/PatientForm"
@@ -14,9 +14,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { getServiceById, fetchServices, type ServiceDef } from "@/lib/services"
 
-export default function PatientDetailPage() {
+function PatientDetailInner() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const patientId = params.id as string
   const [patient, setPatient] = useState<any>(null)
   const [anamnesis, setAnamnesis] = useState<any[]>([])
@@ -51,6 +52,13 @@ export default function PatientDetailPage() {
     fetchData()
   }, [fetchData])
 
+  useEffect(() => {
+    const tab = searchParams.get("tab")
+    if (tab === "history" || tab === "clinical" || tab === "overview") {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
+
   if (loading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
@@ -77,7 +85,7 @@ export default function PatientDetailPage() {
   const summaryCards = [
     { label: "Atendimentos", value: String(completedAppointments.length), color: "bg-primary/10 text-primary", icon: <Calendar className="h-5 w-5" /> },
     { label: "Total investido", value: `R$ ${totalInvestido.toFixed(2).replace(".", ",")}`, color: "bg-emerald-500/10 text-emerald-600", icon: <Wallet className="h-5 w-5" /> },
-    { label: "Prontuários", value: String(records.length), color: "bg-sky-500/10 text-sky-600", icon: <NotebookPen className="h-5 w-5" /> },
+    { label: "Evoluções", value: String(records.length), color: "bg-sky-500/10 text-sky-600", icon: <NotebookPen className="h-5 w-5" /> },
     { label: "Anamneses", value: String(anamnesis.length), color: "bg-violet-500/10 text-violet-600", icon: <ClipboardList className="h-5 w-5" /> },
   ]
 
@@ -87,7 +95,7 @@ export default function PatientDetailPage() {
     events.push({
       id: `rec-${r.id}`, kind: "record", date: r.created_at,
       dateLabel: new Date(r.created_at).toLocaleString("pt-BR"),
-      title: `Prontuário - Sessão ${r.session_number || "?"}`,
+      title: `Evolução - Sessão ${r.session_number || "?"}`,
       subtitle: r.chief_complaint || r.assessment || "Sem queixa registrada",
       badge: r.status === "completed" ? "Concluído" : "Rascunho",
       badgeVariant: r.status === "completed" ? "success" : "warning",
@@ -262,7 +270,7 @@ export default function PatientDetailPage() {
                     </Button>
                     <Button onClick={() => setIsRecordOpen(true)} className="shadow-sm">
                       <NotebookPen className="mr-2 h-4 w-4" />
-                      Novo Prontuário
+                      Nova Evolução
                     </Button>
                     <Button render={<Link href="/appointments" />} variant="secondary" className="shadow-sm">
                       <Calendar className="mr-2 h-4 w-4" />
@@ -372,13 +380,13 @@ export default function PatientDetailPage() {
                     historyFilter === k ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {k === "all" ? "Todos" : k === "record" ? "Prontuários" : k === "anamnesis" ? "Anamneses" : "Agendamentos"}
+                  {k === "all" ? "Todos" : k === "record" ? "Evoluções" : k === "anamnesis" ? "Anamneses" : "Agendamentos"}
                 </button>
               ))}
             </div>
             <Button onClick={() => setIsRecordOpen(true)} className="shadow-sm">
               <Plus className="mr-2 h-4 w-4" />
-              Novo Prontuário
+              Nova Evolução
             </Button>
           </div>
 
@@ -424,7 +432,7 @@ export default function PatientDetailPage() {
       <Dialog open={isRecordOpen} onOpenChange={setIsRecordOpen}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Novo Prontuário</DialogTitle>
+            <DialogTitle>Nova Evolução</DialogTitle>
             <DialogDescription>Registre uma nova evolução para {patient.full_name}</DialogDescription>
           </DialogHeader>
           <RecordForm
@@ -436,5 +444,20 @@ export default function PatientDetailPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+export default function PatientDetailPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-[50vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <p>Carregando perfil...</p>
+        </div>
+      </div>
+    }>
+      <PatientDetailInner />
+    </Suspense>
   )
 }

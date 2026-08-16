@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { login, loginAsTestUser, TEST_EMAIL } from './helpers';
+import { login, TEST_EMAIL } from './helpers';
 
 test('login page has title and login form', async ({ page }) => {
   await page.goto('/login');
@@ -37,13 +37,7 @@ test('login with wrong password shows error message', async ({ page }) => {
 test('logout returns to login page', async ({ page }) => {
   await login(page);
 
-  // Open the user dropdown in the sidebar and click Sair
-  const trigger = page.locator('aside').getByRole('button').filter({ hasText: TEST_EMAIL }).first();
-  await trigger.click();
-
-  const logoutItem = page.getByRole('menuitem', { name: /sair/i });
-  await expect(logoutItem).toBeVisible();
-  await logoutItem.click();
+  await page.getByTitle('Sair do Sistema').click();
 
   await expect(page).toHaveURL(/.*\/login.*/, { timeout: 15000 });
 });

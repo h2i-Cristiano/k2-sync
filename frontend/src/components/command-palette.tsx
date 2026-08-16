@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Search, Users, Calendar, FileText, Settings, ArrowRight, Loader2 } from "lucide-react"
+import { Search, Users, Calendar, Settings, ArrowRight, Loader2 } from "lucide-react"
 
 interface CommandPaletteProps {
   open: boolean
@@ -34,7 +34,6 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     { id: "nav-dashboard", title: "Dashboard", href: "/dashboard", icon: ArrowRight, type: "navigation" },
     { id: "nav-appointments", title: "Agenda", href: "/appointments", icon: Calendar, type: "navigation" },
     { id: "nav-patients", title: "Pacientes", href: "/patients", icon: Users, type: "navigation" },
-    { id: "nav-records", title: "Prontuários", href: "/records", icon: FileText, type: "navigation" },
     { id: "nav-settings", title: "Configurações", href: "/settings", icon: Settings, type: "navigation" },
   ], [])
 

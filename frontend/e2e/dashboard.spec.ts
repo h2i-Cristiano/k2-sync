@@ -8,11 +8,11 @@ test.describe('Dashboard', () => {
     await expect(page.locator('header')).toBeVisible();
     await expect(page.locator('aside').getByText('K2-Sync')).toBeVisible();
 
-    await expect(page.getByText(/pacientes/i).first()).toBeVisible();
-    await expect(page.getByText(/agendamento/i).first()).toBeVisible();
+    await expect(page.getByText(/agendados/i).first()).toBeVisible();
+    await expect(page.getByText(/confirmados/i).first()).toBeVisible();
 
     await expect(page.getByRole('link', { name: 'Agenda', exact: true })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Prontuários', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Serviços', exact: true })).toBeVisible();
   });
 
   test('dashboard has user avatar menu', async ({ page }) => {
@@ -37,9 +37,9 @@ test.describe('Dashboard', () => {
     await page.waitForURL(/.*\/appointments.*/);
     await expect(page.getByText(/agenda/i).first()).toBeVisible();
 
-    await page.getByRole('link', { name: 'Prontuários', exact: true }).first().click();
-    await page.waitForURL(/.*\/records.*/);
-    await expect(page.getByText(/prontuários/i).first()).toBeVisible();
+    await page.getByRole('link', { name: 'Serviços', exact: true }).first().click();
+    await page.waitForURL(/.*\/services.*/);
+    await expect(page.getByText(/serviços/i).first()).toBeVisible();
 
     // Pacientes is a direct link (single click), not a collapsible group
     await page.getByRole('link', { name: 'Pacientes', exact: true }).first().click();

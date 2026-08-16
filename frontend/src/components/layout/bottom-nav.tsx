@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, Calendar, Users, Plus, Menu, UserPlus, CalendarPlus, ClipboardPlus } from "lucide-react"
+import { LayoutDashboard, Calendar, Users, Plus, Menu, UserPlus, CalendarPlus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -30,13 +30,17 @@ const items = [
 const quickActions = [
   { href: "/patients", label: "Novo Paciente", icon: UserPlus },
   { href: "/appointments", label: "Agendar Sessão", icon: CalendarPlus },
-  { href: "/records", label: "Novo Prontuário", icon: ClipboardPlus },
 ]
 
 export function BottomNav({ user, onLogout }: BottomNavProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
+
+  useEffect(() => {
+    setMoreOpen(false)
+  }, [pathname])
 
   const isActive = (href: string) =>
     href === "/dashboard" ? pathname === href : pathname.startsWith(href)
@@ -80,7 +84,7 @@ export function BottomNav({ user, onLogout }: BottomNavProps) {
 
         <NavItem href="/patients" label="Pacientes" icon={Users} active={isActive("/patients")} />
 
-        <Sheet>
+        <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
           <SheetTrigger
             render={
               <Button

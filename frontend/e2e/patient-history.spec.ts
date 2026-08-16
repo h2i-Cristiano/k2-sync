@@ -27,7 +27,7 @@ test.describe('Patient history', () => {
     await page.goto('/patients');
     const row = page.locator('tr', { hasText: patientName });
     await expect(row).toBeVisible({ timeout: 10000 });
-    await row.getByRole('link', { name: /perfil/i }).click();
+    await row.getByRole('link', { name: new RegExp(patientName) }).click();
     await page.waitForURL(/.*\/patients\/[0-9a-f-]{36}/);
     await expect(page.getByText(patientName).first()).toBeVisible({ timeout: 10000 });
 
@@ -36,17 +36,17 @@ test.describe('Patient history', () => {
 
     await expect(page.getByText(/atendimentos/i)).toBeVisible();
     await expect(page.getByText(/total investido/i)).toBeVisible();
-    await expect(page.getByText('Prontuários', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Evoluções', { exact: true }).first()).toBeVisible();
     await expect(page.getByText(/anamneses/i).first()).toBeVisible();
 
     await expect(page.getByRole('button', { name: /todos/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Prontuários', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Evoluções', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: /anamneses/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /agendamentos/i })).toBeVisible();
     await expect(page.getByText(/linha do tempo/i)).toBeVisible();
     await expect(page.getByText(/nenhum registro/i)).toBeVisible();
 
-    await page.getByRole('button', { name: /novo prontu/i }).click();
+    await page.getByRole('button', { name: /nova evolução/i }).click();
     await page.waitForTimeout(500);
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
@@ -59,7 +59,7 @@ test.describe('Patient history', () => {
     await dialog.locator('#chief_complaint').fill(complaint);
     await dialog.getByRole('button', { name: /salvar/i }).click();
 
-    await expect(page.getByText(/criado com sucesso/i)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/criada com sucesso/i)).toBeVisible({ timeout: 15000 });
     await expect(page.getByText(complaint)).toBeVisible({ timeout: 10000 });
   });
 });

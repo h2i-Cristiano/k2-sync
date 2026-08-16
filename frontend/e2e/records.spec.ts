@@ -6,8 +6,8 @@ test.describe('Records CRUD', () => {
     await loginAsTestUser(page);
     await page.goto('/records');
 
-    await expect(page.getByText(/prontuários/i).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: /novo prontuário/i })).toBeVisible();
+    await expect(page.getByText(/evoluções/i).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /nova evolução/i })).toBeVisible();
   });
 
   test('search input is visible', async ({ page }) => {
@@ -21,7 +21,7 @@ test.describe('Records CRUD', () => {
     await loginAsTestUser(page);
     await page.goto('/records');
 
-    await page.getByRole('button', { name: /novo prontuário/i }).click();
+    await page.getByRole('button', { name: /nova evolução/i }).click();
     await page.waitForTimeout(500);
 
     await expect(page.getByRole('dialog')).toBeVisible();
@@ -32,7 +32,7 @@ test.describe('Records CRUD', () => {
     await loginAsTestUser(page);
     await page.goto('/records');
 
-    const emptyState = page.getByText(/nenhum prontuário/i);
+    const emptyState = page.getByText(/nenhuma evolução/i);
     const anyRecord = page.getByText(/sessão/i).first();
 
     await Promise.race([

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PageHeader } from "@/components/ui/page-header"
 import { EmptyState } from "@/components/ui/empty-state"
-import { Plus, Search, FileText, Users, Eye, Trash2, Calendar, X, Phone } from "lucide-react"
+import { Plus, Search, FileText, Users, NotebookPen, Trash2, Calendar, X, Phone } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -95,14 +95,14 @@ export default function PatientsPage() {
     <div className="space-y-5 animate-slide-up-fade">
       <PageHeader
         title="Pacientes"
-        description="Gerencie sua lista de pacientes, fichas e prontuários."
+        description="Gerencie sua lista de pacientes, fichas e evoluções."
         actions={
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger render={<Button />}>
               <Plus className="mr-2 h-4 w-4" />
               Novo Paciente
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Adicionar Novo Paciente</DialogTitle>
               </DialogHeader>
@@ -207,7 +207,9 @@ export default function PatientsPage() {
                       {initial}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-foreground truncate">{patient.full_name}</p>
+                      <Link href={`/patients/${patient.id}`} className="font-semibold text-foreground truncate hover:text-primary transition-colors">
+                        {patient.full_name}
+                      </Link>
                       <p className="text-xs text-muted-foreground truncate mt-0.5">
                         {patient.cpf ? `CPF: ${patient.cpf}` : "CPF não informado"}
                       </p>
@@ -233,9 +235,9 @@ export default function PatientsPage() {
                       <FileText className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
                       Anamnese
                     </Button>
-                    <Button render={<Link href={`/patients/${patient.id}`} />} variant="secondary" size="sm" className="flex-1 h-10">
-                      <Eye className="h-3.5 w-3.5 mr-1.5 text-primary" />
-                      Perfil
+                    <Button render={<Link href={`/patients/${patient.id}?tab=history`} />} variant="secondary" size="sm" className="flex-1 h-10">
+                      <NotebookPen className="h-3.5 w-3.5 mr-1.5 text-primary" />
+                      Evolução
                     </Button>
                   </div>
                 </div>
@@ -267,7 +269,9 @@ export default function PatientsPage() {
                                 {initial}
                               </div>
                               <div>
-                                <span className="font-semibold text-base text-foreground group-hover:text-primary transition-colors">{patient.full_name}</span>
+                                <Link href={`/patients/${patient.id}`} className="font-semibold text-base text-foreground group-hover:text-primary transition-colors">
+                                  {patient.full_name}
+                                </Link>
                                 <div className="text-xs text-muted-foreground mt-0.5">
                                   {patient.cpf ? `CPF: ${patient.cpf}` : "CPF não informado"}
                                 </div>
@@ -284,9 +288,9 @@ export default function PatientsPage() {
                                 <FileText className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
                                 Anamnese
                               </Button>
-                              <Button render={<Link href={`/patients/${patient.id}`} />} variant="secondary" size="sm" className="h-8">
-                                <Eye className="h-3.5 w-3.5 mr-1.5 text-primary" />
-                                Perfil
+                              <Button render={<Link href={`/patients/${patient.id}?tab=history`} />} variant="secondary" size="sm" className="h-8">
+                                <NotebookPen className="h-3.5 w-3.5 mr-1.5 text-primary" />
+                                Evolução
                               </Button>
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg text-rose-500 hover:bg-rose-500/10 hover:text-rose-600" onClick={() => handleDelete(patient.id)} title="Excluir paciente">
                                 <Trash2 className="h-4 w-4" />

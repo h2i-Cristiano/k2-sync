@@ -5,7 +5,7 @@ const features = [
   {
     icon: CalendarHeart,
     title: "Agenda e pacientes",
-    description: "Agendamentos, prontuários e evoluções em um só lugar.",
+    description: "Agendamentos, pacientes e evoluções em um só lugar.",
   },
   {
     icon: ReceiptText,
