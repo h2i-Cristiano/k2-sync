@@ -376,7 +376,7 @@ function PatientDetailInner() {
                   key={k}
                   type="button"
                   onClick={() => setHistoryFilter(k)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                   className={`cursor-pointer px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     historyFilter === k ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >

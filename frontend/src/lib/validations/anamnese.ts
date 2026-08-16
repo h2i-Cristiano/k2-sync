@@ -45,13 +45,13 @@ export const anamneseDataSchema = z.object({
 
   consent_name: z.string().min(3, "Nome completo obrigatório"),
   consent_cpf: z.string().regex(cpfRegex, "CPF inválido (ex: 123.456.789-00)"),
-  consent_signature_image: z.string().min(1, "Assinatura é obrigatória"),
+  consent_signature_image: z.string().optional(),
   consent_signature_typed_name: z.string().optional(),
-  consent_signature_timestamp: z.string().min(1, "Data da assinatura é obrigatória"),
+  consent_signature_timestamp: z.string().optional(),
   consent_photo: z.string().optional(),
   consent_photo_timestamp: z.string().optional(),
-  consent_lgpd_accepted: z.boolean().refine(val => val === true, "Você deve aceitar os termos LGPD"),
-  consent_marketing_accepted: z.boolean(),
+  consent_lgpd_accepted: z.boolean().optional(),
+  consent_marketing_accepted: z.boolean().optional(),
 })
 
 export type AnamneseDataValues = z.infer<typeof anamneseDataSchema>

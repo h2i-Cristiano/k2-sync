@@ -46,7 +46,7 @@ function DateStrip({ selected, onSelect, daysCount = 7, className }: DateStripPr
             onClick={() => onSelect(d)}
             aria-pressed={isSelected}
             className={cn(
-              "flex min-w-[52px] flex-col items-center gap-0.5 rounded-xl border px-2 py-2 transition-colors",
+              "flex min-w-[52px] cursor-pointer flex-col items-center gap-0.5 rounded-xl border px-2 py-2 transition-colors",
               isSelected
                 ? "border-transparent bg-primary text-primary-foreground shadow-sm"
                 : "border-border/60 bg-card text-foreground hover:border-primary/40 hover:bg-primary/5"

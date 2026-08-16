@@ -164,7 +164,7 @@ export default function PayablePage() {
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs">Categoria</Label>
-                  <button type="button" onClick={() => setShowNewCategory(!showNewCategory)} className="text-[10px] text-primary hover:underline">+ Nova</button>
+                  <button type="button" onClick={() => setShowNewCategory(!showNewCategory)} className="cursor-pointer text-[10px] text-primary hover:underline">+ Nova</button>
                 </div>
                 {showNewCategory ? (
                   <div className="flex gap-1">

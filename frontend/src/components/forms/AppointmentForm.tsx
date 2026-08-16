@@ -374,11 +374,11 @@ export function AppointmentForm({ patients, initialData, onSuccess, onCancel }: 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="rounded-xl border border-border/60 bg-card p-3">
             <div className="flex items-center justify-between mb-3">
-              <button type="button" onClick={prevMonth} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
+              <button type="button" onClick={prevMonth} className="cursor-pointer p-1.5 hover:bg-muted rounded-lg transition-colors">
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <p className="text-sm font-semibold">{MONTHS[calMonth]} {calYear}</p>
-              <button type="button" onClick={nextMonth} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
+              <button type="button" onClick={nextMonth} className="cursor-pointer p-1.5 hover:bg-muted rounded-lg transition-colors">
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>

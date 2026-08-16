@@ -37,6 +37,36 @@ export async function createAnamnese(data: AnamneseCreateFormValues) {
   }
 }
 
+export async function getAnamneseById(patientId: string) {
+  try {
+    const { supabase, tenantId } = await getUserAndTenant()
+
+    const { data, error } = await supabase
+      .from("anamnesis")
+      .select("id, data")
+      .eq("patient_id", patientId)
+      .eq("tenant_id", tenantId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (error) {
+      console.error("Erro ao buscar anamnese:", error)
+      return { error: "Erro ao buscar anamnese." }
+    }
+
+    if (!data) {
+      return { data: null }
+    }
+
+    return { data: { id: data.id, data: data.data } }
+  } catch (err: any) {
+    console.error("Erro em getAnamneseById:", err)
+    if (err.message === "Não autenticado") return { error: "Não autorizado." }
+    return { error: "Erro interno." }
+  }
+}
+
 export async function updateAnamnese(id: string, data: Partial<AnamneseUpdateFormValues>) {
   try {
     uuidSchema.parse(id)

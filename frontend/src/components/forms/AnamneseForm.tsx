@@ -4,26 +4,18 @@ import { useState, useRef, useEffect } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { anamneseDataSchema, AnamneseDataValues } from "@/lib/validations/anamnese"
-import { createAnamnese } from "@/lib/actions/anamnese.actions"
+import { createAnamnese, updateAnamnese } from "@/lib/actions/anamnese.actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { ArrowLeft, ArrowRight, Check, Camera, Shield } from "lucide-react"
+import { ArrowLeft, ArrowRight, Check, Camera, Shield, Edit, FileText } from "lucide-react"
 import { toast } from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { SignaturePad } from "@/components/ui/signature-pad"
 import { Separator } from "@/components/ui/separator"
-
-const steps = [
-  "Queixa Principal",
-  "Saúde",
-  "Hábitos",
-  "Expectativas",
-  "Consentimento LGPD",
-]
 
 const LGPD_TERMS = `TERMO DE CONSENTIMENTO E PRIVACIDADE – LEI GERAL DE PROTEÇÃO DE DADOS (LGPD)
 
@@ -123,11 +115,13 @@ E-mail: contato@studiokamke.com.br`
 
 interface AnamneseFormProps {
   patientId: string
+  anamneseId?: string
+  initialData?: AnamneseDataValues
   onSuccess?: () => void
   onCancel?: () => void
 }
 
-export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormProps) {
+export function AnamneseForm({ patientId, anamneseId, initialData, onSuccess, onCancel }: AnamneseFormProps) {
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
   const [signatureData, setSignatureData] = useState<{ signatureImage: string; typedName?: string; timestamp: string } | null>(null)
@@ -135,10 +129,14 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
   const [photoStream, setPhotoStream] = useState<MediaStream | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const [showCamera, setShowCamera] = useState(false)
+  const [saved, setSaved] = useState(!!initialData)
+  const [savedData, setSavedData] = useState<AnamneseDataValues | null>(initialData ?? null)
+  const [savedAnamneseId, setSavedAnamneseId] = useState<string | null>(anamneseId ?? null)
+  const isFirstTime = !savedAnamneseId
 
   const form = useForm<AnamneseDataValues>({
     resolver: zodResolver(anamneseDataSchema),
-    defaultValues: {
+    defaultValues: initialData ?? {
       chief_complaint: "",
       pain_location: "",
       pain_intensity: "",
@@ -168,6 +166,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
       consent_lgpd_accepted: false,
       consent_marketing_accepted: false,
     },
+    mode: "onChange",
   })
 
   const watchPregnant = useWatch({ control: form.control, name: "pregnant" })
@@ -183,6 +182,17 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
   }, [photoStream])
 
   async function onSubmit(data: AnamneseDataValues) {
+    if (isFirstTime) {
+      if (!signatureData) {
+        toast.error("Assine o documento para continuar")
+        return
+      }
+      if (!watchConsentLgpd) {
+        toast.error("Você deve aceitar os termos LGPD para salvar")
+        return
+      }
+    }
+
     setSaving(true)
     const submissionData = {
       ...data,
@@ -192,20 +202,51 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
       consent_photo: photoData?.image || "",
       consent_photo_timestamp: photoData?.timestamp || "",
     }
-    const result = await createAnamnese({
-      patient_id: patientId,
-      form_type: "general",
-      data: submissionData,
-      status: "completed",
-    })
+    let result
+    if (savedAnamneseId) {
+      result = await updateAnamnese(savedAnamneseId, {
+        patient_id: patientId,
+        form_type: "general",
+        data: submissionData,
+        status: "completed",
+      })
+    } else {
+      result = await createAnamnese({
+        patient_id: patientId,
+        form_type: "general",
+        data: submissionData,
+        status: "completed",
+      })
+    }
     setSaving(false)
     if (result.error) {
       toast.error(result.error)
       return
     }
     toast.success("Anamnese salva com sucesso!")
+    const savedValues = { ...submissionData }
+    setSavedData(savedValues)
+    if ('data' in result && result.data?.id) setSavedAnamneseId(result.data.id)
+    setSaved(true)
     onSuccess?.()
   }
+
+  function handleEdit() {
+    setSaved(false)
+    setStep(0)
+  }
+
+  function handleCancel() {
+    if (saved && savedData) {
+      setSaved(true)
+      return
+    }
+    onCancel?.()
+  }
+
+  const formSteps = isFirstTime
+    ? ["Queixa Principal", "Saúde", "Hábitos", "Expectativas", "Consentimento LGPD"]
+    : ["Queixa Principal", "Saúde", "Hábitos", "Expectativas"]
 
   const nextStep = async () => {
     let fieldsToValidate: any[] = []
@@ -221,13 +262,13 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
         return
       }
       if (isValid) {
-        setStep(s => Math.min(steps.length - 1, s + 1))
+        setStep(s => Math.min(formSteps.length - 1, s + 1))
       }
       return
     }
 
     const isValid = await form.trigger(fieldsToValidate)
-    if (isValid) setStep(s => Math.min(steps.length - 1, s + 1))
+    if (isValid) setStep(s => Math.min(formSteps.length - 1, s + 1))
   }
 
   const prevStep = () => setStep(s => Math.max(0, s - 1))
@@ -278,12 +319,134 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
     setPhotoStream(null)
   }
 
+  if (saved && savedData) {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300">
+        <Card className="border-none shadow-sm bg-card">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Anamnese
+                </CardTitle>
+                <CardDescription>
+                  {savedAnamneseId
+                    ? "Histórico clínico registrado."
+                    : "Anamnese registrada com sucesso."}
+                </CardDescription>
+              </div>
+              <Button variant="link" size="sm" onClick={handleEdit} className="text-xs text-muted-foreground hover:text-foreground">
+                <Edit className="h-3.5 w-3.5 mr-1" />
+                Editar
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-8 text-sm">
+              <div className="space-y-5">
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Queixa Principal</p>
+                  <p className="mt-1 text-foreground break-words">{savedData.chief_complaint || "Não informado"}</p>
+                </div>
+
+                {savedData.pain_location && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Localização da Dor</p>
+                    <p className="mt-1 text-foreground break-words">{savedData.pain_location}</p>
+                  </div>
+                )}
+
+                {savedData.pain_intensity && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Intensidade (1-10)</p>
+                    <p className="mt-1 text-foreground break-words">{savedData.pain_intensity}</p>
+                  </div>
+                )}
+
+                {savedData.previous_treatments && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tratamentos Anteriores</p>
+                    <p className="mt-1 text-foreground break-words">{savedData.previous_treatments}</p>
+                  </div>
+                )}
+
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Saúde</p>
+                  <div className="mt-1 space-y-1">
+                    <p className="text-foreground break-words"><span className="text-muted-foreground">Alergias:</span> {savedData.allergies || "Nenhuma"}</p>
+                    <p className="text-foreground break-words"><span className="text-muted-foreground">Medicações:</span> {savedData.medications || "Nenhuma"}</p>
+                    <p className="text-foreground break-words"><span className="text-muted-foreground">Condições:</span> {savedData.medical_conditions || "Nenhuma"}</p>
+                    <p className="text-foreground break-words"><span className="text-muted-foreground">Cirurgias:</span> {savedData.previous_surgeries || "Nenhuma"}</p>
+                    <p className="text-foreground break-words"><span className="text-muted-foreground">Grávida:</span> {savedData.pregnant === "yes" ? "Sim" : savedData.pregnant === "no" ? "Não" : "Não informado"}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Hábitos</p>
+                  <div className="mt-1 space-y-1">
+                    <p className="text-foreground break-words"><span className="text-muted-foreground">Fuma:</span> {savedData.smokes || "Não informado"}</p>
+                    <p className="text-foreground break-words"><span className="text-muted-foreground">Álcool:</span> {savedData.drinks || "Não informado"}</p>
+                    <p className="text-foreground break-words"><span className="text-muted-foreground">Exercício:</span> {savedData.exercise_frequency || "Não informado"}</p>
+                    <p className="text-foreground break-words"><span className="text-muted-foreground">Sono:</span> {savedData.sleep_quality || "Não informado"}</p>
+                    <p className="text-foreground break-words"><span className="text-muted-foreground">Estresse:</span> {savedData.stress_level || "Não informado"}</p>
+                    <p className="text-foreground break-words"><span className="text-muted-foreground">Alimentação:</span> {savedData.diet || "Não informado"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Expectativas</p>
+                  <p className="mt-1 text-foreground break-words whitespace-pre-wrap">{savedData.expectations || "Não informado"}</p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Consentimento</p>
+                  <div className="mt-1 space-y-1">
+                    <p className="text-foreground break-words"><span className="text-muted-foreground">Nome:</span> {savedData.consent_name || "Não informado"}</p>
+                    <p className="text-foreground break-words"><span className="text-muted-foreground">CPF:</span> {savedData.consent_cpf || "Não informado"}</p>
+                  </div>
+                </div>
+
+                {savedData.consent_signature_image && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Assinatura</p>
+                    <img src={savedData.consent_signature_image} alt="Assinatura" className="mt-1 max-h-[100px] w-full max-w-[280px] rounded-xl border" />
+                  </div>
+                )}
+
+                {savedData.consent_photo && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Foto</p>
+                    <img src={savedData.consent_photo} alt="Foto" className="mt-1 max-h-[160px] w-full max-w-[280px] rounded-xl border object-cover" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+          <CardContent className="border-t">
+            <div className="flex justify-between">
+              <Button variant="ghost" size="sm" onClick={handleCancel}>
+                Voltar
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleEdit}>
+                <Edit className="h-3.5 w-3.5 mr-1" />
+                Editar Anamnese
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
       {/* Progress Indicator */}
       <div className="space-y-2">
         <div className="flex gap-2">
-          {steps.map((s, i) => (
+          {formSteps.map((s, i) => (
             <div
               key={s}
               className={`flex-1 h-2 rounded-full transition-colors duration-300 ${
@@ -293,7 +456,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
           ))}
         </div>
         <p className="text-sm font-medium text-muted-foreground">
-          Passo {step + 1} de {steps.length}: <span className="text-foreground">{steps[step]}</span>
+          Passo {step + 1} de {formSteps.length}: <span className="text-foreground">{formSteps[step]}</span>
         </p>
       </div>
 
@@ -669,7 +832,7 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
 
       <div className="flex justify-between border-t pt-4">
         {step === 0 ? (
-          <Button type="button" variant="ghost" onClick={onCancel}>
+          <Button type="button" variant="ghost" onClick={handleCancel}>
             Cancelar
           </Button>
         ) : (
@@ -678,13 +841,13 @@ export function AnamneseForm({ patientId, onSuccess, onCancel }: AnamneseFormPro
           </Button>
         )}
 
-        {step < steps.length - 1 ? (
+        {step < formSteps.length - 1 ? (
           <Button type="button" onClick={nextStep}>
             Próximo <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         ) : (
-          <Button type="submit" disabled={saving || !signatureData || !watchConsentLgpd}>
-            {saving ? "Salvando..." : "Salvar Anamnese"}
+          <Button type="submit" disabled={saving}>
+            {saving ? "Salvando..." : isFirstTime ? "Salvar Anamnese" : "Salvar Alterações"}
             {!saving && <Check className="ml-2 h-4 w-4" />}
           </Button>
         )}

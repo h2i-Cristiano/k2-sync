@@ -90,6 +90,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="username"
                   placeholder="seu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -105,6 +106,7 @@ export default function LoginPage() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -114,7 +116,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute top-1/2 right-3 -translate-y-1/2 rounded-lg p-1 text-muted-foreground/60 transition-colors hover:text-muted-foreground"
+                  className="cursor-pointer absolute top-1/2 right-3 -translate-y-1/2 rounded-lg p-2 text-muted-foreground/60 transition-colors hover:bg-muted/30 hover:text-muted-foreground"
                   aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                 >
                   {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
