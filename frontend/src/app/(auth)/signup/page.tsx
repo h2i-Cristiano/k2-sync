@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { Leaf, User, Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, AlertCircle } from "lucide-react"
+import { mensagemDeErro } from "@/lib/auth-errors"
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState("")
@@ -37,7 +38,8 @@ export default function SignupPage() {
       })
 
       if (authError) {
-        setError(authError.message)
+        console.error("Falha no signUp:", authError)
+        setError(mensagemDeErro(authError, "Não foi possível criar sua conta. Tente novamente."))
         setLoading(false)
         return
       }
@@ -61,7 +63,8 @@ export default function SignupPage() {
       )
 
       if (tenantError) {
-        setError("Erro ao criar clínica: " + tenantError.message)
+        console.error("Falha em create_tenant_for_user:", tenantError)
+        setError(mensagemDeErro(tenantError, "Conta criada, mas não foi possível configurar sua clínica. Faça login para continuar."))
         setLoading(false)
         return
       }
@@ -76,7 +79,8 @@ export default function SignupPage() {
 
       setSuccess(true)
     } catch (err) {
-      setError("Erro inesperado: " + (err as Error).message)
+      console.error("Erro inesperado no cadastro:", err)
+      setError(mensagemDeErro(err, "Erro inesperado. Tente novamente."))
     }
     setLoading(false)
   }

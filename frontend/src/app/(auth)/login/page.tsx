@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { Leaf, Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, AlertCircle } from "lucide-react"
+import { mensagemDeErro } from "@/lib/auth-errors"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -30,7 +31,8 @@ export default function LoginPage() {
     })
 
     if (error) {
-      setError(error.message)
+      console.error("Falha no login:", error)
+      setError(mensagemDeErro(error, "Não foi possível entrar. Tente novamente."))
       setLoading(false)
       return
     }
