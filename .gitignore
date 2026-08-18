@@ -47,3 +47,4 @@ frontend/dev-server.err.log
 
 # testsprite artifacts
 frontend/e2e-testsprite/
+testsprite_tests/
