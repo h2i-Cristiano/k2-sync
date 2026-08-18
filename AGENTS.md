@@ -22,8 +22,8 @@
 
 - `frontend/` — app Next.js (todo código vive aqui; `src/app`, `src/components`, `src/lib`)
 - `docs/` — **vault Obsidian** de documentação técnica (arquitetura, banco, deploy, handoff). Leia `docs/handoff-ia.md` para retomar o trabalho.
-- `supabase/migrations/` — migrations SQL (16 arquivos, numerados `YYYYMMDDHHMMSS_descricao.sql`)
-- `database-schema.sql` — schema base no repo root
+- `supabase/migrations/` — migrations SQL numeradas `YYYYMMDDHHMMSS_descricao.sql`. **Fonte da verdade do schema.**
+- `database-schema.sql` — snapshot **gerado** do banco, no repo root. Não editar a mão; regerar com `supabase db dump --schema public > database-schema.sql`. Consultar para saber o estado real do banco, nunca como especificação — a versão anterior era escrita a mão, divergiu do banco e causou um incidente (ver migration `20260816030000`).
 
 ## Comandos (sempre em `frontend/`)
 

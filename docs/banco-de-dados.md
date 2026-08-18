@@ -396,10 +396,11 @@ CREATE POLICY "Anamnesis files are accessible only by tenant"
 
 ### Ordem de Execucao
 
+> `database-schema.sql` **não** faz parte desta ordem: desde 2026-08-16 ele é um
+> snapshot gerado (`supabase db dump`), não um script executável. As migrations
+> abaixo são a fonte da verdade e reproduzem o banco por si só.
+
 ```
-database-schema.sql (schema base)
-    │
-    ▼
 20260726000000_create_tenant_rpc.sql
 20260726010000_auto_confirm_users.sql
 20260726020000_fix_tenant_rpc.sql

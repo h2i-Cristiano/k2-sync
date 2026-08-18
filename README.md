@@ -50,7 +50,8 @@ k2-sync/
 │   ├── src/components/      # Componentes React
 │   ├── src/lib/             # Utilitários, validações, server actions
 │   └── e2e/                 # Testes Playwright
-└── database-schema.sql      # Schema completo do banco
+├── supabase/migrations/     # Schema do banco (fonte da verdade)
+└── database-schema.sql      # Snapshot gerado do schema — não editar a mão
 ```
 
 ## Funcionalidades
