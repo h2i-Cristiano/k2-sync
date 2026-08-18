@@ -17,11 +17,11 @@ test.describe('Signup flow', () => {
     await page.getByLabel('Senha', { exact: true }).fill('testpassword123');
     await page.getByRole('button', { name: /criar conta/i }).click();
     await page.waitForTimeout(3000);
-    const errorBox = page.locator('.bg-red-50, [class*="red"]').first();
-    const errorVisible = await errorBox.isVisible().catch(() => false);
-    const url = page.url();
-    const stayedOnSignup = url.includes('/signup');
-    expect(errorVisible || stayedOnSignup).toBeTruthy();
+    // A assercao anterior era `errorVisible || stayedOnSignup`, que nunca podia
+    // falhar: no sucesso a pagina troca o conteudo in-place e a URL segue em
+    // /signup, entao stayedOnSignup era true nos dois desfechos. O que importa
+    // e que um e-mail duplicado NAO conclua o cadastro.
+    await expect(page.getByText('Conta criada!')).not.toBeVisible();
   });
 
   test('signup form validates required fields', async ({ page }) => {
