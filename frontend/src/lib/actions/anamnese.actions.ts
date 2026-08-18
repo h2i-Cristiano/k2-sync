@@ -3,14 +3,15 @@
 import { z } from "zod"
 import { anamneseCreateSchema, anamneseUpdateSchema, AnamneseCreateFormValues, AnamneseUpdateFormValues } from "@/lib/validations/anamnese"
 import { revalidatePath } from "next/cache"
-import { getUserAndTenant } from "@/lib/auth-helpers"
+import { getUserAndTenant, assertAcessoClinico, SEM_PERMISSAO } from "@/lib/auth-helpers"
 
 const uuidSchema = z.string().uuid("ID inválido")
 
 export async function createAnamnese(data: AnamneseCreateFormValues) {
   try {
     const validatedData = anamneseCreateSchema.parse(data)
-    const { supabase, tenantId, user } = await getUserAndTenant()
+    const { supabase, tenantId, user, role } = await getUserAndTenant()
+    assertAcessoClinico(role)
 
     const { data: newAnamnese, error } = await supabase
       .from("anamnesis")
@@ -33,13 +34,15 @@ export async function createAnamnese(data: AnamneseCreateFormValues) {
   } catch (err: any) {
     console.error("Erro em createAnamnese:", err)
     if (err.message === "Não autenticado") return { error: "Não autorizado." }
+    if (err.message === SEM_PERMISSAO) return { error: "Seu perfil não tem acesso à anamnese." }
     return { error: "Os dados enviados são inválidos." }
   }
 }
 
 export async function getAnamneseById(patientId: string) {
   try {
-    const { supabase, tenantId } = await getUserAndTenant()
+    const { supabase, tenantId, role } = await getUserAndTenant()
+    assertAcessoClinico(role)
 
     const { data, error } = await supabase
       .from("anamnesis")
@@ -63,6 +66,7 @@ export async function getAnamneseById(patientId: string) {
   } catch (err: any) {
     console.error("Erro em getAnamneseById:", err)
     if (err.message === "Não autenticado") return { error: "Não autorizado." }
+    if (err.message === SEM_PERMISSAO) return { error: "Seu perfil não tem acesso à anamnese." }
     return { error: "Erro interno." }
   }
 }
@@ -71,7 +75,8 @@ export async function updateAnamnese(id: string, data: Partial<AnamneseUpdateFor
   try {
     uuidSchema.parse(id)
     const validatedData = anamneseUpdateSchema.parse(data)
-    const { supabase, tenantId } = await getUserAndTenant()
+    const { supabase, tenantId, role } = await getUserAndTenant()
+    assertAcessoClinico(role)
 
     const { error } = await supabase
       .from("anamnesis")
@@ -84,7 +89,7 @@ export async function updateAnamnese(id: string, data: Partial<AnamneseUpdateFor
       return { error: "Erro ao atualizar anamnese." }
     }
 
-    const { data: anamnese } = await supabase.from("anamnesis").select("patient_id").eq("id", id).single()
+    const { data: anamnese } = await supabase.from("anamnesis").select("patient_id").eq("id", id).eq("tenant_id", tenantId).single()
     if (anamnese?.patient_id) {
       revalidatePath(`/patients/${anamnese.patient_id}`)
     }
@@ -93,6 +98,7 @@ export async function updateAnamnese(id: string, data: Partial<AnamneseUpdateFor
   } catch (err: any) {
     console.error("Erro em updateAnamnese:", err)
     if (err.message === "Não autenticado") return { error: "Não autorizado." }
+    if (err.message === SEM_PERMISSAO) return { error: "Seu perfil não tem acesso à anamnese." }
     return { error: "Dados inválidos ou erro interno." }
   }
 }

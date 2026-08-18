@@ -33,8 +33,8 @@ export async function createAppointment(data: AppointmentCreateFormValues & { de
 
     if (depositAmount && depositAmount > 0) {
       const [patientResult, serviceResult] = await Promise.all([
-        supabase.from("patients").select("full_name").eq("id", validatedData.patient_id).single(),
-        supabase.from("services").select("name").eq("id", validatedData.service_type).single(),
+        supabase.from("patients").select("full_name").eq("id", validatedData.patient_id).eq("tenant_id", tenantId).single(),
+        supabase.from("services").select("name").eq("id", validatedData.service_type).eq("tenant_id", tenantId).single(),
       ])
 
       const patientName = patientResult.data?.full_name || "Paciente"
@@ -100,8 +100,8 @@ export async function updateAppointment(id: string, data: Partial<AppointmentUpd
 
     if (validatedData.status === "completed" && currentApt && currentApt.status !== "completed" && currentApt.total_cost > 0) {
       const [patientResult, serviceResult] = await Promise.all([
-        supabase.from("patients").select("full_name").eq("id", currentApt.patient_id).single(),
-        supabase.from("services").select("name").eq("id", currentApt.service_type).single(),
+        supabase.from("patients").select("full_name").eq("id", currentApt.patient_id).eq("tenant_id", tenantId).single(),
+        supabase.from("services").select("name").eq("id", currentApt.service_type).eq("tenant_id", tenantId).single(),
       ])
 
       const patientName = patientResult.data?.full_name || "Paciente"

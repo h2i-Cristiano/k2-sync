@@ -33,16 +33,6 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protected routes
-  const protectedPaths = ['/dashboard', '/patients', '/appointments', '/settings']
-  const isProtected = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))
-
-  if (isProtected && !user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
-
   // Redirect logged in users from auth pages to dashboard
   const authPaths = ['/login', '/signup']
   const isAuthPage = authPaths.some(path => request.nextUrl.pathname.startsWith(path))
@@ -50,6 +40,17 @@ export async function updateSession(request: NextRequest) {
   if (isAuthPage && user) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
+  // Everything outside the public list requires a session. Deny by default so
+  // novas rotas ficam protegidas sem precisar ser listadas aqui. '/' apenas
+  // redireciona para /login.
+  const isPublic = isAuthPage || request.nextUrl.pathname === '/'
+
+  if (!isPublic && !user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 

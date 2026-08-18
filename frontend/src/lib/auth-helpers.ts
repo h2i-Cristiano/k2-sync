@@ -10,7 +10,7 @@ export async function getUserAndTenant() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("tenant_id")
+    .select("tenant_id, role")
     .eq("id", user.id)
     .single()
 
@@ -18,5 +18,18 @@ export async function getUserAndTenant() {
     throw new Error("Erro de configuração da conta (Tenant não encontrado).")
   }
 
-  return { supabase, user, tenantId: profile.tenant_id }
+  return { supabase, user, tenantId: profile.tenant_id, role: profile.role as string }
+}
+
+export const SEM_PERMISSAO = "Sem permissão"
+
+// Perfis sem acesso a dado clínico (evoluções e anamnese).
+const PERFIS_SEM_ACESSO_CLINICO = ["receptionist"]
+
+// Bloqueia escrita de dado clínico. A leitura é barrada pela RLS, já que as
+// páginas consultam o banco direto do cliente.
+export function assertAcessoClinico(role: string) {
+  if (PERFIS_SEM_ACESSO_CLINICO.includes(role)) {
+    throw new Error(SEM_PERMISSAO)
+  }
 }

@@ -3,14 +3,15 @@
 import { z } from "zod"
 import { revalidatePath } from "next/cache"
 import { recordCreateSchema, recordUpdateSchema, RecordCreateFormValues, RecordUpdateFormValues } from "@/lib/validations/record"
-import { getUserAndTenant } from "@/lib/auth-helpers"
+import { getUserAndTenant, assertAcessoClinico, SEM_PERMISSAO } from "@/lib/auth-helpers"
 
 const uuidSchema = z.string().uuid("ID inválido")
 
 export async function createRecord(data: RecordCreateFormValues) {
   try {
     const parsed = recordCreateSchema.parse(data)
-    const { supabase, user, tenantId } = await getUserAndTenant()
+    const { supabase, user, tenantId, role } = await getUserAndTenant()
+    assertAcessoClinico(role)
 
     const { data: newRecord, error } = await supabase
       .from("medical_records")
@@ -32,6 +33,7 @@ export async function createRecord(data: RecordCreateFormValues) {
   } catch (err: any) {
     console.error("Erro em createRecord:", err)
     if (err.message === "Não autenticado") return { error: "Não autorizado." }
+    if (err.message === SEM_PERMISSAO) return { error: "Seu perfil não tem acesso a evoluções." }
     return { error: "Dados inválidos ou erro interno." }
   }
 }
@@ -40,7 +42,8 @@ export async function updateRecord(id: string, data: RecordUpdateFormValues) {
   try {
     uuidSchema.parse(id)
     const parsed = recordUpdateSchema.parse(data)
-    const { supabase, tenantId } = await getUserAndTenant()
+    const { supabase, tenantId, role } = await getUserAndTenant()
+    assertAcessoClinico(role)
 
     const { error } = await supabase
       .from("medical_records")
@@ -58,6 +61,7 @@ export async function updateRecord(id: string, data: RecordUpdateFormValues) {
   } catch (err: any) {
     console.error("Erro em updateRecord:", err)
     if (err.message === "Não autenticado") return { error: "Não autorizado." }
+    if (err.message === SEM_PERMISSAO) return { error: "Seu perfil não tem acesso a evoluções." }
     return { error: "Dados inválidos ou erro interno." }
   }
 }
@@ -65,7 +69,8 @@ export async function updateRecord(id: string, data: RecordUpdateFormValues) {
 export async function deleteRecord(id: string) {
   try {
     uuidSchema.parse(id)
-    const { supabase, tenantId } = await getUserAndTenant()
+    const { supabase, tenantId, role } = await getUserAndTenant()
+    assertAcessoClinico(role)
 
     const { error } = await supabase
       .from("medical_records")
@@ -83,6 +88,7 @@ export async function deleteRecord(id: string) {
   } catch (err: any) {
     console.error("Erro em deleteRecord:", err)
     if (err.message === "Não autenticado") return { error: "Não autorizado." }
+    if (err.message === SEM_PERMISSAO) return { error: "Seu perfil não tem acesso a evoluções." }
     return { error: "Erro interno." }
   }
 }
