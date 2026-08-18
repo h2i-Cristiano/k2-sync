@@ -41,9 +41,9 @@ supabase/.temp/
 
 frontend/test-results/
 
-# runtime logs
-frontend/dev-server.log
-frontend/dev-server.err.log
+# runtime logs (qualquer diretorio, qualquer extensao — antes so os de frontend/
+# estavam listados e os da raiz escapavam)
+dev-server.*
 
 # testsprite artifacts
 frontend/e2e-testsprite/
